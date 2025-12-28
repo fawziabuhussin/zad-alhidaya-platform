@@ -24,12 +24,54 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const FRONTEND_URL = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000';
-const CORS_ORIGIN = FRONTEND_URL;
+
+// CORS configuration - allow multiple origins for Vercel deployments
+const getAllowedOrigins = () => {
+  const origins: string[] = [];
+  
+  // Add FRONTEND_URL if set
+  if (process.env.FRONTEND_URL) {
+    origins.push(process.env.FRONTEND_URL);
+  }
+  
+  // Add NEXT_PUBLIC_FRONTEND_URL if set
+  if (process.env.NEXT_PUBLIC_FRONTEND_URL) {
+    origins.push(process.env.NEXT_PUBLIC_FRONTEND_URL);
+  }
+  
+  // Add CORS_ORIGIN if set
+  if (process.env.CORS_ORIGIN) {
+    origins.push(process.env.CORS_ORIGIN);
+  }
+  
+  // Default Vercel frontend URL
+  origins.push('https://zad-alhidaya-web.vercel.app');
+  
+  // Localhost for development
+  origins.push('http://localhost:3000');
+  
+  // Remove duplicates
+  return [...new Set(origins)];
+};
 
 // Middleware
 app.use(cors({
-  origin: CORS_ORIGIN,
+  origin: (origin, callback) => {
+    const allowedOrigins = getAllowedOrigins();
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // In production, be strict; in development, allow all
+      if (process.env.NODE_ENV === 'production') {
+        callback(new Error('Not allowed by CORS'));
+      } else {
+        callback(null, true);
+      }
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
