@@ -2,11 +2,16 @@
 
 ## 🗂️ Quick Import from `env-templates/`
 
-Use the ready-to-import templates in `env-templates/`:
-- `api.env.template` → for `zad-alhidaya-platform-api` project
-- `web.env.template` → for `zad-alhidaya-web` project
+Vercel supports direct import of `.env` files! Use the ready-to-import files in `env-templates/`:
+- `api.env` → Import directly into `zad-alhidaya-platform-api` project
+- `web.env` → Import directly into `zad-alhidaya-web` project
 
-Copy the values from these files and add them in Vercel Dashboard → Settings → Environment Variables, then redeploy.
+**Steps:**
+1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+2. Click **Import** button
+3. Select `api.env` or `web.env` file
+4. Choose environments (Production/Preview/Development)
+5. Click **Import** and **Redeploy**
 
 ## 📋 قائمة Environment Variables المطلوبة
 

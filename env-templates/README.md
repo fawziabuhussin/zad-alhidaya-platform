@@ -1,19 +1,27 @@
-# Environment Templates
+# Environment Variables for Vercel
 
-This folder contains ready-to-import environment-variable templates for the Vercel projects. Importing these files saves you from manually typing every key while still letting you tweak the values (for example by pasting a fresh Neon `DATABASE_URL` or rotating JWT secrets).
+This folder contains ready-to-import `.env` files for Vercel projects. Vercel supports direct import of `.env` files.
 
 ## Files
 
-- `api.env.template` → use this with the `zad-alhidaya-platform-api` Vercel project. It lists the database connection, JWT secrets, and other API-only values.
-- `web.env.template` → use this with the `zad-alhidaya-web` project. It wires the frontend to the deployed API URLs.
+- `api.env` → Import this into the `zad-alhidaya-platform-api` Vercel project
+- `web.env` → Import this into the `zad-alhidaya-web` Vercel project
 
-## Workflow
+## How to Import in Vercel
 
-1. Copy either template to a temporary file (or download directly) and fill in the real secrets.
-2. In Vercel, go to **Settings > Environment Variables > Import > File** and select the prepared file.
-3. Assign each template to the appropriate environment (Production/Preview/Development) and save.
-4. Trigger a redeploy so the new values ship with the build.
+1. Go to your Vercel project → **Settings** → **Environment Variables**
+2. Click **Import** button
+3. Select the appropriate `.env` file (`api.env` or `web.env`)
+4. Choose which environments to apply (Production, Preview, Development)
+5. Click **Import**
+6. **Redeploy** your project for changes to take effect
 
-For local development, copy a template to `.env.local`, update the URLs/secrets you need, and restart the app. Keep real secrets out of Git by keeping `.env.local` ignored.
+## For Local Development
+
+Copy the `.env` file to your project directory:
+- `api.env` → `apps/api/.env`
+- `web.env` → `apps/web/.env.local`
+
+Update any values as needed (e.g., use `localhost` URLs for local development).
 
 
