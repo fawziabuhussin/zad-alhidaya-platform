@@ -3,15 +3,6 @@
   "buildCommand": "cd apps/web && npm run build",
   "outputDirectory": "apps/web/.next",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://zad-alhidaya-platform-api.vercel.app/api/:path*"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "framework": "nextjs"
 }
 

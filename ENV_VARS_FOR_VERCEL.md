@@ -1,8 +1,12 @@
-# 🔐 Environment Variables لـ Vercel
+# 🔐 Environment Variables for Vercel
 
-## 🗂️ قم باستيراد من `env-templates/`
+## 🗂️ Quick Import from `env-templates/`
 
-يمكنك استيراد المتغيرات مباشرة عبر الملفات الموجودة في `env-templates/` داخل هذا المستودع (`api.env.template` و `web.env.template`). بعد نسخ أي ملف وإدخال القيم الحقيقية، استخدم زر "Import" في صفحة Environment Variables على Vercel ثم قم بإعادة النشر.
+Use the ready-to-import templates in `env-templates/`:
+- `api.env.template` → for `zad-alhidaya-platform-api` project
+- `web.env.template` → for `zad-alhidaya-web` project
+
+Copy the values from these files and add them in Vercel Dashboard → Settings → Environment Variables, then redeploy.
 
 ## 📋 قائمة Environment Variables المطلوبة
 
@@ -41,11 +45,9 @@ JWT_REFRESH_SECRET=z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0f9e8d7c6b5a4
 
 ### 4. FRONTEND_URL (مطلوب)
 ```
-FRONTEND_URL=https://zad-alhidaya-platform-web.vercel.app
+FRONTEND_URL=https://zad-alhidaya-web.vercel.app
 ```
-**ملاحظة:** 
-- إذا لم تنشر Frontend بعد، استخدم: `http://localhost:3000`
-- بعد نشر Frontend، غيّره إلى URL الفعلي
+**ملاحظة:** يجب أن يكون URL الفعلي للـ Frontend على Vercel
 
 ---
 
@@ -127,17 +129,7 @@ GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 
 ---
 
-## 🎯 مثال كامل
+## 🎯 Complete Example
 
-```
-DATABASE_URL=postgresql://user:pass@ep-cool-darkness-123456.us-east-1.aws.neon.tech/neondb?sslmode=require
-JWT_SECRET=my-super-secret-jwt-key-12345678901234567890
-JWT_REFRESH_SECRET=my-super-secret-refresh-key-09876543210987654321
-FRONTEND_URL=https://zad-alhidaya-platform-web.vercel.app
-NODE_ENV=production
-```
-
----
-
-**جاهز! الآن أضف هذه المتغيرات في Vercel Dashboard.**
+See `env-templates/api.env.template` and `env-templates/web.env.template` for ready-to-use templates with actual values.
 

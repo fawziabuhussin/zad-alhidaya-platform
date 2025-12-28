@@ -103,8 +103,8 @@ vercel deploy
 
 ## 📚 الوثائق
 
-- [API Documentation](./apps/api/README.md)
-- [Frontend Guide](./apps/web/README.md)
+- [Environment Variables for Vercel](./ENV_VARS_FOR_VERCEL.md) - إعداد متغيرات البيئة للنشر
+- [Environment Templates](./env-templates/README.md) - قوالب جاهزة للاستيراد
 
 ## 🛠️ التطوير
 

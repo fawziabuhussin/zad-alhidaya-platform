@@ -41,7 +41,7 @@ yarn-error.log*
 # Prisma
 apps/api/prisma/dev.db
 apps/api/prisma/dev.db-journal
-apps/api/prisma/migrations/
+# Note: migrations/ should be committed, so don't ignore it
 
 # IDE
 .vscode/
