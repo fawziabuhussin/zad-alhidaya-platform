@@ -35,13 +35,13 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Health check - support both paths
-app.get('/health', (req, res) => {
+// Health check - support both root and /api/health for Vercel rewrites
+const healthHandler = (_req: express.Request, res: express.Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-app.get('/', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+};
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+app.get('/', healthHandler);
 
 // Routes - support both /api/* and /* for compatibility
 // When accessed via /api/courses, Express receives /api/courses
