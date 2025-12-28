@@ -1,6 +1,36 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Determine API URL: use env var if set, otherwise detect environment
+const getApiUrl = (): string => {
+  // Explicitly set env var takes priority
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // Runtime detection for browser
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // If frontend is on Vercel, use Vercel API
+    if (hostname.includes('vercel.app') || hostname.includes('zad-alhidaya-web')) {
+      return 'https://zad-alhidaya-platform-api.vercel.app';
+    }
+  }
+  
+  // Server-side: check if we're in production
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://zad-alhidaya-platform-api.vercel.app';
+  }
+  
+  // Default to localhost for local development
+  return 'http://localhost:3001';
+};
+
+const API_URL = getApiUrl();
+
+// Log API URL in development for debugging
+if (process.env.NODE_ENV === 'development' || typeof window !== 'undefined') {
+  console.log('[API] Using API URL:', API_URL);
+}
 
 export const api = axios.create({
   baseURL: `${API_URL}/api`,
