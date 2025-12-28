@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://your-api-url.vercel.app/api/:path*"
+      "destination": "https://zad-alhidaya-platform-api.vercel.app/api/:path*"
     }
   ],
   "env": {
