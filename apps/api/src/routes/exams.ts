@@ -130,14 +130,16 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
     const examWithParsedQuestions = {
       ...exam,
       questions: exam.questions.map(q => {
-        let choices = q.choices;
-        if (typeof choices === 'string') {
+        let choices: string[] = [];
+        if (typeof q.choices === 'string') {
           try {
-            choices = JSON.parse(choices);
+            choices = JSON.parse(q.choices);
           } catch (e) {
             console.error('Failed to parse choices:', e);
             choices = [];
           }
+        } else if (Array.isArray(q.choices)) {
+          choices = q.choices;
         }
         return {
           id: q.id,
