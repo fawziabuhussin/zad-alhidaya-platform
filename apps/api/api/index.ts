@@ -1,14 +1,27 @@
 // Vercel Serverless Function entry point
 import app from '../src/index';
 
-// Vercel adds /api/ prefix automatically, so we need to handle routes correctly
-// The Express app already has /api/ routes, so Vercel will call them as /api/api/*
-// We create a wrapper that strips the /api prefix if needed
+// Vercel adds /api/ prefix automatically for files in api/ folder
+// So when Vercel calls /api/health, it becomes /api/api/health in Express
+// We need to strip the extra /api prefix
 const handler = (req: any, res: any) => {
-  // If the path starts with /api/api, remove one /api prefix
-  if (req.url && req.url.startsWith('/api/api')) {
-    req.url = req.url.replace('/api/api', '/api');
+  // Store original URL
+  const originalUrl = req.url;
+  
+  // If URL starts with /api/, remove it (Vercel already added it)
+  if (req.url && req.url.startsWith('/api/')) {
+    req.url = req.url.replace('/api', '') || '/';
+    // Also update the originalUrl property
+    if (req.originalUrl) {
+      req.originalUrl = req.url;
+    }
   }
+  
+  // Handle root path
+  if (req.url === '' || req.url === '/') {
+    req.url = '/health';
+  }
+  
   return app(req, res);
 };
 

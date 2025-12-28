@@ -35,43 +35,29 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Health check
+// Health check - support both paths
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-app.get('/api/health', (req, res) => {
+app.get('/', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes - support both /api/* and /* for Vercel compatibility
+// Routes - Vercel adds /api/ prefix automatically, so we use routes without /api/
 app.use('/auth', authRoutes);
-app.use('/api/auth', authRoutes);
 app.use('/users', usersRoutes);
-app.use('/api/users', usersRoutes);
 app.use('/courses', coursesRoutes);
-app.use('/api/courses', coursesRoutes);
 app.use('/enrollments', enrollmentsRoutes);
-app.use('/api/enrollments', enrollmentsRoutes);
 app.use('/progress', progressRoutes);
-app.use('/api/progress', progressRoutes);
 app.use('/live-sessions', liveSessionsRoutes);
-app.use('/api/live-sessions', liveSessionsRoutes);
 app.use('/quizzes', quizzesRoutes);
-app.use('/api/quizzes', quizzesRoutes);
 app.use('/categories', categoriesRoutes);
-app.use('/api/categories', categoriesRoutes);
 app.use('/modules', modulesRoutes);
-app.use('/api/modules', modulesRoutes);
 app.use('/lessons', lessonsRoutes);
-app.use('/api/lessons', lessonsRoutes);
 app.use('/exams', examsRoutes);
-app.use('/api/exams', examsRoutes);
 app.use('/homework', homeworkRoutes);
-app.use('/api/homework', homeworkRoutes);
 app.use('/grades', gradesRoutes);
-app.use('/api/grades', gradesRoutes);
 app.use('/playlists', playlistsRoutes);
-app.use('/api/playlists', playlistsRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
