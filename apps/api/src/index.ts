@@ -43,20 +43,36 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes - Vercel adds /api/ prefix automatically, so we use routes without /api/
+// Routes - support both /api/* and /* for compatibility
+// When accessed via /api/courses, Express receives /api/courses
+// When accessed via /courses, Express receives /courses
+app.use('/api/auth', authRoutes);
 app.use('/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 app.use('/users', usersRoutes);
+app.use('/api/courses', coursesRoutes);
 app.use('/courses', coursesRoutes);
+app.use('/api/enrollments', enrollmentsRoutes);
 app.use('/enrollments', enrollmentsRoutes);
+app.use('/api/progress', progressRoutes);
 app.use('/progress', progressRoutes);
+app.use('/api/live-sessions', liveSessionsRoutes);
 app.use('/live-sessions', liveSessionsRoutes);
+app.use('/api/quizzes', quizzesRoutes);
 app.use('/quizzes', quizzesRoutes);
+app.use('/api/categories', categoriesRoutes);
 app.use('/categories', categoriesRoutes);
+app.use('/api/modules', modulesRoutes);
 app.use('/modules', modulesRoutes);
+app.use('/api/lessons', lessonsRoutes);
 app.use('/lessons', lessonsRoutes);
+app.use('/api/exams', examsRoutes);
 app.use('/exams', examsRoutes);
+app.use('/api/homework', homeworkRoutes);
 app.use('/homework', homeworkRoutes);
+app.use('/api/grades', gradesRoutes);
 app.use('/grades', gradesRoutes);
+app.use('/api/playlists', playlistsRoutes);
 app.use('/playlists', playlistsRoutes);
 
 // Error handling middleware
