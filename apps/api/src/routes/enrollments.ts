@@ -129,3 +129,4 @@ router.get('/course/:courseId', authenticate, async (req: AuthRequest, res) => {
 
 export default router;
 
+

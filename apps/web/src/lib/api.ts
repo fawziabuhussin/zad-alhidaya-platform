@@ -1,23 +1,26 @@
 import axios from 'axios';
 
-// Determine API URL: use env var if set, otherwise detect environment
+// Determine API URL: prioritize env var, then runtime detection
 const getApiUrl = (): string => {
-  // Explicitly set env var takes priority
+  // 1. Check build-time env var (set in Vercel)
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
   
-  // Runtime detection for browser
+  // 2. Runtime detection for browser (client-side)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     // If frontend is on Vercel, use Vercel API
-    if (hostname.includes('vercel.app') || hostname.includes('zad-alhidaya-web')) {
+    if (hostname.includes('vercel.app') || hostname.includes('zad-alhidaya')) {
       return 'https://zad-alhidaya-platform-api.vercel.app';
     }
+    // Local development
+    return 'http://localhost:3001';
   }
   
-  // Server-side: check if we're in production
-  if (process.env.NODE_ENV === 'production') {
+  // 3. Server-side rendering (SSR)
+  // In production on Vercel, use Vercel API
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
     return 'https://zad-alhidaya-platform-api.vercel.app';
   }
   
@@ -27,8 +30,8 @@ const getApiUrl = (): string => {
 
 const API_URL = getApiUrl();
 
-// Log API URL in development for debugging
-if (process.env.NODE_ENV === 'development' || typeof window !== 'undefined') {
+// Always log API URL for debugging (helps identify issues)
+if (typeof window !== 'undefined') {
   console.log('[API] Using API URL:', API_URL);
 }
 

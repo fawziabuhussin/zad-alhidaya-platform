@@ -27,14 +27,27 @@ export default function CoursesPage() {
 
   const loadCourses = async () => {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (selectedCategory) params.append('categoryId', selectedCategory);
       
-      const response = await api.get(`/courses/public?${params.toString()}`);
-      setCourses(response.data);
-    } catch (error) {
-      console.error('Failed to load courses:', error);
+      const url = `/courses/public${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log('[Courses] Fetching from:', url);
+      
+      const response = await api.get(url);
+      console.log('[Courses] Response:', response.data);
+      setCourses(response.data || []);
+    } catch (error: any) {
+      console.error('[Courses] Failed to load courses:', error);
+      console.error('[Courses] Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+      });
+      setCourses([]);
     } finally {
       setLoading(false);
     }
