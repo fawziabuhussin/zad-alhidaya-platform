@@ -56,6 +56,71 @@ router.get('/admin', authenticate, authorize('TEACHER', 'ADMIN'), async (req: Au
   }
 });
 
+// Get all courses (default - returns published courses for public, all for authenticated)
+router.get('/', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    let userId = null;
+    let role = null;
+    
+    if (token) {
+      try {
+        const { verifyAccessToken } = require('../utils/jwt');
+        const payload = verifyAccessToken(token);
+        userId = payload.userId;
+        role = payload.role;
+      } catch (e) {
+        // Invalid token, continue as guest
+      }
+    }
+
+    const { categoryId, search } = req.query;
+    const where: any = {};
+    
+    // Public users only see published courses
+    // Authenticated users see published courses
+    // Admin/Teacher see all courses
+    if (role !== 'ADMIN' && role !== 'TEACHER') {
+      where.status = 'PUBLISHED';
+    }
+
+    if (categoryId) where.categoryId = categoryId;
+    if (search) {
+      where.OR = [
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { description: { contains: search as string, mode: 'insensitive' } },
+      ];
+    }
+
+    const courses = await prisma.course.findMany({
+      where,
+      include: {
+        category: true,
+        teacher: {
+          select: { id: true, name: true, email: true },
+        },
+        modules: {
+          include: {
+            lessons: {
+              select: { id: true },
+            },
+          },
+        },
+        _count: {
+          select: { enrollments: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(courses);
+  } catch (error: any) {
+    console.error('Failed to fetch courses:', error);
+    res.status(500).json({ message: error.message || 'Failed to fetch courses' });
+  }
+});
+
 // Get all published courses (public)
 router.get('/public', async (req, res) => {
   try {
