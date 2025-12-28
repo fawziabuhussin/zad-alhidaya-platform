@@ -204,7 +204,7 @@ export default function ExamAttemptsPage() {
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
-                            value={editingScore[attempt.id] || attempt.score}
+                            value={editingScore[attempt.id] ?? (attempt.score ?? 0)}
                             onChange={(e) => setEditingScore({ ...editingScore, [attempt.id]: parseFloat(e.target.value) || 0 })}
                             min="0"
                             max={exam!.maxScore * 1.5}
@@ -212,7 +212,7 @@ export default function ExamAttemptsPage() {
                             className="w-32 px-3 py-2 border-2 border-gray-300 rounded-lg text-lg text-gray-800 bg-white"
                           />
                           <button
-                            onClick={() => handleSetFinalScore(attempt.id, editingScore[attempt.id] || attempt.score)}
+                            onClick={() => handleSetFinalScore(attempt.id, editingScore[attempt.id] ?? (attempt.score ?? 0))}
                             className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-semibold"
                           >
                             حفظ
