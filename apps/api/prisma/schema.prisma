@@ -1,0 +1,337 @@
+// Prisma Schema for Zad Al-Hidaya Academy Platform
+// Supports both SQLite (development) and PostgreSQL (production)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  passwordHash  String?
+  provider      String?   // GOOGLE, APPLE, EMAIL
+  providerId    String?   // OAuth provider user ID
+  role          String    @default("STUDENT") // ADMIN, TEACHER, STUDENT
+  blocked       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  coursesTaught Course[]
+  enrollments  Enrollment[]
+  progress     LessonProgress[]
+  quizAttempts QuizAttempt[]
+  refreshTokens RefreshToken[]
+  homeworkSubmissions HomeworkSubmission[]
+  examAttempts ExamAttempt[]
+  grades       Grade[]
+
+  @@index([email])
+  @@index([role])
+  @@index([provider, providerId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses Course[]
+
+  @@index([order])
+}
+
+model Course {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  coverImage  String?
+  categoryId  String
+  teacherId   String
+  status      String        @default("DRAFT") // DRAFT, PUBLISHED
+  price       Float?        @default(0)
+  gradingMethod String?     // JSON string: {"reading": 50, "homework": 20, "exam": 30}
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  category    Category      @relation(fields: [categoryId], references: [id])
+  teacher     User          @relation(fields: [teacherId], references: [id])
+  modules     Module[]
+  enrollments Enrollment[]
+  liveSessions LiveSession[]
+  quizzes     Quiz[]
+  homeworks   Homework[]
+  exams       Exam[]
+  grades      Grade[]
+
+  @@index([categoryId])
+  @@index([teacherId])
+  @@index([status])
+}
+
+model Module {
+  id        String   @id @default(uuid())
+  courseId String
+  title     String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([courseId])
+  @@index([order])
+}
+
+model Lesson {
+  id              String     @id @default(uuid())
+  moduleId        String
+  title           String
+  type            String     // VIDEO, TEXT, LIVE, PLAYLIST
+  order           Int        @default(0)
+  youtubeUrl      String?    // Single video URL or playlist URL
+  youtubePlaylistId String?  // YouTube playlist ID
+  textContent     String?
+  durationMinutes Int?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  module   Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
+
+  @@index([moduleId])
+  @@index([order])
+}
+
+model LiveSession {
+  id          String              @id @default(uuid())
+  courseId    String
+  title       String
+  scheduledAt DateTime
+  provider    String              // YOUTUBE, FACEBOOK, ZOOM, MEET, OTHER
+  embedUrl    String
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([scheduledAt])
+}
+
+model Enrollment {
+  id        String           @id @default(uuid())
+  userId    String
+  courseId  String
+  status    String           @default("PENDING") // ACTIVE, PENDING, CANCELED
+  enrolledAt DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+}
+
+model LessonProgress {
+  id          String   @id @default(uuid())
+  userId      String
+  lessonId    String
+  completedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+}
+
+model Quiz {
+  id        String   @id @default(uuid())
+  courseId  String
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  QuizAttempt[]
+
+  @@index([courseId])
+}
+
+model Question {
+  id           String   @id @default(uuid())
+  quizId       String
+  prompt       String
+  choices      String   // JSON string: ["choice1", "choice2", ...]
+  correctIndex Int
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@index([order])
+}
+
+model QuizAttempt {
+  id          String   @id @default(uuid())
+  userId      String
+  quizId      String
+  score       Float
+  submittedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([quizId])
+}
+
+model Homework {
+  id          String   @id @default(uuid())
+  courseId    String
+  moduleId    String?
+  lessonId    String?
+  title       String
+  description String
+  dueDate     DateTime
+  maxScore    Float    @default(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course  Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions HomeworkSubmission[]
+
+  @@index([courseId])
+  @@index([dueDate])
+}
+
+model HomeworkSubmission {
+  id          String   @id @default(uuid())
+  homeworkId  String
+  userId      String
+  content     String
+  fileUrl     String?
+  score       Float?
+  feedback    String?
+  submittedAt DateTime @default(now())
+  gradedAt    DateTime?
+
+  homework Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([homeworkId, userId])
+  @@index([homeworkId])
+  @@index([userId])
+}
+
+model Exam {
+  id          String   @id @default(uuid())
+  courseId    String
+  title       String
+  description String
+  durationMinutes Int
+  startDate   DateTime
+  endDate     DateTime
+  maxScore    Float    @default(100)
+  passingScore Float   @default(60)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course    Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions ExamQuestion[]
+  attempts  ExamAttempt[]
+
+  @@index([courseId])
+  @@index([startDate])
+}
+
+model ExamQuestion {
+  id          String @id @default(uuid())
+  examId      String
+  prompt      String
+  type        String @default("MULTIPLE_CHOICE") // MULTIPLE_CHOICE, TEXT, ESSAY
+  choices     String? // JSON string: ["choice1", "choice2", ...] - null for text/essay questions
+  correctIndex Int? // null for text/essay questions
+  explanation String? // Explanation for the correct answer
+  points      Float  @default(1)
+  order       Int    @default(0)
+  createdAt   DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId])
+  @@index([order])
+}
+
+model ExamAttempt {
+  id          String   @id @default(uuid())
+  examId      String
+  userId      String
+  answers     String   // JSON string: {questionId: answerIndex}
+  score       Float?
+  status      String   @default("PENDING") // PENDING, GRADED, AUTO_GRADED
+  submittedAt DateTime @default(now())
+  startedAt   DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, userId])
+  @@index([examId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Grade {
+  id          String   @id @default(uuid())
+  userId      String
+  courseId    String
+  type        String   // EXAM, HOMEWORK, QUIZ, FINAL
+  itemId      String   // ID of exam, homework, or quiz
+  score       Float
+  maxScore    Float
+  percentage  Float
+  letterGrade String   // A+, A, B+, B, C+, C, D, F
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId, type, itemId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([type])
+}

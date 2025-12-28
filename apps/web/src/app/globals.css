@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --accent: #f59e0b;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  direction: rtl;
+  font-family: 'Cairo', 'Noto Sans Arabic', sans-serif;
+  font-size: 16px; /* Base font size for better readability */
+  line-height: 1.6; /* Better line spacing */
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Enhanced readability for older users */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Large text utilities */
+  .text-large {
+    font-size: 1.25rem; /* 20px */
+    line-height: 1.8;
+  }
+  
+  .text-xlarge {
+    font-size: 1.5rem; /* 24px */
+    line-height: 2;
+  }
+  
+  /* Large buttons */
+  .btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.125rem; /* 18px */
+    min-height: 3.5rem;
+  }
+  
+  /* High contrast */
+  .high-contrast {
+    color: #000;
+    background: #fff;
+    border: 2px solid #000;
+  }
+  
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+  }
+  
+  /* Fix select dropdown overflow in RTL */
+  select {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl;
+  }
+  
+  /* Ensure select dropdown stays within viewport */
+  select option {
+    direction: rtl;
+    text-align: right;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Container for forms with selects */
+  form {
+    position: relative;
+    overflow: visible;
+  }
+  
+  /* Prevent select from breaking layout */
+  .relative select {
+    position: relative;
+    z-index: 1;
+  }
+}
