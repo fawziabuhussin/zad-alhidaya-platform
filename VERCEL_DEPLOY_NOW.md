@@ -27,9 +27,9 @@
    - **Project Name**: `zad-alhidaya-api`
    - **Root Directory**: `apps/api` ⚠️ مهم جداً!
    - **Framework Preset**: **Other**
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-   - **Install Command**: `cd ../.. && npm install && cd apps/api && npm install && npx prisma generate`
+   - **Build Command**: `npm run vercel-build` ⚠️ مهم!
+   - **Output Directory**: (اتركه فارغاً - serverless functions لا تحتاج output directory)
+   - **Install Command**: `npm install` (سيقوم Vercel بتثبيت dependencies تلقائياً)
 5. اضغط **"Environment Variables"** وأضف:
    ```
    DATABASE_URL=postgresql://... (من Neon)
