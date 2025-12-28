@@ -1,9 +1,18 @@
 // Vercel Serverless Function entry point
 import app from '../src/index';
 
-// Export Express app directly - Vercel will handle routing
-// The routes in Express are defined without /api/ prefix
-// Vercel's vercel.json routes will map /api/* to this handler
-// So /api/courses becomes /courses in Express
-export default app;
+// Vercel routing: When user accesses /api/courses, Vercel calls this handler with /api/courses
+// Express routes are defined with /api/ prefix, so we pass it directly
+// But we also need to handle the case where Vercel might strip /api/
+const handler = (req: any, res: any) => {
+  // Log for debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Handler] URL: ${req.url}, Original: ${req.originalUrl}`);
+  }
+  
+  // Pass request directly to Express - routes already have /api/ prefix
+  return app(req, res);
+};
+
+export default handler;
 
