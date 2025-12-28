@@ -360,12 +360,12 @@ export default function AdminGradesPage() {
           {Object.keys(groupedGrades).length > 0 && (
             <div className="space-y-6">
               {Object.entries(groupedGrades).map(([key, group]) => {
-                // Find assessment by itemId
+                // Find assessment by assessmentId
                 let assessment = null;
                 if (group.type === 'EXAM') {
-                  assessment = selectedCourse?.exams?.find((e: any) => e.id === group.itemId);
+                  assessment = selectedCourse?.exams?.find((e: any) => e.id === group.assessmentId);
                 } else if (group.type === 'HOMEWORK') {
-                  assessment = selectedCourse?.homeworks?.find((h: any) => h.id === group.itemId);
+                  assessment = selectedCourse?.homeworks?.find((h: any) => h.id === group.assessmentId);
                 }
                 
                 return (
