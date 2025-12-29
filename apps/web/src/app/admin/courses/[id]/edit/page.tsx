@@ -1218,8 +1218,12 @@ export default function EditCoursePage() {
                         )}
                         <div className="mt-2 text-sm text-gray-700">
                           <span>الدرجة الكاملة: {exam.maxScore}</span>
-                          <span className="mr-4">• من {new Date(exam.startDate).toLocaleDateString('ar-SA')}</span>
-                          <span>إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')}</span>
+                          <span className="mr-4">
+                            • من {new Date(exam.startDate).toLocaleDateString('ar-SA')} {new Date(exam.startDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span>
+                            إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')} {new Date(exam.endDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
                       </div>
                       <div className="flex gap-2">

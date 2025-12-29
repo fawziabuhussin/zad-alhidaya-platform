@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import Modal from '@/components/Modal';
 
 // Custom Role Filter Dropdown
 function RoleFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -375,86 +376,70 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Edit User Modal */}
-      {editingUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">تعديل بيانات المستخدم</h2>
-              <button
-                onClick={() => {
-                  setEditingUser(null);
-                  setEditFormData({ name: '', password: '' });
-                }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-lg font-semibold mb-2 text-gray-800">الاسم</label>
-                <input
-                  type="text"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-lg font-semibold mb-2 text-gray-800">كلمة المرور الجديدة (اختياري)</label>
-                <input
-                  type="password"
-                  value={editFormData.password}
-                  onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-                  placeholder="اتركه فارغاً للاحتفاظ بكلمة المرور الحالية"
-                />
-              </div>
-              
-              <div className="flex gap-4 pt-4">
-                <button
-                  onClick={handleSaveEdit}
-                  className="flex-1 px-6 py-3 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition"
-                >
-                  حفظ
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingUser(null);
-                    setEditFormData({ name: '', password: '' });
-                  }}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold text-lg hover:bg-gray-300 transition"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </div>
+      <Modal
+        isOpen={!!editingUser}
+        onClose={() => {
+          setEditingUser(null);
+          setEditFormData({ name: '', password: '' });
+        }}
+        title="تعديل بيانات المستخدم"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-lg font-semibold mb-2 text-gray-800">الاسم</label>
+            <input
+              type="text"
+              value={editFormData.name}
+              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-lg font-semibold mb-2 text-gray-800">كلمة المرور الجديدة (اختياري)</label>
+            <input
+              type="password"
+              value={editFormData.password}
+              onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
+              placeholder="اتركه فارغاً للاحتفاظ بكلمة المرور الحالية"
+            />
+          </div>
+          
+          <div className="flex gap-4 pt-4">
+            <button
+              onClick={handleSaveEdit}
+              className="flex-1 px-6 py-3 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition"
+            >
+              حفظ
+            </button>
+            <button
+              onClick={() => {
+                setEditingUser(null);
+                setEditFormData({ name: '', password: '' });
+              }}
+              className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold text-lg hover:bg-gray-300 transition"
+            >
+              إلغاء
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Create User Modal */}
-      {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">إنشاء مستخدم جديد</h2>
-              <button
-                onClick={() => {
-                  setShowCreateForm(false);
-                  router.push('/admin/users');
-                  setCreateFormData({ name: '', email: '', password: '', role: 'STUDENT' });
-                  setCreateErrors({});
-                }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="space-y-4">
+      <Modal
+        isOpen={showCreateForm}
+        onClose={() => {
+          setShowCreateForm(false);
+          router.push('/admin/users');
+          setCreateFormData({ name: '', email: '', password: '', role: 'STUDENT' });
+          setCreateErrors({});
+        }}
+        title="إنشاء مستخدم جديد"
+        size="md"
+      >
+        <div className="space-y-4">
               <div>
                 <label className="block text-lg font-semibold mb-2 text-gray-800">الاسم *</label>
                 <input
@@ -543,33 +528,24 @@ export default function AdminUsersPage() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* View Profile Modal */}
-      {viewingProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800">الملف الشخصي</h2>
-              <button
-                onClick={() => {
-                  setViewingProfile(null);
-                  setProfileData(null);
-                }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            {profileLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary"></div>
-              </div>
-            ) : profileData ? (
-              <div className="p-6 space-y-6">
+      <Modal
+        isOpen={!!viewingProfile}
+        onClose={() => {
+          setViewingProfile(null);
+          setProfileData(null);
+        }}
+        title="الملف الشخصي"
+        size="lg"
+      >
+        {profileLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary"></div>
+          </div>
+        ) : profileData ? (
+          <div className="space-y-6">
                 {/* User Info */}
                 <div className="flex items-center gap-6 pb-6 border-b border-gray-200">
                   <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold text-3xl">
@@ -702,9 +678,7 @@ export default function AdminUsersPage() {
                 <p>فشل تحميل بيانات الملف الشخصي</p>
               </div>
             )}
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import Modal from '@/components/Modal';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -336,28 +337,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </footer>
 
       {/* Profile Modal */}
-      {showProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800">الملف الشخصي</h2>
-              <button
-                onClick={() => {
-                  setShowProfile(false);
-                  setProfileData(null);
-                }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            {profileLoading ? (
+      <Modal
+        isOpen={showProfile}
+        onClose={() => {
+          setShowProfile(false);
+          setProfileData(null);
+        }}
+        title="الملف الشخصي"
+        size="lg"
+      >
+        {profileLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary"></div>
               </div>
             ) : profileData ? (
-              <div className="p-6 space-y-6">
+              <div className="space-y-6">
                 {/* User Info */}
                 <div className="flex items-center gap-6 pb-6 border-b border-gray-200">
                   <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold text-3xl">
@@ -490,9 +484,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <p>فشل تحميل بيانات الملف الشخصي</p>
               </div>
             )}
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

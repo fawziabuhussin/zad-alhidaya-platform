@@ -196,44 +196,6 @@ export default function TeacherCreateCoursePage() {
         <h1 className="text-3xl font-bold text-gray-800">إنشاء دورة جديدة</h1>
       </div>
 
-      {/* Playlist Option */}
-      <div className="mb-6 bg-blue-50 border-2 border-blue-300 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">إنشاء من قائمة تشغيل YouTube (اختياري)</h2>
-          <button
-            onClick={() => setShowPlaylistOption(!showPlaylistOption)}
-            className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-semibold"
-          >
-            {showPlaylistOption ? 'إخفاء' : 'إظهار'}
-          </button>
-        </div>
-
-        {showPlaylistOption && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-lg font-semibold mb-2 text-gray-800">رابط قائمة التشغيل</label>
-              <input
-                type="url"
-                value={playlistUrl}
-                onChange={(e) => setPlaylistUrl(e.target.value)}
-                className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-                placeholder="https://www.youtube.com/watch?v=...&list=..."
-              />
-              <p className="text-sm text-gray-700 mt-2">
-                سيتم إنشاء دورة كاملة من قائمة التشغيل تلقائياً
-              </p>
-            </div>
-            <button
-              onClick={handleCreateFromPlaylist}
-              disabled={loadingPlaylist}
-              className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loadingPlaylist ? 'جاري الإنشاء...' : 'إنشاء الدورة من قائمة التشغيل'}
-            </button>
-          </div>
-        )}
-      </div>
-
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8 space-y-6">
         <h2 className="text-2xl font-bold mb-4 text-gray-800">إنشاء دورة يدوياً</h2>
 
@@ -464,6 +426,44 @@ export default function TeacherCreateCoursePage() {
           </button>
         </div>
       </form>
+
+      {/* Playlist Option - Moved to bottom */}
+      <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-800">إنشاء من قائمة تشغيل YouTube (اختياري)</h2>
+          <button
+            onClick={() => setShowPlaylistOption(!showPlaylistOption)}
+            className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-semibold shadow-sm"
+          >
+            {showPlaylistOption ? 'إخفاء' : 'إظهار'}
+          </button>
+        </div>
+
+        {showPlaylistOption && (
+          <div className="space-y-4 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+            <div>
+              <label className="block text-lg font-semibold mb-2 text-gray-800">رابط قائمة التشغيل</label>
+              <input
+                type="url"
+                value={playlistUrl}
+                onChange={(e) => setPlaylistUrl(e.target.value)}
+                className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
+                placeholder="https://www.youtube.com/watch?v=...&list=..."
+              />
+              <p className="text-sm text-gray-700 mt-2">
+                سيتم إنشاء دورة كاملة من قائمة التشغيل تلقائياً
+              </p>
+            </div>
+            <button
+              onClick={handleCreateFromPlaylist}
+              disabled={loadingPlaylist}
+              className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            >
+              {loadingPlaylist ? 'جاري الإنشاء...' : 'إنشاء الدورة من قائمة التشغيل'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

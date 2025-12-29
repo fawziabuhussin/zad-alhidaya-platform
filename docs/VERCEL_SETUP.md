@@ -55,3 +55,4 @@ You need **TWO separate Vercel projects** for this monorepo:
 - The frontend automatically detects the API URL, but setting `NEXT_PUBLIC_API_URL` is recommended
 - After creating the frontend project, both will auto-deploy on every git push
 
+

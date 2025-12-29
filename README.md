@@ -103,7 +103,13 @@ vercel deploy
 
 ## 📚 الوثائق
 
-- [Environment Variables for Vercel](./ENV_VARS_FOR_VERCEL.md) - إعداد متغيرات البيئة للنشر
+جميع ملفات الوثائق موجودة في مجلد [`docs/`](./docs/):
+
+- [Database Setup](./docs/DATABASE_SETUP.md) - إعداد قاعدة البيانات والهجرات
+- [API Vercel Setup](./docs/API_VERCEL_SETUP.md) - إعداد نشر API على Vercel
+- [Frontend Vercel Setup](./docs/FRONTEND_VERCEL_SETUP.md) - إعداد نشر Frontend على Vercel
+- [Vercel Setup](./docs/VERCEL_SETUP.md) - دليل النشر العام على Vercel
+- [Environment Variables](./docs/ENV_VARS_FOR_VERCEL.md) - إعداد متغيرات البيئة للنشر
 - [Environment Templates](./env-templates/README.md) - قوالب جاهزة للاستيراد
 
 ## 🛠️ التطوير
@@ -120,6 +126,13 @@ cd apps/web && pnpm dev
 
 # فتح Prisma Studio
 pnpm db:studio
+
+# تشغيل الاختبارات
+cd apps/web && npm test
+cd apps/api && npm test
+
+# بناء المشروع
+pnpm build
 ```
 
 ## 📝 الرخصة

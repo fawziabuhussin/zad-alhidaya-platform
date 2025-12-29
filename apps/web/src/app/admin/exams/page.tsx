@@ -345,7 +345,7 @@ export default function AdminExamsPage() {
                     <td className="px-6 py-4 text-lg text-gray-800 font-semibold">{exam.course?.title || 'غير محدد'}</td>
                     <td className="px-6 py-4 text-lg text-gray-800 font-semibold">{exam.durationMinutes} دقيقة</td>
                     <td className="px-6 py-4 text-lg text-gray-800 font-semibold">
-                      {new Date(exam.startDate).toLocaleDateString('ar-SA')}
+                      {new Date(exam.startDate).toLocaleDateString('ar-SA')} {new Date(exam.startDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="px-6 py-4 text-lg text-gray-800 font-semibold">{exam._count?.attempts || 0}</td>
                     <td className="px-6 py-4">

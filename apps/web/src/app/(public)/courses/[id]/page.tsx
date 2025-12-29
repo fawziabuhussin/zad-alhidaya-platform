@@ -216,7 +216,10 @@ export default function CourseDetailsPage() {
                         )}
                         <div className="flex gap-4 text-sm text-gray-600">
                           <span>الدرجة الكاملة: {exam.maxScore}</span>
-                          <span>من {new Date(exam.startDate).toLocaleDateString('ar-SA')} إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')}</span>
+                          <span>
+                            من {new Date(exam.startDate).toLocaleDateString('ar-SA')} {new Date(exam.startDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                            {' '}إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')} {new Date(exam.endDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
                       </div>
                       <span className={`px-4 py-2 rounded-lg font-semibold ${

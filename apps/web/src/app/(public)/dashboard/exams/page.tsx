@@ -138,12 +138,16 @@ export default function StudentExamsPage() {
                     <span className="text-lg text-gray-800">{exam.passingScore}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-800">تاريخ البدء:</span>
-                    <span className="text-lg text-gray-800">{new Date(exam.startDate).toLocaleDateString('ar-SA')}</span>
+                    <span className="text-lg font-semibold text-gray-800">تاريخ ووقت البدء:</span>
+                    <span className="text-lg text-gray-800">
+                      {new Date(exam.startDate).toLocaleDateString('ar-SA')} {new Date(exam.startDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-800">تاريخ الانتهاء:</span>
-                    <span className="text-lg text-gray-800">{new Date(exam.endDate).toLocaleDateString('ar-SA')}</span>
+                    <span className="text-lg font-semibold text-gray-800">تاريخ ووقت الانتهاء:</span>
+                    <span className="text-lg text-gray-800">
+                      {new Date(exam.endDate).toLocaleDateString('ar-SA')} {new Date(exam.endDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                   {hasAttempt && score !== null && (
                     <div className="flex justify-between items-center pt-3 border-t-2">
