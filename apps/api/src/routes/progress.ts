@@ -167,12 +167,22 @@ router.get('/courses/:courseId', authenticate, authorize('STUDENT', 'ADMIN'), as
     const completedLessons = progress.length;
     const percentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
+    // Convert Map to object for JSON serialization
+    const progressObject: Record<string, any> = {};
+    progressMap.forEach((value, key) => {
+      progressObject[key] = {
+        lessonId: value.lessonId,
+        completedAt: value.completedAt,
+      };
+    });
+
     res.json({
       courseId,
       totalLessons,
       completedLessons,
       percentage,
-      progress: progressMap,
+      progress: progressObject,
+      completedLessonIds: Array.from(progressMap.keys()),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message || 'Failed to fetch progress' });
