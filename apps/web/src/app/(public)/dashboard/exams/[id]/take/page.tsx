@@ -24,6 +24,11 @@ interface Exam {
   maxScore: number;
   passingScore: number;
   questions: Question[];
+  course?: { id: string; title: string };
+  courseCompletionRequired?: boolean;
+  allLessonsCompleted?: boolean;
+  completedLessons?: number;
+  totalLessons?: number;
 }
 
 export default function TakeExamPage() {
@@ -151,7 +156,12 @@ export default function TakeExamPage() {
       router.push('/dashboard/exams');
     } catch (error: any) {
       console.error('Failed to submit exam:', error);
-      alert(error.response?.data?.message || 'فشل تسليم الامتحان');
+      const errorMessage = error.response?.data?.message || 'فشل تسليم الامتحان';
+      if (error.response?.data?.completedLessons !== undefined) {
+        alert(`${errorMessage}\n\nالدروس المكتملة: ${error.response.data.completedLessons} من ${error.response.data.totalLessons}`);
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -213,6 +223,37 @@ export default function TakeExamPage() {
         >
           العودة إلى الامتحانات
         </button>
+      </div>
+    );
+  }
+
+  // Check if all lessons are completed
+  if (exam.courseCompletionRequired && !exam.allLessonsCompleted) {
+    return (
+      <div className="text-center py-12">
+        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-8 max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold text-yellow-800 mb-4">⚠️ يجب إكمال جميع دروس الدورة</h2>
+          <p className="text-lg text-gray-700 mb-4">
+            لا يمكنك إجراء هذا الامتحان حتى تكمل جميع دروس الدورة
+          </p>
+          <div className="bg-white rounded-lg p-4 mb-6">
+            <p className="text-gray-800 font-semibold">
+              الدروس المكتملة: {exam.completedLessons || 0} من {exam.totalLessons || 0}
+            </p>
+            <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
+              <div
+                className="bg-primary h-4 rounded-full transition-all"
+                style={{ width: `${exam.totalLessons ? (exam.completedLessons || 0) / exam.totalLessons * 100 : 0}%` }}
+              ></div>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push(`/courses/${exam.course?.id || ''}`)}
+            className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition"
+          >
+            العودة إلى الدورة
+          </button>
+        </div>
       </div>
     );
   }

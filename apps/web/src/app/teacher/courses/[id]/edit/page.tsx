@@ -255,11 +255,15 @@ export default function EditCoursePage() {
       const updateData: any = {
         title: formData.title.trim(),
         description: formData.description.trim(),
-        categoryId: formData.categoryId,
         price: formData.price || 0,
         status: formData.status,
         gradingMethod: JSON.stringify(gradingMethod),
       };
+
+      // Only include categoryId if it's a valid UUID (not empty string)
+      if (formData.categoryId && formData.categoryId.trim() !== '') {
+        updateData.categoryId = formData.categoryId;
+      }
 
       if (formData.coverImage.trim()) {
         updateData.coverImage = formData.coverImage.trim();

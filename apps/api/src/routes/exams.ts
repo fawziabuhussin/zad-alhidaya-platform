@@ -99,6 +99,13 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
       include: {
         course: {
           include: {
+            modules: {
+              include: {
+                lessons: {
+                  select: { id: true },
+                },
+              },
+            },
             enrollments: {
               where: { userId, status: 'ACTIVE' },
             },
@@ -126,9 +133,31 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
+    // Check if student has completed all lessons (only for students, not teachers/admins)
+    let allLessonsCompleted = true;
+    let completedLessonsCount = 0;
+    let totalLessonsCount = 0;
+    
+    if (req.user!.role === 'STUDENT' && isEnrolled) {
+      const allLessonIds = exam.course.modules.flatMap(m => m.lessons.map(l => l.id));
+      totalLessonsCount = allLessonIds.length;
+      const completedLessons = await prisma.lessonProgress.findMany({
+        where: {
+          userId,
+          lessonId: { in: allLessonIds },
+        },
+      });
+      completedLessonsCount = completedLessons.length;
+      allLessonsCompleted = completedLessons.length >= allLessonIds.length;
+    }
+
     // Parse choices for each question
-    const examWithParsedQuestions = {
+    const examWithParsedQuestions: any = {
       ...exam,
+      course: {
+        id: exam.course.id,
+        title: exam.course.title || '',
+      },
       questions: exam.questions.map(q => {
         let choices: string[] = [];
         if (typeof q.choices === 'string') {
@@ -152,6 +181,10 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
           order: q.order,
         };
       }),
+      courseCompletionRequired: req.user!.role === 'STUDENT' && isEnrolled,
+      allLessonsCompleted,
+      completedLessons: completedLessonsCount,
+      totalLessons: totalLessonsCount,
     };
 
     res.json(examWithParsedQuestions);
@@ -671,6 +704,40 @@ router.post('/:id/attempt', authenticate, authorize('STUDENT', 'ADMIN'), async (
 
     if (existingAttempt) {
       return res.status(400).json({ message: 'Exam already attempted' });
+    }
+
+    // Check if student has completed all lessons in the course
+    if (req.user!.role === 'STUDENT') {
+      const course = await prisma.course.findUnique({
+        where: { id: exam.courseId },
+        include: {
+          modules: {
+            include: {
+              lessons: {
+                select: { id: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (course) {
+        const allLessonIds = course.modules.flatMap(m => m.lessons.map(l => l.id));
+        const completedLessons = await prisma.lessonProgress.findMany({
+          where: {
+            userId: req.user!.userId,
+            lessonId: { in: allLessonIds },
+          },
+        });
+
+        if (completedLessons.length < allLessonIds.length) {
+          return res.status(403).json({ 
+            message: 'يجب إكمال جميع دروس الدورة قبل إجراء الامتحان',
+            completedLessons: completedLessons.length,
+            totalLessons: allLessonIds.length,
+          });
+        }
+      }
     }
 
     // Check if exam has open-ended questions (TEXT or ESSAY)

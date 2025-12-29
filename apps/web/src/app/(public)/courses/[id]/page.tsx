@@ -177,17 +177,29 @@ export default function CourseDetailsPage() {
             {isEnrolled && progress && (
               <div className="mt-6 bg-gray-50 rounded-lg p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-gray-800">تقدمك في الدورة</h3>
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-xl font-bold text-gray-800">تقدمك في الدورة</h3>
+                    {progress.percentage === 100 && (
+                      <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-bold text-sm">
+                        ✓ تم إكمال الدورة
+                      </span>
+                    )}
+                  </div>
                   <span className="text-2xl font-bold text-primary">{progress.percentage}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-6 mb-2">
                   <div
-                    className="bg-primary h-6 rounded-full transition-all duration-300"
+                    className={`h-6 rounded-full transition-all duration-300 ${
+                      progress.percentage === 100 ? 'bg-green-500' : 'bg-primary'
+                    }`}
                     style={{ width: `${progress.percentage}%` }}
                   ></div>
                 </div>
                 <p className="text-gray-700 text-sm">
                   {progress.completedLessons} من {progress.totalLessons} درس مكتمل
+                  {progress.percentage === 100 && (
+                    <span className="mr-2 text-green-600 font-bold">• الدورة مكتملة</span>
+                  )}
                 </p>
               </div>
             )}
@@ -231,12 +243,20 @@ export default function CourseDetailsPage() {
                       </span>
                     </div>
                     {isActive && (
-                      <Link
-                        href={`/dashboard/exams/${exam.id}/take`}
-                        className="inline-block px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition"
-                      >
-                        بدء الامتحان
-                      </Link>
+                      <>
+                        {progress && progress.percentage === 100 ? (
+                          <Link
+                            href={`/dashboard/exams/${exam.id}/take`}
+                            className="inline-block px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition"
+                          >
+                            بدء الامتحان
+                          </Link>
+                        ) : (
+                          <div className="inline-block px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-bold cursor-not-allowed">
+                            يجب إكمال جميع دروس الدورة أولاً
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 );
