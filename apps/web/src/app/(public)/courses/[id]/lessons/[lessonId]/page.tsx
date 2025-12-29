@@ -33,9 +33,14 @@ export default function LessonPage() {
         return;
       }
 
-      // Get lesson directly from API
-      const response = await api.get(`/lessons/${params.lessonId}`);
-      setLesson(response.data);
+      // Get lesson and check completion status in parallel
+      const [lessonResponse, progressResponse] = await Promise.all([
+        api.get(`/lessons/${params.lessonId}`),
+        api.get(`/progress/lessons/${params.lessonId}/status`).catch(() => ({ data: { completed: false } })),
+      ]);
+
+      setLesson(lessonResponse.data);
+      setCompleted(progressResponse.data?.completed || false);
     } catch (error: any) {
       console.error('Failed to load lesson:', error);
       if (error.response?.status === 401 || error.response?.status === 403) {
@@ -50,8 +55,11 @@ export default function LessonPage() {
     try {
       await api.post(`/progress/lessons/${params.lessonId}/complete`);
       setCompleted(true);
-    } catch (error) {
+      // Show success message
+      alert('تم إكمال الدرس بنجاح!');
+    } catch (error: any) {
       console.error('Failed to mark lesson as complete:', error);
+      alert(error.response?.data?.message || 'فشل في إكمال الدرس');
     }
   };
 

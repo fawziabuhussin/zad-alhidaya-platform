@@ -63,6 +63,61 @@ router.post('/lessons/:lessonId/complete', authenticate, authorize('STUDENT', 'A
   }
 });
 
+// Check if a lesson is completed
+router.get('/lessons/:lessonId/status', authenticate, authorize('STUDENT', 'ADMIN'), async (req: AuthRequest, res) => {
+  try {
+    const { lessonId } = req.params;
+    const userId = req.user!.userId;
+
+    // Check if lesson exists and user is enrolled
+    const lesson = await prisma.lesson.findUnique({
+      where: { id: lessonId },
+      include: {
+        module: {
+          include: {
+            course: {
+              include: {
+                enrollments: {
+                  where: {
+                    userId,
+                    status: 'ACTIVE',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!lesson) {
+      return res.status(404).json({ message: 'Lesson not found' });
+    }
+
+    // Check enrollment
+    if (req.user!.role !== 'ADMIN' && lesson.module.course.enrollments.length === 0) {
+      return res.status(403).json({ message: 'You must be enrolled in this course' });
+    }
+
+    // Check if lesson is completed
+    const progress = await prisma.lessonProgress.findUnique({
+      where: {
+        userId_lessonId: {
+          userId,
+          lessonId,
+        },
+      },
+    });
+
+    res.json({
+      completed: !!progress,
+      completedAt: progress?.completedAt || null,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || 'Failed to check lesson status' });
+  }
+});
+
 // Get progress for a course
 router.get('/courses/:courseId', authenticate, authorize('STUDENT', 'ADMIN'), async (req: AuthRequest, res) => {
   try {
