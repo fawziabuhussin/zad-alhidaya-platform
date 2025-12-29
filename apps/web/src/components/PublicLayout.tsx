@@ -425,8 +425,8 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
               <h4 className="text-xl font-bold mb-4">تواصل معنا</h4>
               <ul className="space-y-3 text-gray-400 text-lg">
                 <li>📧 info@zad-alhidaya.com</li>
-                <li>📱 +966 50 123 4567</li>
-                <li>📍 المملكة العربية السعودية</li>
+                <li>📱 <span dir="ltr">+972523779400</span></li>
+                <li>📍 باقة الغربية</li>
               </ul>
             </div>
           </div>
