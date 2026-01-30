@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { CheckCircleIcon } from '@/components/Icons';
+import { Resource } from '@/types/resource';
+import { ResourceList } from '@/components/resources';
 
 interface Lesson {
   id: string;
@@ -14,6 +16,7 @@ interface Lesson {
   youtubeUrl?: string;
   textContent?: string;
   durationMinutes?: number;
+  resources?: Resource[];
 }
 
 export default function LessonPage() {
@@ -134,6 +137,20 @@ export default function LessonPage() {
           {lesson.description && (
             <div className="mb-6">
               <p className="text-gray-800">{lesson.description}</p>
+            </div>
+          )}
+
+          {/* Lesson Resources Section - Only show if resources exist */}
+          {lesson.resources && lesson.resources.length > 0 && (
+            <div className="mb-6">
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-xl font-bold mb-4 text-gray-800">مواد الدرس</h3>
+                <ResourceList
+                  resources={lesson.resources}
+                  showActions={false}
+                />
+              </div>
+              <div className="border-b border-gray-200 pb-6 mt-6"></div>
             </div>
           )}
 

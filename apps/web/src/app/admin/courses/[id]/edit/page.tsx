@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { CreateResourceDTO } from '@/types/resource';
+import { ResourceList, ResourceForm } from '@/components/resources';
 
 // Custom Lesson Type Dropdown
 function LessonTypeDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -73,6 +75,23 @@ interface Category {
   title: string;
 }
 
+interface Resource {
+  id: string;
+  title: string;
+  description: string | null;
+  url: string;
+  order: number;
+  courseId: string | null;
+  lessonId: string | null;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: {
+    id: string;
+    name: string;
+  };
+}
+
 interface Lesson {
   id: string;
   title: string;
@@ -82,6 +101,7 @@ interface Lesson {
   textContent?: string;
   durationMinutes?: number;
   order: number;
+  resources?: Resource[];
 }
 
 interface Module {
@@ -122,6 +142,7 @@ interface Course {
   modules: Module[];
   exams?: Exam[];
   homeworks?: Homework[];
+  resources?: Resource[];
 }
 
 export default function EditCoursePage() {
@@ -149,6 +170,18 @@ export default function EditCoursePage() {
   const [homeworks, setHomeworks] = useState<Homework[]>([]);
   const [showExamForm, setShowExamForm] = useState(false);
   const [showHomeworkForm, setShowHomeworkForm] = useState(false);
+  
+  // Course resources state
+  const [courseResources, setCourseResources] = useState<Resource[]>([]);
+  const [showCourseResourceForm, setShowCourseResourceForm] = useState(false);
+  const [editingCourseResource, setEditingCourseResource] = useState<Resource | null>(null);
+  
+  // Lesson resources state
+  const [showLessonResourceForm, setShowLessonResourceForm] = useState<string | null>(null);
+  const [editingLessonResource, setEditingLessonResource] = useState<{
+    lessonId: string;
+    resource: Resource;
+  } | null>(null);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [lessonTypeDropdownOpen, setLessonTypeDropdownOpen] = useState(false);
@@ -231,6 +264,7 @@ export default function EditCoursePage() {
 
       setExams(examsRes.data || []);
       setHomeworks(homeworksRes.data || []);
+      setCourseResources(courseData.resources || []);
       setCategories(categoriesRes.data || []);
     } catch (error: any) {
       console.error('Failed to load data:', error);
@@ -348,6 +382,87 @@ export default function EditCoursePage() {
       loadData();
     } catch (error: any) {
       alert(error.response?.data?.message || 'فشل حذف الواجب');
+    }
+  };
+
+  // Course Resource Handlers
+  const handleAddCourseResource = async (data: CreateResourceDTO) => {
+    try {
+      const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
+      await api.post(`/courses/${courseId}/resources`, data);
+      setShowCourseResourceForm(false);
+      loadData();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'فشل إضافة المادة');
+      throw error;
+    }
+  };
+
+  const handleUpdateCourseResource = async (data: CreateResourceDTO) => {
+    if (!editingCourseResource) return;
+    try {
+      const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
+      await api.put(`/courses/${courseId}/resources/${editingCourseResource.id}`, data);
+      setEditingCourseResource(null);
+      setShowCourseResourceForm(false);
+      loadData();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'فشل تحديث المادة');
+      throw error;
+    }
+  };
+
+  const handleDeleteCourseResource = async (resourceId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذه المادة؟')) return;
+    try {
+      const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
+      await api.delete(`/courses/${courseId}/resources/${resourceId}`);
+      loadData();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'فشل حذف المادة');
+    }
+  };
+
+  const handleEditCourseResource = (resource: Resource) => {
+    setEditingCourseResource(resource);
+    setShowCourseResourceForm(true);
+  };
+
+  // Lesson Resource Handlers
+  const handleAddLessonResource = async (lessonId: string, data: CreateResourceDTO) => {
+    try {
+      await api.post(`/lessons/${lessonId}/resources`, data);
+      setShowLessonResourceForm(null);
+      loadData();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'فشل إضافة المادة');
+      throw error;
+    }
+  };
+
+  const handleUpdateLessonResource = async (data: CreateResourceDTO) => {
+    if (!editingLessonResource) return;
+    try {
+      await api.put(
+        `/lessons/${editingLessonResource.lessonId}/resources/${editingLessonResource.resource.id}`,
+        data
+      );
+      setEditingLessonResource(null);
+      setShowLessonResourceForm(null);
+      loadData();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'فشل تحديث المادة');
+      throw error;
+    }
+  };
+
+  const handleDeleteLessonResource = async (lessonId: string, resourceId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذه المادة؟')) return;
+    try {
+      await api.delete(`/lessons/${lessonId}/resources/${resourceId}`);
+      loadData();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'فشل حذف المادة');
     }
   };
 
@@ -1098,6 +1213,57 @@ export default function EditCoursePage() {
                                     )}
                                   </div>
                                 )}
+                                
+                                {/* Lesson Resources Section */}
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                  <div className="flex justify-between items-center mb-3">
+                                    <h5 className="text-sm font-bold text-gray-700">
+                                      مواد الدرس {lesson.resources && lesson.resources.length > 0 && `(${lesson.resources.length})`}
+                                    </h5>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingLessonResource(null);
+                                        setShowLessonResourceForm(lesson.id);
+                                      }}
+                                      className="px-3 py-1 bg-teal-100 text-teal-700 rounded hover:bg-teal-200 transition text-sm font-semibold"
+                                    >
+                                      + إضافة مادة
+                                    </button>
+                                  </div>
+                                  
+                                  {showLessonResourceForm === lesson.id && (
+                                    <div className="mb-3">
+                                      <ResourceForm
+                                        initialData={editingLessonResource?.lessonId === lesson.id ? editingLessonResource.resource : undefined}
+                                        onSubmit={
+                                          editingLessonResource?.lessonId === lesson.id
+                                            ? handleUpdateLessonResource
+                                            : (data) => handleAddLessonResource(lesson.id, data)
+                                        }
+                                        onCancel={() => {
+                                          setShowLessonResourceForm(null);
+                                          setEditingLessonResource(null);
+                                        }}
+                                        isEditing={editingLessonResource?.lessonId === lesson.id}
+                                      />
+                                    </div>
+                                  )}
+                                  
+                                  {lesson.resources && lesson.resources.length > 0 ? (
+                                    <ResourceList
+                                      resources={lesson.resources}
+                                      showActions={true}
+                                      onEdit={(resource) => {
+                                        setEditingLessonResource({ lessonId: lesson.id, resource });
+                                        setShowLessonResourceForm(lesson.id);
+                                      }}
+                                      onDelete={(resourceId) => handleDeleteLessonResource(lesson.id, resourceId)}
+                                    />
+                                  ) : (
+                                    <p className="text-sm text-gray-500">لا توجد مواد لهذا الدرس</p>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex gap-2">
                                 <button
@@ -1354,6 +1520,44 @@ export default function EditCoursePage() {
               )}
             </div>
           </div>
+
+          {/* Course Resources Section */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">مواد الدورة</h2>
+              <button
+                onClick={() => {
+                  setEditingCourseResource(null);
+                  setShowCourseResourceForm(true);
+                }}
+                className="px-4 py-2 bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 transition font-semibold"
+              >
+                + إضافة مادة
+              </button>
+            </div>
+
+            {showCourseResourceForm && (
+              <div className="mb-6">
+                <ResourceForm
+                  initialData={editingCourseResource || undefined}
+                  onSubmit={editingCourseResource ? handleUpdateCourseResource : handleAddCourseResource}
+                  onCancel={() => {
+                    setShowCourseResourceForm(false);
+                    setEditingCourseResource(null);
+                  }}
+                  isEditing={!!editingCourseResource}
+                />
+              </div>
+            )}
+
+            <ResourceList
+              resources={courseResources}
+              showActions={true}
+              onEdit={handleEditCourseResource}
+              onDelete={handleDeleteCourseResource}
+              emptyMessage="لا توجد مواد للدورة"
+            />
+          </div>
         </div>
 
         {/* Sidebar - Course Info */}
@@ -1387,6 +1591,19 @@ export default function EditCoursePage() {
                 <div>
                   <span className="font-semibold text-gray-700">الواجبات:</span>
                   <p className="text-gray-800">{homeworks.length}</p>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-700">المواد:</span>
+                  <p className="text-gray-800">{courseResources.length}</p>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-700">مواد الدروس:</span>
+                  <p className="text-gray-800">
+                    {course?.modules?.reduce(
+                      (sum, m) => sum + m.lessons.reduce((lSum, l) => lSum + (l.resources?.length || 0), 0),
+                      0
+                    ) || 0}
+                  </p>
                 </div>
               </div>
             </div>
