@@ -1,127 +1,155 @@
+/**
+ * LiveSession Routes
+ * HTTP layer - delegates to LiveSessionManager
+ */
 import express from 'express';
-import { prisma } from '../utils/prisma';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
+import { liveSessionManager } from '../managers/liveSession.manager';
+import { createLiveSessionSchema, updateLiveSessionSchema } from '../schemas/liveSession.schema';
 
 const router = express.Router();
 
-const createLiveSessionSchema = z.object({
-  courseId: z.string().uuid(),
-  title: z.string().min(1).max(200),
-  scheduledAt: z.string().datetime(),
-  provider: z.enum(['YOUTUBE', 'FACEBOOK', 'ZOOM', 'MEET', 'OTHER']),
-  embedUrl: z.string().url(),
-  notes: z.string().optional(),
-});
-
-// Get live sessions for a course
-router.get('/course/:courseId', async (req, res) => {
+/**
+ * GET /course/:courseId - Get live sessions for a course
+ */
+router.get('/course/:courseId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { courseId } = req.params;
-    const sessions = await prisma.liveSession.findMany({
-      where: { courseId },
-      orderBy: { scheduledAt: 'asc' },
-    });
-    res.json(sessions);
+
+    const result = await liveSessionManager.listLiveSessions(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
+    }
+
+    res.json(result.data);
   } catch (error: any) {
+    console.error('Failed to fetch live sessions:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch live sessions' });
   }
 });
 
-// Create live session (Teacher/Admin)
+/**
+ * POST / - Create live session (Teacher/Admin)
+ */
 router.post('/', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRequest, res) => {
   try {
-    const data = createLiveSessionSchema.parse(req.body);
+    const validatedData = createLiveSessionSchema.parse(req.body);
+    const { courseId } = req.body;
 
-    // Verify course ownership
-    const course = await prisma.course.findUnique({ where: { id: data.courseId } });
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+    if (!courseId) {
+      return res.status(400).json({ message: 'courseId is required' });
     }
 
-    const isTeacher = course.teacherId === req.user!.userId;
-    const isAdmin = req.user!.role === 'ADMIN';
-    if (!isTeacher && !isAdmin) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+    // Convert string date to Date object
+    const data = {
+      ...validatedData,
+      scheduledAt: new Date(validatedData.scheduledAt),
+    };
+
+    const result = await liveSessionManager.createLiveSession(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId,
+      data
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    const session = await prisma.liveSession.create({
-      data: {
-        ...data,
-        scheduledAt: new Date(data.scheduledAt),
-      },
-    });
-
-    res.status(201).json(session);
+    res.status(201).json(result.data);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: error.errors.map((e) => ({
+          path: e.path.join('.'),
+          message: e.message,
+        })),
+      });
     }
+    console.error('Failed to create live session:', error);
     res.status(500).json({ message: error.message || 'Failed to create live session' });
   }
 });
 
-// Update live session
+/**
+ * PUT /:id - Update live session
+ */
 router.put('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const data = createLiveSessionSchema.partial().parse(req.body);
+    const validatedData = updateLiveSessionSchema.parse(req.body);
+    const { courseId } = req.body;
 
-    const session = await prisma.liveSession.findUnique({
-      where: { id },
-      include: { course: true },
-    });
-
-    if (!session) {
-      return res.status(404).json({ message: 'Live session not found' });
+    if (!courseId) {
+      return res.status(400).json({ message: 'courseId is required' });
     }
 
-    const isTeacher = session.course.teacherId === req.user!.userId;
-    const isAdmin = req.user!.role === 'ADMIN';
-    if (!isTeacher && !isAdmin) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+    // Convert string date to Date object if present
+    const data: any = { ...validatedData };
+    if (data.scheduledAt) {
+      data.scheduledAt = new Date(data.scheduledAt);
     }
 
-    const updated = await prisma.liveSession.update({
-      where: { id },
-      data: data.scheduledAt ? { ...data, scheduledAt: new Date(data.scheduledAt) } : data,
-    });
+    const result = await liveSessionManager.updateLiveSession(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId,
+      id,
+      data
+    );
 
-    res.json(updated);
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
+    }
+
+    res.json(result.data);
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: error.errors.map((e) => ({
+          path: e.path.join('.'),
+          message: e.message,
+        })),
+      });
+    }
+    console.error('Failed to update live session:', error);
     res.status(500).json({ message: error.message || 'Failed to update live session' });
   }
 });
 
-// Delete live session
+/**
+ * DELETE /:id - Delete live session
+ */
 router.delete('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
+    const { courseId } = req.query;
 
-    const session = await prisma.liveSession.findUnique({
-      where: { id },
-      include: { course: true },
-    });
-
-    if (!session) {
-      return res.status(404).json({ message: 'Live session not found' });
+    if (!courseId || typeof courseId !== 'string') {
+      return res.status(400).json({ message: 'courseId is required' });
     }
 
-    const isTeacher = session.course.teacherId === req.user!.userId;
-    const isAdmin = req.user!.role === 'ADMIN';
-    if (!isTeacher && !isAdmin) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+    const result = await liveSessionManager.deleteLiveSession(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId,
+      id
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    await prisma.liveSession.delete({ where: { id } });
     res.json({ message: 'Live session deleted successfully' });
   } catch (error: any) {
+    console.error('Failed to delete live session:', error);
     res.status(500).json({ message: error.message || 'Failed to delete live session' });
   }
 });
 
 export default router;
-
-
-
-

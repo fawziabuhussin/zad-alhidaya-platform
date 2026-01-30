@@ -1,81 +1,68 @@
+/**
+ * Quiz Routes
+ * HTTP layer - delegates to QuizManager
+ */
 import express from 'express';
-import { prisma } from '../utils/prisma';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { authenticate, AuthRequest } from '../middleware/auth';
+import { z } from 'zod';
+import { quizManager } from '../managers/quiz.manager';
+import { submitQuizAttemptSchema } from '../schemas/quiz.schema';
 
 const router = express.Router();
 
-// Get quizzes for a course
-router.get('/course/:courseId', async (req, res) => {
+/**
+ * GET /course/:courseId - List all quizzes for a course
+ */
+router.get('/course/:courseId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { courseId } = req.params;
-    const quizzes = await prisma.quiz.findMany({
-      where: { courseId },
-      include: {
-        questions: {
-          orderBy: { order: 'asc' },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    res.json(quizzes);
+
+    const result = await quizManager.listQuizzes(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
+    }
+
+    res.json(result.data);
   } catch (error: any) {
+    console.error('Failed to fetch quizzes:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch quizzes' });
   }
 });
 
-// Submit quiz attempt
-router.post('/:quizId/attempt', authenticate, authorize('STUDENT', 'ADMIN'), async (req: AuthRequest, res) => {
+/**
+ * POST /:quizId/attempt - Submit quiz attempt
+ */
+router.post('/:quizId/attempt', authenticate, async (req: AuthRequest, res) => {
   try {
     const { quizId } = req.params;
-    const { answers } = req.body; // Array of { questionId, selectedIndex }
+    const data = submitQuizAttemptSchema.parse(req.body);
 
-    const quiz = await prisma.quiz.findUnique({
-      where: { id: quizId },
-      include: {
-        questions: true,
-        course: {
-          include: {
-            enrollments: {
-              where: {
-                userId: req.user!.userId,
-                status: 'ACTIVE',
-              },
-            },
-          },
-        },
-      },
-    });
+    const result = await quizManager.submitQuizAttempt(
+      { userId: req.user!.userId, role: req.user!.role },
+      quizId,
+      data
+    );
 
-    if (!quiz) {
-      return res.status(404).json({ message: 'Quiz not found' });
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    // Check enrollment
-    if (req.user!.role !== 'ADMIN' && quiz.course.enrollments.length === 0) {
-      return res.status(403).json({ message: 'You must be enrolled in this course' });
-    }
-
-    // Calculate score
-    let correct = 0;
-    quiz.questions.forEach((q, idx) => {
-      const answer = answers.find((a: any) => a.questionId === q.id);
-      if (answer && answer.selectedIndex === q.correctIndex) {
-        correct++;
-      }
-    });
-
-    const score = (correct / quiz.questions.length) * 100;
-
-    const attempt = await prisma.quizAttempt.create({
-      data: {
-        userId: req.user!.userId,
-        quizId,
-        score,
-      },
-    });
-
-    res.json({ ...attempt, correct, total: quiz.questions.length });
+    res.json(result.data);
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: error.errors.map((e) => ({
+          path: e.path.join('.'),
+          message: e.message,
+        })),
+      });
+    }
+    console.error('Failed to submit quiz:', error);
     res.status(500).json({ message: error.message || 'Failed to submit quiz' });
   }
 });

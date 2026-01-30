@@ -1,105 +1,57 @@
+/**
+ * Grade Routes
+ * HTTP layer - delegates to GradeManager
+ */
 import express from 'express';
-import { prisma } from '../utils/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { gradeManager } from '../managers/grade.manager';
 
 const router = express.Router();
 
-// Get student grades
+/**
+ * GET /student/:userId - Get student grades with GPA
+ */
 router.get('/student/:userId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { userId } = req.params;
-    const currentUserId = req.user!.userId;
-    const isAdmin = req.user!.role === 'ADMIN';
 
-    if (userId !== currentUserId && !isAdmin) {
-      return res.status(403).json({ message: 'Access denied' });
+    const result = await gradeManager.getStudentGrades(
+      { userId: req.user!.userId, role: req.user!.role },
+      userId
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    const grades = await prisma.grade.findMany({
-      where: { userId },
-      include: {
-        course: {
-          select: {
-            id: true,
-            title: true,
-            coverImage: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // Calculate GPA
-    const gradePoints: { [key: string]: number } = {
-      'A+': 4.0,
-      'A': 4.0,
-      'B+': 3.5,
-      'B': 3.0,
-      'C+': 2.5,
-      'C': 2.0,
-      'D': 1.0,
-      'F': 0.0,
-    };
-
-    const totalPoints = grades.reduce((sum, grade) => {
-      return sum + (gradePoints[grade.letterGrade] || 0);
-    }, 0);
-
-    const gpa = grades.length > 0 ? totalPoints / grades.length : 0;
-
-    res.json({ grades, gpa: gpa.toFixed(2) });
+    res.json(result.data);
   } catch (error: any) {
+    console.error('Failed to fetch student grades:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch grades' });
   }
 });
 
-// Get course grades
+/**
+ * GET /course/:courseId - Get course grades (teacher/admin only)
+ */
 router.get('/course/:courseId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { courseId } = req.params;
-    const userId = req.user!.userId;
 
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-      include: { teacher: true },
-    });
+    const result = await gradeManager.getCourseGrades(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId
+    );
 
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    const isTeacher = course.teacherId === userId;
-    const isAdmin = req.user!.role === 'ADMIN';
-
-    if (!isTeacher && !isAdmin) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    const grades = await prisma.grade.findMany({
-      where: { courseId },
-      include: {
-        course: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    res.json(grades);
+    res.json(result.data);
   } catch (error: any) {
+    console.error('Failed to fetch course grades:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch grades' });
   }
 });
 
 export default router;
-

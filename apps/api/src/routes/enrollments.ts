@@ -1,134 +1,112 @@
+/**
+ * Enrollment Routes
+ * HTTP layer - delegates to EnrollmentManager
+ */
 import express from 'express';
-import { prisma } from '../utils/prisma';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { authenticate, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
+import { enrollmentManager } from '../managers/enrollment.manager';
+import { createEnrollmentSchema } from '../schemas/enrollment.schema';
 
 const router = express.Router();
 
-// Enroll in course (Student)
-router.post('/', authenticate, authorize('STUDENT', 'ADMIN'), async (req: AuthRequest, res) => {
+/**
+ * POST / - Enroll in course (Student/Admin)
+ */
+router.post('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { courseId } = req.body;
+    const { courseId } = createEnrollmentSchema.parse(req.body);
 
-    if (!courseId) {
-      return res.status(400).json({ message: 'Course ID is required' });
+    const result = await enrollmentManager.enrollInCourse(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    // Check if course exists and is published
-    const course = await prisma.course.findUnique({ where: { id: courseId } });
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
-    }
-
-    if (course.status !== 'PUBLISHED') {
-      return res.status(400).json({ message: 'Course is not available for enrollment' });
-    }
-
-    // Check if already enrolled
-    const existing = await prisma.enrollment.findUnique({
-      where: {
-        userId_courseId: {
-          userId: req.user!.userId,
-          courseId,
-        },
-      },
-    });
-
-    if (existing) {
-      return res.status(400).json({ message: 'Already enrolled in this course' });
-    }
-
-    const enrollment = await prisma.enrollment.create({
-      data: {
-        userId: req.user!.userId,
-        courseId,
-        status: 'ACTIVE',
-      },
-      include: {
-        course: {
-          include: {
-            category: true,
-            teacher: {
-              select: { id: true, name: true },
-            },
-          },
-        },
-      },
-    });
-
-    res.status(201).json(enrollment);
+    res.status(201).json(result.data);
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: error.errors.map((e) => ({
+          path: e.path.join('.'),
+          message: e.message,
+        })),
+      });
+    }
+    console.error('Failed to enroll:', error);
     res.status(500).json({ message: error.message || 'Failed to enroll' });
   }
 });
 
-// Get my enrollments (Student)
-router.get('/my-enrollments', authenticate, authorize('STUDENT', 'ADMIN'), async (req: AuthRequest, res) => {
+/**
+ * GET /my-enrollments - Get my enrollments (Student/Admin)
+ */
+router.get('/my-enrollments', authenticate, async (req: AuthRequest, res) => {
   try {
-    const enrollments = await prisma.enrollment.findMany({
-      where: {
-        userId: req.user!.userId,
-        status: 'ACTIVE',
-      },
-      include: {
-        course: {
-          include: {
-            category: true,
-            teacher: {
-              select: { id: true, name: true },
-            },
-            modules: {
-              include: {
-                lessons: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { enrolledAt: 'desc' },
+    const result = await enrollmentManager.getMyEnrollments({
+      userId: req.user!.userId,
+      role: req.user!.role,
     });
 
-    res.json(enrollments);
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
+    }
+
+    res.json(result.data);
   } catch (error: any) {
+    console.error('Failed to fetch enrollments:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch enrollments' });
   }
 });
 
-// Get enrollments for a course (Teacher/Admin)
+/**
+ * GET /course/:courseId - Get enrollments for a course (Teacher/Admin)
+ */
 router.get('/course/:courseId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { courseId } = req.params;
 
-    const course = await prisma.course.findUnique({ where: { id: courseId } });
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+    const result = await enrollmentManager.getCourseEnrollments(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    // Check permissions
-    const isTeacher = course.teacherId === req.user!.userId;
-    const isAdmin = req.user!.role === 'ADMIN';
-    if (!isTeacher && !isAdmin) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
-    }
-
-    const enrollments = await prisma.enrollment.findMany({
-      where: { courseId },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-      orderBy: { enrolledAt: 'desc' },
-    });
-
-    res.json(enrollments);
+    res.json(result.data);
   } catch (error: any) {
+    console.error('Failed to fetch enrollments:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch enrollments' });
   }
 });
 
+/**
+ * DELETE /:id - Delete/Cancel enrollment
+ */
+router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await enrollmentManager.deleteEnrollment(
+      { userId: req.user!.userId, role: req.user!.role },
+      id
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
+    }
+
+    res.json({ message: 'Enrollment deleted successfully' });
+  } catch (error: any) {
+    console.error('Failed to delete enrollment:', error);
+    res.status(500).json({ message: error.message || 'Failed to delete enrollment' });
+  }
+});
+
 export default router;
-
-
-
-
