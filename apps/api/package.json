@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc",
-    "vercel-build": "prisma generate && tsc",
+    "vercel-build": "node scripts/vercel-migrate.js && prisma generate && tsc",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
     "test": "jest",
