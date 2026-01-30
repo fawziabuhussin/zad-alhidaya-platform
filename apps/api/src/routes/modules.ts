@@ -1,142 +1,120 @@
+/**
+ * Module Routes
+ * HTTP layer - delegates to ModuleManager
+ */
 import express from 'express';
-import { prisma } from '../utils/prisma';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
+import { moduleManager } from '../managers/module.manager';
+import { createModuleSchema, updateModuleSchema } from '../schemas/module.schema';
 
 const router = express.Router();
 
-const createModuleSchema = z.object({
-  courseId: z.string().uuid('معرف الدورة غير صحيح'),
-  title: z.string().min(1, 'عنوان الوحدة مطلوب').max(200, 'العنوان طويل جداً'),
-  order: z.number().int().optional(),
-});
-
-// Create module (Teacher/Admin)
+/**
+ * POST / - Create module (Teacher/Admin)
+ */
 router.post('/', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRequest, res) => {
   try {
     const data = createModuleSchema.parse(req.body);
-    
-    // Validate title is not empty
-    if (!data.title || data.title.trim().length === 0) {
-      return res.status(400).json({ 
-        message: 'Validation error', 
-        errors: [{ path: ['title'], message: 'عنوان الوحدة مطلوب' }]
-      });
+    const { courseId } = req.body;
+
+    if (!courseId) {
+      return res.status(400).json({ message: 'courseId is required' });
     }
 
-    // Verify course ownership
-    const course = await prisma.course.findUnique({ where: { id: data.courseId } });
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+    const result = await moduleManager.createModule(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId,
+      data
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    const isTeacher = course.teacherId === req.user!.userId;
-    const isAdmin = req.user!.role === 'ADMIN';
-    if (!isTeacher && !isAdmin) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
-    }
-
-    // Get max order if not provided
-    if (data.order === undefined) {
-      const maxOrder = await prisma.module.findFirst({
-        where: { courseId: data.courseId },
-        orderBy: { order: 'desc' },
-        select: { order: true },
-      });
-      data.order = (maxOrder?.order ?? -1) + 1;
-    }
-
-    const module = await prisma.module.create({
-      data,
-      include: {
-        lessons: {
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
-
-    res.status(201).json(module);
+    res.status(201).json(result.data);
   } catch (error: any) {
-    console.error('Error creating module:', error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ 
-        message: 'Validation error', 
-        errors: error.errors.map(e => ({
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: error.errors.map((e) => ({
           path: e.path,
-          message: e.message
-        }))
+          message: e.message,
+        })),
       });
     }
-    if (error.code === 'P2003') {
-      return res.status(400).json({ message: 'الدورة غير موجودة' });
-    }
+    console.error('Error creating module:', error);
     res.status(500).json({ message: error.message || 'Failed to create module' });
   }
 });
 
-// Update module
+/**
+ * PUT /:id - Update module
+ */
 router.put('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const data = createModuleSchema.partial().parse(req.body);
+    const data = updateModuleSchema.parse(req.body);
+    const { courseId } = req.body;
 
-    const module = await prisma.module.findUnique({
-      where: { id },
-      include: { course: true },
-    });
-
-    if (!module) {
-      return res.status(404).json({ message: 'Module not found' });
+    if (!courseId) {
+      return res.status(400).json({ message: 'courseId is required' });
     }
 
-    const isTeacher = module.course.teacherId === req.user!.userId;
-    const isAdmin = req.user!.role === 'ADMIN';
-    if (!isTeacher && !isAdmin) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+    const result = await moduleManager.updateModule(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId,
+      id,
+      data
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    const updated = await prisma.module.update({
-      where: { id },
-      data,
-      include: {
-        lessons: {
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
-
-    res.json(updated);
+    res.json(result.data);
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: error.errors.map((e) => ({
+          path: e.path,
+          message: e.message,
+        })),
+      });
+    }
+    console.error('Failed to update module:', error);
     res.status(500).json({ message: error.message || 'Failed to update module' });
   }
 });
 
-// Delete module
+/**
+ * DELETE /:id - Delete module
+ */
 router.delete('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
+    const { courseId } = req.query;
 
-    const module = await prisma.module.findUnique({
-      where: { id },
-      include: { course: true },
-    });
-
-    if (!module) {
-      return res.status(404).json({ message: 'Module not found' });
+    if (!courseId || typeof courseId !== 'string') {
+      return res.status(400).json({ message: 'courseId is required' });
     }
 
-    const isTeacher = module.course.teacherId === req.user!.userId;
-    const isAdmin = req.user!.role === 'ADMIN';
-    if (!isTeacher && !isAdmin) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+    const result = await moduleManager.deleteModule(
+      { userId: req.user!.userId, role: req.user!.role },
+      courseId,
+      id
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    await prisma.module.delete({ where: { id } });
     res.json({ message: 'Module deleted successfully' });
   } catch (error: any) {
+    console.error('Failed to delete module:', error);
     res.status(500).json({ message: error.message || 'Failed to delete module' });
   }
 });
 
 export default router;
-
