@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { HomeworkIcon, PlusIcon, TrashIcon, ChartIcon, CalendarIcon, UsersIcon } from '@/components/Icons';
 
 interface Homework {
   id: string;
@@ -94,30 +95,68 @@ export default function AdminHomeworkPage() {
     }
   };
 
+  const totalSubmissions = homeworks.reduce((sum, h) => sum + (h._count?.submissions || 0), 0);
+  const overdueCount = homeworks.filter(h => new Date() > new Date(h.dueDate)).length;
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">إدارة الواجبات</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition btn-large"
-        >
-          + واجب جديد
-        </button>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <HomeworkIcon size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold">إدارة الواجبات</h1>
+                <p className="text-white/70 text-sm">{homeworks.length} واجب</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a227] text-white rounded-xl font-bold hover:bg-[#b08f20] transition-all shadow-lg"
+            >
+              <PlusIcon size={18} />
+              واجب جديد
+            </button>
+          </div>
+        </div>
       </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-[#1a3a2f]">{homeworks.length}</p>
+            <p className="text-sm text-stone-500">إجمالي الواجبات</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-sky-600">{totalSubmissions}</p>
+            <p className="text-sm text-stone-500">إجمالي التسليمات</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-red-600">{overdueCount}</p>
+            <p className="text-sm text-stone-500">منتهية</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-emerald-600">{homeworks.length - overdueCount}</p>
+            <p className="text-sm text-stone-500">نشطة</p>
+          </div>
+        </div>
+
       {showForm && (
-        <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-primary">
-          <h2 className="text-2xl font-bold mb-6">إنشاء واجب جديد</h2>
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-6 mb-6">
+          <h2 className="text-xl font-bold text-stone-800 mb-6">إنشاء واجب جديد</h2>
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative w-full">
               <label className="block text-lg font-semibold mb-3 text-gray-800">الدورة *</label>
               <div className="relative w-full">
@@ -262,79 +301,91 @@ export default function AdminHomeworkPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        {homeworks.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-xl text-gray-500 mb-6">لا توجد واجبات</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition btn-large"
-            >
-              إنشاء واجب جديد
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-primary text-white">
-                <tr>
-                  <th className="px-6 py-4 text-right text-lg font-bold">الواجب</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">الدورة</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">تاريخ الاستحقاق</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">الدرجة</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">التسليمات</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {homeworks.map((homework) => {
-                  const dueDate = new Date(homework.dueDate);
-                  const now = new Date();
-                  const isOverdue = now > dueDate;
-                  
-                  return (
-                    <tr key={homework.id} className="hover:bg-gray-50 bg-white">
-                      <td className="px-6 py-4">
-                        <div className="text-lg font-bold text-gray-800">{homework.title}</div>
-                        <div className="text-sm text-gray-600 mt-1">{homework.description}</div>
-                      </td>
-                      <td className="px-6 py-4 text-lg text-gray-800 font-semibold">{homework.course?.title || 'غير محدد'}</td>
-                      <td className="px-6 py-4">
-                        <div className="text-lg text-gray-800 font-semibold">{dueDate.toLocaleDateString('ar-SA')}</div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          {dueDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        {isOverdue && (
-                          <span className="inline-block mt-1 px-3 py-1 bg-red-100 text-red-800 rounded-lg text-sm font-bold">
-                            منتهي
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-lg text-gray-800 font-semibold">{homework.maxScore}</td>
-                      <td className="px-6 py-4 text-lg text-gray-800 font-semibold">{homework._count?.submissions || 0}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <Link
-                            href={`/admin/homework/${homework.id}/submissions`}
-                            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-base font-semibold"
-                          >
-                            تصحيح ({homework._count?.submissions || 0})
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(homework.id)}
-                            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-base font-semibold"
-                          >
-                            حذف
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {/* Homework Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+          {homeworks.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <HomeworkIcon size={32} className="text-stone-400" />
+              </div>
+              <p className="text-stone-500 text-lg mb-4">لا توجد واجبات</p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#143026] transition"
+              >
+                <PlusIcon size={18} />
+                إنشاء واجب جديد
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-stone-50 border-b border-stone-200">
+                  <tr>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الواجب</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الدورة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden sm:table-cell">تاريخ الاستحقاق</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden lg:table-cell">الدرجة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">التسليمات</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {homeworks.map((homework) => {
+                    const dueDate = new Date(homework.dueDate);
+                    const now = new Date();
+                    const isOverdue = now > dueDate;
+                    
+                    return (
+                      <tr key={homework.id} className="hover:bg-stone-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-stone-800">{homework.title}</div>
+                          <div className="text-sm text-stone-500 mt-1 line-clamp-1">{homework.description}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">{homework.course?.title || 'غير محدد'}</td>
+                        <td className="px-6 py-4 hidden sm:table-cell">
+                          <div className="flex items-center gap-1 text-stone-600">
+                            <CalendarIcon size={14} />
+                            <span className="text-sm">{dueDate.toLocaleDateString('ar-SA')}</span>
+                          </div>
+                          {isOverdue && (
+                            <span className="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">
+                              منتهي
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-stone-600 font-medium hidden lg:table-cell">{homework.maxScore}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1 text-stone-600">
+                            <UsersIcon size={14} />
+                            <span className="text-sm font-medium">{homework._count?.submissions || 0}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <Link
+                              href={`/admin/homework/${homework.id}/submissions`}
+                              className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition text-sm font-medium"
+                            >
+                              تصحيح
+                            </Link>
+                            <button
+                              onClick={() => handleDelete(homework.id)}
+                              className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                              title="حذف"
+                            >
+                              <TrashIcon size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

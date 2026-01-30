@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { UsersIcon, BookIcon, CalendarIcon, FilterIcon } from '@/components/Icons';
 
 // Custom Status Filter Dropdown
 function StatusFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -165,86 +166,137 @@ export default function AdminEnrollmentsPage() {
     !statusFilter || e.status === statusFilter
   );
 
+  const stats = {
+    total: enrollments.length,
+    active: enrollments.filter(e => e.status === 'ACTIVE').length,
+    pending: enrollments.filter(e => e.status === 'PENDING').length,
+    canceled: enrollments.filter(e => e.status === 'CANCELED').length,
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
-      <h1 className="text-2xl font-bold text-gray-800">إدارة التسجيلات</h1>
-
-      {/* Filter */}
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <StatusFilterDropdown
-          value={statusFilter}
-          onChange={(value) => setStatusFilter(value)}
-        />
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <UsersIcon size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold">إدارة التسجيلات</h1>
+              <p className="text-white/70 text-sm">{stats.total} تسجيل</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Enrollments Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {filteredEnrollments.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">لا توجد تسجيلات</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-[#1a3a2f]">{stats.total}</p>
+            <p className="text-sm text-stone-500">إجمالي التسجيلات</p>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الطالب</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الدورة</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">تاريخ التسجيل</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {filteredEnrollments.map((enrollment) => (
-                  <tr key={enrollment.id} className="hover:bg-gray-50 bg-white">
-                    <td className="px-6 py-4">
-                      <div>
-                        <h3 className="font-semibold text-gray-800">{enrollment.user.name}</h3>
-                        <p className="text-sm text-gray-600">{enrollment.user.email}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-800">{enrollment.course.title}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs ${
-                        enrollment.status === 'ACTIVE'
-                          ? 'bg-green-100 text-green-800'
-                          : enrollment.status === 'PENDING'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {enrollment.status === 'ACTIVE' ? 'نشط' : 
-                         enrollment.status === 'PENDING' ? 'قيد الانتظار' : 'ملغي'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-800">
-                      {new Date(enrollment.enrolledAt).toLocaleDateString('ar-SA')}
-                    </td>
-                    <td className="px-6 py-4">
-                      <select
-                        value={enrollment.status}
-                        onChange={(e) => handleStatusChange(enrollment.id, e.target.value)}
-                        className="px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-primary text-gray-800 bg-white"
-                      >
-                        <option value="ACTIVE">نشط</option>
-                        <option value="PENDING">قيد الانتظار</option>
-                        <option value="CANCELED">إلغاء</option>
-                      </select>
-                    </td>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-emerald-600">{stats.active}</p>
+            <p className="text-sm text-stone-500">نشطة</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
+            <p className="text-sm text-stone-500">قيد الانتظار</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-red-600">{stats.canceled}</p>
+            <p className="text-sm text-stone-500">ملغية</p>
+          </div>
+        </div>
+
+        {/* Filter */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <FilterIcon size={18} className="text-stone-400" />
+            <StatusFilterDropdown
+              value={statusFilter}
+              onChange={(value) => setStatusFilter(value)}
+            />
+          </div>
+        </div>
+
+        {/* Enrollments Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+          {filteredEnrollments.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UsersIcon size={32} className="text-stone-400" />
+              </div>
+              <p className="text-stone-500 text-lg">لا توجد تسجيلات</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-stone-50 border-b border-stone-200">
+                  <tr>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الطالب</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الدورة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الحالة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden sm:table-cell">تاريخ التسجيل</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {filteredEnrollments.map((enrollment) => (
+                    <tr key={enrollment.id} className="hover:bg-stone-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <h3 className="font-semibold text-stone-800">{enrollment.user.name}</h3>
+                          <p className="text-sm text-stone-500">{enrollment.user.email}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">{enrollment.course.title}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                          enrollment.status === 'ACTIVE'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : enrollment.status === 'PENDING'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {enrollment.status === 'ACTIVE' ? 'نشط' : 
+                           enrollment.status === 'PENDING' ? 'قيد الانتظار' : 'ملغي'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 hidden sm:table-cell">
+                        <div className="flex items-center gap-1 text-stone-500 text-sm">
+                          <CalendarIcon size={14} />
+                          {new Date(enrollment.enrolledAt).toLocaleDateString('ar-SA')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <select
+                          value={enrollment.status}
+                          onChange={(e) => handleStatusChange(enrollment.id, e.target.value)}
+                          className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-700 bg-white"
+                        >
+                          <option value="ACTIVE">نشط</option>
+                          <option value="PENDING">قيد الانتظار</option>
+                          <option value="CANCELED">إلغاء</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

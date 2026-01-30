@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { AlertIcon } from '@/components/Icons';
 
 interface Question {
   id: string;
@@ -232,7 +233,9 @@ export default function TakeExamPage() {
     return (
       <div className="text-center py-12">
         <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-8 max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-yellow-800 mb-4">⚠️ يجب إكمال جميع دروس الدورة</h2>
+          <h2 className="text-2xl font-bold text-yellow-800 mb-4 flex items-center justify-center gap-2">
+            <AlertIcon size={28} className="text-yellow-700" /> يجب إكمال جميع دروس الدورة
+          </h2>
           <p className="text-lg text-gray-700 mb-4">
             لا يمكنك إجراء هذا الامتحان حتى تكمل جميع دروس الدورة
           </p>

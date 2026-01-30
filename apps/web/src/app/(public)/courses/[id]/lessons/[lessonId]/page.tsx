@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
+import { CheckCircleIcon } from '@/components/Icons';
 
 interface Lesson {
   id: string;
@@ -142,7 +143,7 @@ export default function LessonPage() {
               disabled={completed}
               className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {completed ? '✓ تم الإكمال' : '✓ اكمال الدرس'}
+              {completed ? <><CheckCircleIcon size={16} className="inline" /> تم الإكمال</> : <><CheckCircleIcon size={16} className="inline" /> إكمال الدرس</>}
             </button>
             <button
               onClick={() => router.back()}

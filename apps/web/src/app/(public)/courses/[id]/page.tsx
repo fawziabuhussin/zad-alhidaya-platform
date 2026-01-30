@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { CheckCircleIcon } from '@/components/Icons';
 
 interface Course {
   id: string;
@@ -191,8 +192,8 @@ export default function CourseDetailsPage() {
                   <div className="flex items-center gap-4">
                     <h3 className="text-xl font-bold text-gray-800">تقدمك في الدورة</h3>
                     {progress.percentage === 100 && (
-                      <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-bold text-sm">
-                        ✓ تم إكمال الدورة
+                      <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-bold text-sm flex items-center gap-1">
+                        <CheckCircleIcon size={16} /> تم إكمال الدورة
                       </span>
                     )}
                   </div>
@@ -377,7 +378,7 @@ export default function CourseDetailsPage() {
                               : 'bg-primary text-white hover:bg-primary-dark'
                           }`}
                         >
-                          {isCompleted ? '✓ إعادة المشاهدة' : 'مشاهدة'}
+                          {isCompleted ? <><CheckCircleIcon size={14} className="inline" /> إعادة المشاهدة</> : 'مشاهدة'}
                         </Link>
                       ) : (
                         <span className="text-gray-400">سجل للوصول</span>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { StarIcon, ChartIcon, ExamIcon, HomeworkIcon, ChevronDownIcon } from '@/components/Icons';
 
 // Custom Dropdown Component
 function CourseDropdown({ courses, selectedCourseId, onSelect }: { courses: any[], selectedCourseId: string, onSelect: (id: string) => void }) {
@@ -230,8 +231,8 @@ export default function AdminGradesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
@@ -247,26 +248,40 @@ export default function AdminGradesPage() {
   }, {} as { [key: string]: number });
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">إدارة التقييمات</h1>
-        <button
-          onClick={() => router.back()}
-          className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition"
-        >
-          ← العودة
-        </button>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <StarIcon size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold">إدارة التقييمات</h1>
+                <p className="text-white/70 text-sm">{grades.length} تقييم</p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.back()}
+              className="px-5 py-2.5 bg-white/10 text-white rounded-xl font-medium hover:bg-white/20 transition"
+            >
+              العودة ←
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Course Selection */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">اختر الدورة</h2>
-        <CourseDropdown
-          courses={courses}
-          selectedCourseId={selectedCourseId}
-          onSelect={(courseId) => setSelectedCourseId(courseId)}
-        />
-      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Course Selection */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-6 mb-6">
+          <h2 className="text-lg font-bold mb-4 text-stone-800">اختر الدورة</h2>
+          <CourseDropdown
+            courses={courses}
+            selectedCourseId={selectedCourseId}
+            onSelect={(courseId) => setSelectedCourseId(courseId)}
+          />
+        </div>
 
       {selectedCourseId && selectedCourse && (
         <>
@@ -486,6 +501,7 @@ export default function AdminGradesPage() {
           <p className="text-xl text-gray-500">يرجى اختيار دورة لعرض التقييمات</p>
         </div>
       )}
+      </div>
     </div>
   );
 }

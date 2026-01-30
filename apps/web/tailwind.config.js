@@ -8,17 +8,34 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Zad Al-Hidaya Color Palette
         primary: {
-          DEFAULT: '#2563eb',
-          dark: '#1e40af',
-          light: '#3b82f6',
+          DEFAULT: '#1a5f4a',  // Deep forest green
+          dark: '#134436',
+          light: '#2d8a6e',
+          50: '#f0fdf4',
+          100: '#dcfce7',
         },
-        accent: {
-          DEFAULT: '#f59e0b',
-          dark: '#d97706',
+        gold: {
+          DEFAULT: '#c9a227',  // Rich gold
+          dark: '#a68521',
+          light: '#e3c65c',
+          muted: '#d4b94e',
         },
-        success: '#10b981',
-        danger: '#ef4444',
+        olive: {
+          DEFAULT: '#5c6b4c',  // Olive - nature, peace
+          dark: '#4a5740',
+          light: '#7a8c66',
+        },
+        earth: {
+          DEFAULT: '#8b7355',  // Earth brown
+          light: '#a69076',
+          dark: '#6b5a44',
+        },
+        // Semantic
+        success: '#2d8a6e',
+        danger: '#b91c1c',
+        warning: '#c9a227',
       },
       fontFamily: {
         arabic: ['Cairo', 'Noto Sans Arabic', 'sans-serif'],

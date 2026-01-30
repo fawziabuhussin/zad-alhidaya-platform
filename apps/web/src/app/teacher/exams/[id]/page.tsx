@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { CheckCircleIcon, AlertIcon } from '@/components/Icons';
 
 interface Question {
   id: string;
@@ -402,10 +403,10 @@ export default function TeacherExamDetailsPage() {
                     </>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 mt-1 flex items-center gap-1">
                   {questionData.type === 'MULTIPLE_CHOICE' 
-                    ? '✓ سيتم التصحيح تلقائياً عند إتمام الطالب للامتحان'
-                    : '⚠️ سيحتاج هذا السؤال إلى تصحيح يدوي من قبل المدرس'}
+                    ? <><CheckCircleIcon size={14} className="text-green-600" /> سيتم التصحيح تلقائياً عند إتمام الطالب للامتحان</>
+                    : <><AlertIcon size={14} className="text-yellow-600" /> سيحتاج هذا السؤال إلى تصحيح يدوي من قبل المدرس</>}
                 </p>
               </div>
 
@@ -478,8 +479,9 @@ export default function TeacherExamDetailsPage() {
 
               {(questionData.type === 'TEXT' || questionData.type === 'ESSAY') && (
                 <div className="p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
-                  <p className="text-base text-yellow-800 font-semibold mb-2">
-                    ⚠️ هذا سؤال {questionData.type === 'TEXT' ? 'نصي قصير' : 'مقالي'} - سيتم تصحيحه يدوياً من قبل المدرس
+                  <p className="text-base text-yellow-800 font-semibold mb-2 flex items-center gap-2">
+                    <AlertIcon size={18} className="text-yellow-700 shrink-0" />
+                    هذا سؤال {questionData.type === 'TEXT' ? 'نصي قصير' : 'مقالي'} - سيتم تصحيحه يدوياً من قبل المدرس
                   </p>
                   <p className="text-sm text-yellow-700">
                     بعد إضافة هذا السؤال، سيحتاج الامتحان إلى تصحيح يدوي. يمكنك إضافة ملاحظات أو معايير التصحيح في حقل الوصف.
@@ -525,7 +527,7 @@ export default function TeacherExamDetailsPage() {
                 }`}>
                   المجموع بعد إضافة هذا السؤال: <span className="font-bold">{totalPoints + questionData.points}</span> / {exam.maxScore}
                   {totalPoints + questionData.points > exam.maxScore && !questionData.allowBonus && (
-                    <span className="block mt-1">⚠️ سيتم اعتبار هذا السؤال إضافياً (bonus) إذا تجاوز المجموع</span>
+                    <span className="mt-1 flex items-center gap-1"><AlertIcon size={14} className="text-yellow-600" /> سيتم اعتبار هذا السؤال إضافياً (bonus) إذا تجاوز المجموع</span>
                   )}
                 </p>
               </div>
@@ -599,8 +601,8 @@ export default function TeacherExamDetailsPage() {
                           </span>
                           <span className="text-lg text-gray-800">{choice}</span>
                           {choiceIndex === question.correctIndex && (
-                            <span className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-bold">
-                              ✓ الإجابة الصحيحة
+                            <span className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-bold flex items-center gap-1">
+                              <CheckCircleIcon size={14} /> الإجابة الصحيحة
                             </span>
                           )}
                         </div>
@@ -608,7 +610,7 @@ export default function TeacherExamDetailsPage() {
                     ))}
                     {question.explanation && (
                       <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
-                        <h4 className="text-lg font-bold text-blue-900 mb-2">📚 شرح الإجابة الصحيحة:</h4>
+                        <h4 className="text-lg font-bold text-blue-900 mb-2">شرح الإجابة الصحيحة:</h4>
                         <p className="text-base text-blue-800 leading-relaxed">{question.explanation}</p>
                       </div>
                     )}
