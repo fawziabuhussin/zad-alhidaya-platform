@@ -31,6 +31,7 @@ model User {
   homeworkSubmissions HomeworkSubmission[]
   examAttempts ExamAttempt[]
   grades       Grade[]
+  resourcesCreated Resource[] @relation("ResourceCreator")
 
   @@index([email])
   @@index([role])
@@ -86,6 +87,7 @@ model Course {
   homeworks   Homework[]
   exams       Exam[]
   grades      Grade[]
+  resources   Resource[]
 
   @@index([categoryId])
   @@index([teacherId])
@@ -122,6 +124,7 @@ model Lesson {
 
   module   Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   progress LessonProgress[]
+  resources Resource[]
 
   @@index([moduleId])
   @@index([order])
@@ -334,4 +337,31 @@ model Grade {
   @@index([userId])
   @@index([courseId])
   @@index([type])
+}
+
+model Resource {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  url         String
+  order       Int      @default(0)
+  
+  // Polymorphic relationship - one of these will be set
+  courseId    String?
+  lessonId    String?
+  
+  // Audit fields
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson      Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation("ResourceCreator", fields: [createdById], references: [id])
+  
+  @@index([courseId])
+  @@index([lessonId])
+  @@index([order])
+  @@index([createdById])
 }

@@ -191,6 +191,16 @@ router.get('/:id', async (req, res) => {
         modules: {
           include: {
             lessons: {
+              include: {
+                resources: {
+                  orderBy: { order: 'asc' },
+                  include: {
+                    createdBy: {
+                      select: { id: true, name: true },
+                    },
+                  },
+                },
+              },
               orderBy: { order: 'asc' },
             },
           },
@@ -204,6 +214,14 @@ router.get('/:id', async (req, res) => {
         },
         homeworks: {
           orderBy: { dueDate: 'asc' },
+        },
+        resources: {
+          orderBy: { order: 'asc' },
+          include: {
+            createdBy: {
+              select: { id: true, name: true },
+            },
+          },
         },
         _count: {
           select: { enrollments: true },
