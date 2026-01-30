@@ -50,10 +50,10 @@ async function main() {
 
   // Create categories
   const fiqhCategory = await prisma.category.upsert({
-    where: { id: 'cat-1' },
+    where: { id: '550e8400-e29b-41d4-a716-446655440001' },
     update: {},
     create: {
-      id: 'cat-1',
+      id: '550e8400-e29b-41d4-a716-446655440001',
       title: 'الفقه',
       description: 'دورات في الفقه الإسلامي',
       order: 1,
@@ -61,10 +61,10 @@ async function main() {
   });
 
   const hadithCategory = await prisma.category.upsert({
-    where: { id: 'cat-2' },
+    where: { id: '550e8400-e29b-41d4-a716-446655440002' },
     update: {},
     create: {
-      id: 'cat-2',
+      id: '550e8400-e29b-41d4-a716-446655440002',
       title: 'الحديث',
       description: 'دورات في علوم الحديث',
       order: 2,
@@ -72,10 +72,10 @@ async function main() {
   });
 
   const tafsirCategory = await prisma.category.upsert({
-    where: { id: 'cat-3' },
+    where: { id: '550e8400-e29b-41d4-a716-446655440003' },
     update: {},
     create: {
-      id: 'cat-3',
+      id: '550e8400-e29b-41d4-a716-446655440003',
       title: 'التفسير',
       description: 'دورات في تفسير القرآن الكريم',
       order: 3,
@@ -83,10 +83,10 @@ async function main() {
   });
 
   const aqidaCategory = await prisma.category.upsert({
-    where: { id: 'cat-4' },
+    where: { id: '550e8400-e29b-41d4-a716-446655440004' },
     update: {},
     create: {
-      id: 'cat-4',
+      id: '550e8400-e29b-41d4-a716-446655440004',
       title: 'العقيدة',
       description: 'دورات في العقيدة الإسلامية',
       order: 4,
@@ -97,10 +97,10 @@ async function main() {
 
   // Course 1: الفقه
   const course1 = await prisma.course.upsert({
-    where: { id: 'course-1' },
+    where: { id: '660e8400-e29b-41d4-a716-446655440001' },
     update: {},
     create: {
-      id: 'course-1',
+      id: '660e8400-e29b-41d4-a716-446655440001',
       title: 'مبادئ الفقه الإسلامي',
       description: 'دورة شاملة في مبادئ الفقه الإسلامي تغطي الأصول والقواعد الأساسية مع أمثلة تطبيقية',
       coverImage: 'https://via.placeholder.com/800x450.png?text=Fiqh+Course',
@@ -158,10 +158,10 @@ async function main() {
 
   // Course 2: الحديث
   const course2 = await prisma.course.upsert({
-    where: { id: 'course-2' },
+    where: { id: '660e8400-e29b-41d4-a716-446655440002' },
     update: {},
     create: {
-      id: 'course-2',
+      id: '660e8400-e29b-41d4-a716-446655440002',
       title: 'علوم الحديث النبوي',
       description: 'دورة متخصصة في علوم الحديث الشريف تشمل مصطلح الحديث ودراسة الأسانيد',
       coverImage: 'https://via.placeholder.com/800x450.png?text=Hadith+Course',
@@ -211,10 +211,10 @@ async function main() {
 
   // Course 3: التفسير
   const course3 = await prisma.course.upsert({
-    where: { id: 'course-3' },
+    where: { id: '660e8400-e29b-41d4-a716-446655440003' },
     update: {},
     create: {
-      id: 'course-3',
+      id: '660e8400-e29b-41d4-a716-446655440003',
       title: 'تفسير القرآن الكريم',
       description: 'دورة في تفسير القرآن الكريم مع التركيز على السور المكية والمدنية',
       coverImage: 'https://via.placeholder.com/800x450.png?text=Tafsir+Course',
@@ -264,10 +264,10 @@ async function main() {
 
   // Course 4: العقيدة
   const course4 = await prisma.course.upsert({
-    where: { id: 'course-4' },
+    where: { id: '660e8400-e29b-41d4-a716-446655440004' },
     update: {},
     create: {
-      id: 'course-4',
+      id: '660e8400-e29b-41d4-a716-446655440004',
       title: 'العقيدة الإسلامية',
       description: 'دورة شاملة في العقيدة الإسلامية تغطي أركان الإيمان والإسلام',
       coverImage: 'https://via.placeholder.com/800x450.png?text=Aqida+Course',
