@@ -3,6 +3,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { 
+  BookIcon, 
+  UsersIcon, 
+  CheckIcon, 
+  TeacherIcon, 
+  GraduateIcon, 
+  FolderIcon, 
+  PlusIcon, 
+  UserIcon,
+  ArrowRightIcon 
+} from '@/components/Icons';
 
 interface Stats {
   courses: number;
@@ -73,193 +84,220 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-primary to-primary-light text-white rounded-lg p-6">
-        <h1 className="text-3xl font-bold mb-2">مرحباً بك في لوحة التحكم</h1>
-        <p className="text-white/90">إدارة شاملة لمنصة زاد الهداية التعليمية</p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6 border-r-4 border-primary">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-600 text-sm mb-1">إجمالي الدورات</p>
-              <p className="text-3xl font-bold text-primary">{stats.courses}</p>
-            </div>
-            <div className="text-4xl">📚</div>
-          </div>
-          <Link href="/admin/courses" className="text-primary text-sm mt-2 inline-block hover:underline">
-            عرض جميع الدورات →
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-r-4 border-green-500">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-600 text-sm mb-1">إجمالي المستخدمين</p>
-              <p className="text-3xl font-bold text-green-600">{stats.users}</p>
-            </div>
-            <div className="text-4xl">👥</div>
-          </div>
-          <Link href="/admin/users" className="text-green-600 text-sm mt-2 inline-block hover:underline">
-            عرض جميع المستخدمين →
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-r-4 border-blue-500">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-600 text-sm mb-1">التسجيلات</p>
-              <p className="text-3xl font-bold text-blue-600">{stats.enrollments}</p>
-            </div>
-            <div className="text-4xl">✅</div>
-          </div>
-          <Link href="/admin/enrollments" className="text-blue-600 text-sm mt-2 inline-block hover:underline">
-            عرض جميع التسجيلات →
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-r-4 border-purple-500">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-600 text-sm mb-1">المدرسين</p>
-              <p className="text-3xl font-bold text-purple-600">{stats.teachers}</p>
-            </div>
-            <div className="text-4xl">👨‍🏫</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-r-4 border-orange-500">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-600 text-sm mb-1">الطلاب</p>
-              <p className="text-3xl font-bold text-orange-600">{stats.students}</p>
-            </div>
-            <div className="text-4xl">🎓</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-r-4 border-indigo-500">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-600 text-sm mb-1">الفئات</p>
-              <p className="text-3xl font-bold text-indigo-600">{stats.categories}</p>
-            </div>
-            <div className="text-4xl">📁</div>
-          </div>
-          <Link href="/admin/categories" className="text-indigo-600 text-sm mt-2 inline-block hover:underline">
-            إدارة الفئات →
-          </Link>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">لوحة التحكم</h1>
+          <p className="text-white/70">إدارة شاملة لمنصة زاد الهداية التعليمية</p>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Courses */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800">أحدث الدورات</h2>
-            <Link href="/admin/courses" className="text-primary text-sm hover:underline">
-              عرض الكل
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Primary Stats - Row 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <Link href="/admin/courses" className="group bg-white rounded-xl p-5 shadow-sm border border-stone-100 hover:shadow-md hover:border-[#c9a227]/30 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-stone-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-stone-200 transition-colors">
+                <BookIcon className="text-stone-600" size={26} />
+              </div>
+              <div className="flex-1">
+                <p className="text-3xl font-bold text-stone-800">{stats.courses}</p>
+                <p className="text-stone-500 text-sm">الدورات</p>
+              </div>
+              <ArrowRightIcon className="text-stone-300 group-hover:text-[#c9a227] transition-colors" size={20} />
+            </div>
+          </Link>
+
+          <Link href="/admin/users" className="group bg-white rounded-xl p-5 shadow-sm border border-stone-100 hover:shadow-md hover:border-[#c9a227]/30 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-stone-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-stone-200 transition-colors">
+                <UsersIcon className="text-stone-600" size={26} />
+              </div>
+              <div className="flex-1">
+                <p className="text-3xl font-bold text-stone-800">{stats.users}</p>
+                <p className="text-stone-500 text-sm">المستخدمين</p>
+              </div>
+              <ArrowRightIcon className="text-stone-300 group-hover:text-[#c9a227] transition-colors" size={20} />
+            </div>
+          </Link>
+
+          <Link href="/admin/enrollments" className="group bg-white rounded-xl p-5 shadow-sm border border-stone-100 hover:shadow-md hover:border-[#c9a227]/30 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-stone-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-stone-200 transition-colors">
+                <CheckIcon className="text-stone-600" size={26} />
+              </div>
+              <div className="flex-1">
+                <p className="text-3xl font-bold text-stone-800">{stats.enrollments}</p>
+                <p className="text-stone-500 text-sm">التسجيلات</p>
+              </div>
+              <ArrowRightIcon className="text-stone-300 group-hover:text-[#c9a227] transition-colors" size={20} />
+            </div>
+          </Link>
+        </div>
+
+        {/* Secondary Stats - Row 2 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center shrink-0">
+                <TeacherIcon className="text-stone-600" size={22} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-stone-800">{stats.teachers}</p>
+                <p className="text-stone-500 text-sm">المدرسين</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center shrink-0">
+                <GraduateIcon className="text-stone-600" size={22} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-stone-800">{stats.students}</p>
+                <p className="text-stone-500 text-sm">الطلاب</p>
+              </div>
+            </div>
+          </div>
+
+          <Link href="/admin/categories" className="group bg-white rounded-xl p-5 shadow-sm border border-stone-100 hover:shadow-md hover:border-[#c9a227]/30 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-stone-200 transition-colors">
+                <FolderIcon className="text-stone-600" size={22} />
+              </div>
+              <div className="flex-1">
+                <p className="text-2xl font-bold text-stone-800">{stats.categories}</p>
+                <p className="text-stone-500 text-sm">الفئات</p>
+              </div>
+              <ArrowRightIcon className="text-stone-300 group-hover:text-[#c9a227] transition-colors" size={18} />
+            </div>
+          </Link>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-6 mb-6">
+          <h2 className="text-lg font-bold text-stone-800 mb-4">إجراءات سريعة</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Link
+              href="/admin/courses/create"
+              className="group flex items-center gap-3 p-4 bg-stone-100 text-stone-700 rounded-xl hover:bg-stone-200 transition-all"
+            >
+              <div className="w-10 h-10 bg-stone-200 rounded-lg flex items-center justify-center group-hover:bg-stone-300 transition-colors">
+                <PlusIcon size={18} />
+              </div>
+              <span className="font-medium">إنشاء دورة جديدة</span>
+            </Link>
+            <Link
+              href="/admin/users?action=create"
+              className="group flex items-center gap-3 p-4 bg-stone-100 text-stone-700 rounded-xl hover:bg-stone-200 transition-all"
+            >
+              <div className="w-10 h-10 bg-stone-200 rounded-lg flex items-center justify-center group-hover:bg-stone-300 transition-colors">
+                <UserIcon size={18} />
+              </div>
+              <span className="font-medium">إضافة مستخدم</span>
+            </Link>
+            <Link
+              href="/admin/categories"
+              className="group flex items-center gap-3 p-4 bg-stone-100 text-stone-700 rounded-xl hover:bg-stone-200 transition-all"
+            >
+              <div className="w-10 h-10 bg-stone-200 rounded-lg flex items-center justify-center group-hover:bg-stone-300 transition-colors">
+                <FolderIcon size={18} />
+              </div>
+              <span className="font-medium">إدارة الفئات</span>
             </Link>
           </div>
-          {recentCourses.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">لا توجد دورات</p>
-          ) : (
-            <div className="space-y-4">
-              {recentCourses.map((course) => (
-                <div key={course.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white font-bold">
-                    {course.title.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800">{course.title}</h3>
-                    <p className="text-sm text-gray-600">{course.category?.title || 'بدون فئة'}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs ${
-                    course.status === 'PUBLISHED' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Recent Users */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800">أحدث المستخدمين</h2>
-            <Link href="/admin/users" className="text-primary text-sm hover:underline">
-              عرض الكل
-            </Link>
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Courses */}
+          <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-stone-800">أحدث الدورات</h2>
+              <Link href="/admin/courses" className="text-[#1a3a2f] text-sm font-medium hover:text-[#c9a227] transition-colors">
+                عرض الكل
+              </Link>
+            </div>
+            {recentCourses.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <BookIcon className="text-stone-400" size={20} />
+                </div>
+                <p className="text-stone-400">لا توجد دورات</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentCourses.map((course) => (
+                  <Link key={course.id} href={`/admin/courses/${course.id}/edit`} className="flex items-center gap-3 p-3 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors">
+                    <div className="w-10 h-10 bg-[#1a3a2f] rounded-lg flex items-center justify-center text-white font-semibold text-sm shrink-0">
+                      {course.title.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-stone-800 truncate text-sm">{course.title}</h3>
+                      <p className="text-xs text-stone-500 truncate">{course.category?.title || 'بدون فئة'}</p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-md text-xs font-medium shrink-0 ${
+                      course.status === 'PUBLISHED' 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-stone-200 text-stone-600'
+                    }`}>
+                      {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-          {recentUsers.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">لا يوجد مستخدمين</p>
-          ) : (
-            <div className="space-y-4">
-              {recentUsers.map((user) => (
-                <div key={user.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold">
-                    {user.name.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800">{user.name}</h3>
-                    <p className="text-sm text-gray-600">{user.email}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs ${
-                    user.role === 'ADMIN' 
-                      ? 'bg-purple-100 text-purple-800'
-                      : user.role === 'TEACHER'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-green-100 text-green-800'
-                  }`}>
-                    {user.role === 'ADMIN' ? 'أدمن' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">إجراءات سريعة</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/admin/courses?action=create"
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition text-center"
-          >
-            <div className="text-3xl mb-2">➕</div>
-            <p className="font-semibold text-gray-800">إنشاء دورة جديدة</p>
-          </Link>
-          <Link
-            href="/admin/users?action=create"
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition text-center"
-          >
-            <div className="text-3xl mb-2">👤</div>
-            <p className="font-semibold text-gray-800">إضافة مستخدم جديد</p>
-          </Link>
-          <Link
-            href="/admin/categories?action=create"
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition text-center"
-          >
-            <div className="text-3xl mb-2">📁</div>
-            <p className="font-semibold text-gray-800">إضافة فئة جديدة</p>
-          </Link>
+          {/* Recent Users */}
+          <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-stone-800">أحدث المستخدمين</h2>
+              <Link href="/admin/users" className="text-[#1a3a2f] text-sm font-medium hover:text-[#c9a227] transition-colors">
+                عرض الكل
+              </Link>
+            </div>
+            {recentUsers.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <UsersIcon className="text-stone-400" size={20} />
+                </div>
+                <p className="text-stone-400">لا يوجد مستخدمين</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentUsers.map((user) => (
+                  <div key={user.id} className="flex items-center gap-3 p-3 bg-stone-50 rounded-lg">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0">
+                      {user.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-stone-800 truncate text-sm">{user.name}</h3>
+                      <p className="text-xs text-stone-500 truncate">{user.email}</p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-md text-xs font-medium shrink-0 ${
+                      user.role === 'ADMIN' 
+                        ? 'bg-violet-100 text-violet-700'
+                        : user.role === 'TEACHER'
+                        ? 'bg-sky-100 text-sky-700'
+                        : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {user.role === 'ADMIN' ? 'مشرف' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

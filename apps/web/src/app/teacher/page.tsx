@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { BookIcon, PlusIcon, GraduateIcon, ExamIcon, HomeworkIcon } from '@/components/Icons';
 
 interface Course {
   id: string;
@@ -92,49 +93,120 @@ export default function TeacherDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
-  return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">لوحة تحكم المدرس</h1>
-          <p className="text-lg text-gray-800">مرحباً، {user?.name}</p>
-        </div>
+  const totalStudents = courses.reduce((sum, course) => sum + course._count.enrollments, 0);
+  const publishedCourses = courses.filter(c => c.status === 'PUBLISHED').length;
 
-        {/* Create Course Button - Centered */}
-        <div className="flex justify-center mb-12">
-          <Link
-            href="/teacher/courses/create"
-            className="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            + إنشاء دورة جديدة
+  return (
+    <div className="bg-stone-50 min-h-screen">
+      {/* Welcome Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">مرحباً، {user?.name}</h1>
+              <p className="text-white/70">إدارة دوراتك ومتابعة تقدم طلابك</p>
+            </div>
+            <Link
+              href="/teacher/courses/create"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#c9a227] text-white rounded-xl font-bold hover:bg-[#b08f20] transition-all shadow-lg hover:shadow-xl"
+            >
+              <PlusIcon size={20} />
+              إنشاء دورة جديدة
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-stone-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-100 rounded-lg flex items-center justify-center">
+                <BookIcon className="text-stone-600" size={20} />
+              </div>
+              <div>
+                <p className="text-2xl md:text-3xl font-bold text-stone-800">{courses.length}</p>
+                <p className="text-xs md:text-sm text-stone-500">إجمالي الدورات</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-stone-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-100 rounded-lg flex items-center justify-center">
+                <BookIcon className="text-stone-600" size={20} />
+              </div>
+              <div>
+                <p className="text-2xl md:text-3xl font-bold text-stone-800">{publishedCourses}</p>
+                <p className="text-xs md:text-sm text-stone-500">دورات منشورة</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-stone-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-100 rounded-lg flex items-center justify-center">
+                <GraduateIcon className="text-stone-600" size={20} />
+              </div>
+              <div>
+                <p className="text-2xl md:text-3xl font-bold text-stone-800">{totalStudents}</p>
+                <p className="text-xs md:text-sm text-stone-500">إجمالي الطلاب</p>
+              </div>
+            </div>
+          </div>
+          <Link href="/teacher/exams" className="group bg-white rounded-xl p-4 md:p-6 shadow-sm border border-stone-100 hover:border-[#c9a227]/30 transition-all">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-100 rounded-lg flex items-center justify-center group-hover:bg-stone-200 transition-colors">
+                <ExamIcon className="text-stone-600" size={20} />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-stone-800">الامتحانات</p>
+                <p className="text-xs md:text-sm text-stone-500">إدارة</p>
+              </div>
+            </div>
           </Link>
         </div>
 
+        {/* Section Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-stone-800">دوراتي</h2>
+          <Link href="/teacher/courses" className="text-[#1a3a2f] text-sm font-medium hover:underline">
+            عرض الكل
+          </Link>
+        </div>
+
+        {/* Courses Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-gray-500 text-lg mb-4">لم تنشئ أي دورة بعد</p>
-              <Link
-                href="/teacher/courses/create"
-                className="inline-block px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition"
-              >
-                إنشاء دورة جديدة
-              </Link>
+            <div className="col-span-full">
+              <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center">
+                <div className="w-16 h-16 bg-[#1a3a2f]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookIcon className="text-[#1a3a2f]" size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-stone-800 mb-2">لم تنشئ أي دورة بعد</h3>
+                <p className="text-stone-500 mb-6">ابدأ بإنشاء دورتك الأولى وشارك علمك مع الطلاب</p>
+                <Link
+                  href="/teacher/courses/create"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#143026] transition"
+                >
+                  <PlusIcon size={18} />
+                  إنشاء دورة جديدة
+                </Link>
+              </div>
             </div>
           ) : (
             courses.map((course) => (
               <Link
                 key={course.id}
                 href={`/teacher/courses/${course.id}`}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition"
+                className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-stone-100"
               >
-                <div className="h-48 bg-gradient-to-br from-primary to-primary-light relative">
+                <div className="h-40 md:h-48 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] relative">
                   {course.coverImage ? (
                     <img
                       src={course.coverImage}
@@ -142,23 +214,32 @@ export default function TeacherDashboard() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+                    <div className="w-full h-full flex items-center justify-center text-white text-3xl font-bold">
                       {course.title.charAt(0)}
                     </div>
                   )}
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2 text-gray-800">{course.title}</h3>
-                  <div className="flex justify-between items-center mt-4">
-                    <span className={`px-3 py-1 rounded-full text-sm ${
+                  {/* Status Badge */}
+                  <div className="absolute top-3 right-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       course.status === 'PUBLISHED' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-emerald-500 text-white' 
+                        : 'bg-stone-600 text-white'
                     }`}>
                       {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
                     </span>
-                    <span className="text-gray-700 font-semibold">
-                      {course._count.enrollments} طالب
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="text-lg font-bold text-stone-800 mb-3 group-hover:text-[#1a3a2f] transition-colors line-clamp-1">
+                    {course.title}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-stone-500">
+                      <GraduateIcon size={16} />
+                      <span className="text-sm">{course._count.enrollments} طالب</span>
+                    </div>
+                    <span className="text-[#1a3a2f] text-sm font-medium group-hover:translate-x-[-4px] transition-transform">
+                      إدارة ←
                     </span>
                   </div>
                 </div>
@@ -166,6 +247,44 @@ export default function TeacherDashboard() {
             ))
           )}
         </div>
+
+        {/* Quick Actions */}
+        {courses.length > 0 && (
+          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Link href="/teacher/exams" className="group bg-white rounded-xl p-4 shadow-sm border border-stone-100 hover:border-[#c9a227]/30 transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center group-hover:bg-stone-200 transition-colors">
+                  <ExamIcon className="text-stone-600" size={18} />
+                </div>
+                <span className="font-medium text-stone-700">الامتحانات</span>
+              </div>
+            </Link>
+            <Link href="/teacher/homework" className="group bg-white rounded-xl p-4 shadow-sm border border-stone-100 hover:border-[#c9a227]/30 transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center group-hover:bg-stone-200 transition-colors">
+                  <HomeworkIcon className="text-stone-600" size={18} />
+                </div>
+                <span className="font-medium text-stone-700">الواجبات</span>
+              </div>
+            </Link>
+            <Link href="/teacher/grades" className="group bg-white rounded-xl p-4 shadow-sm border border-stone-100 hover:border-[#c9a227]/30 transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center group-hover:bg-stone-200 transition-colors">
+                  <GraduateIcon className="text-stone-600" size={18} />
+                </div>
+                <span className="font-medium text-stone-700">التقييمات</span>
+              </div>
+            </Link>
+            <Link href="/teacher/courses/create" className="group bg-white rounded-xl p-4 shadow-sm border border-stone-100 hover:border-[#c9a227]/30 transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center group-hover:bg-stone-200 transition-colors">
+                  <PlusIcon className="text-stone-600" size={18} />
+                </div>
+                <span className="font-medium text-stone-700">دورة جديدة</span>
+              </div>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

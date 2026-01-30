@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { CheckCircleIcon, HomeworkIcon, CalendarIcon, BookIcon } from '@/components/Icons';
 
 interface Homework {
   id: string;
@@ -62,106 +63,128 @@ export default function StudentHomeworkPage() {
     const hasSubmission = homework.submissions && homework.submissions.length > 0;
     const isOverdue = now > due && !hasSubmission;
 
-    if (hasSubmission) return { status: 'submitted', label: 'تم التسليم', color: 'bg-green-100 text-green-800' };
-    if (isOverdue) return { status: 'overdue', label: 'متأخر', color: 'bg-red-100 text-red-800' };
-    return { status: 'pending', label: 'قيد الانتظار', color: 'bg-yellow-100 text-yellow-800' };
+    if (hasSubmission) return { status: 'submitted', label: 'تم التسليم', color: 'bg-emerald-50 text-emerald-700' };
+    if (isOverdue) return { status: 'overdue', label: 'متأخر', color: 'bg-red-50 text-red-700' };
+    return { status: 'pending', label: 'قيد الانتظار', color: 'bg-amber-50 text-amber-700' };
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800">الواجبات</h1>
-
-      {homeworks.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-          <p className="text-xl text-gray-500 mb-6">لا توجد واجبات متاحة</p>
-          <Link
-            href="/courses"
-            className="inline-block px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition btn-large"
-          >
-            تصفح الدورات
-          </Link>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <HomeworkIcon className="text-white" size={20} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">الواجبات</h1>
+              <p className="text-white/70 text-sm">{homeworks.length} واجب</p>
+            </div>
+          </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          {homeworks.map((homework) => {
-            const hwStatus = getHomeworkStatus(homework);
-            const hasSubmission = homework.submissions && homework.submissions.length > 0;
-            const submission = hasSubmission ? homework.submissions[0] : null;
+      </div>
 
-            return (
-              <div key={homework.id} className="bg-white rounded-lg shadow-lg p-6 border-2 border-gray-200">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold mb-2 text-gray-800">{homework.title}</h2>
-                    <p className="text-lg text-gray-700">{homework.course.title}</p>
-                  </div>
-                  <span className={`px-4 py-2 rounded-lg font-semibold text-base ${hwStatus.color}`}>
-                    {hwStatus.label}
-                  </span>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {homeworks.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-12 text-center">
+            <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <HomeworkIcon className="text-stone-600" size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-stone-800 mb-2">لا توجد واجبات متاحة</h3>
+            <p className="text-stone-500 mb-6">سجل في دورات للوصول إلى الواجبات</p>
+            <Link
+              href="/courses"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#143026] transition"
+            >
+              <BookIcon size={18} />
+              تصفح الدورات
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            {homeworks.map((homework) => {
+              const hwStatus = getHomeworkStatus(homework);
+              const hasSubmission = homework.submissions && homework.submissions.length > 0;
+              const submission = hasSubmission ? homework.submissions[0] : null;
 
-                <div className="mb-4">
-                  <p className="text-lg text-gray-700 leading-relaxed">{homework.description}</p>
-                </div>
-
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-800">تاريخ الاستحقاق:</span>
-                    <span className="text-lg text-gray-800">{new Date(homework.dueDate).toLocaleDateString('ar-SA')}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-800">الوقت:</span>
-                    <span className="text-lg text-gray-800">
-                      {new Date(homework.dueDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+              return (
+                <div key={homework.id} className="bg-white rounded-xl shadow-sm border border-stone-100 p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h2 className="text-xl font-bold mb-1 text-stone-800">{homework.title}</h2>
+                      <p className="text-stone-500">{homework.course.title}</p>
+                    </div>
+                    <span className={`px-3 py-1.5 rounded-lg font-medium text-sm ${hwStatus.color}`}>
+                      {hwStatus.label}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-800">الدرجة الكاملة:</span>
-                    <span className="text-lg text-gray-800">{homework.maxScore}</span>
+
+                  <div className="mb-4">
+                    <p className="text-stone-600 leading-relaxed">{homework.description}</p>
                   </div>
-                  {submission && submission.score !== null && (
-                    <div className="flex justify-between items-center pt-3 border-t-2">
-                      <span className="text-xl font-bold">درجتك:</span>
-                      <span className="text-2xl font-bold text-green-600">
-                        {submission.score} / {homework.maxScore}
+
+                  <div className="space-y-2 mb-6 text-sm">
+                    <div className="flex justify-between items-center py-2 border-b border-stone-100">
+                      <span className="text-stone-500 flex items-center gap-2">
+                        <CalendarIcon size={14} /> تاريخ الاستحقاق
+                      </span>
+                      <span className="font-medium text-stone-800">{new Date(homework.dueDate).toLocaleDateString('ar-SA')}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-stone-100">
+                      <span className="text-stone-500">الوقت</span>
+                      <span className="font-medium text-stone-800">
+                        {new Date(homework.dueDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
+                    <div className="flex justify-between items-center py-2 border-b border-stone-100">
+                      <span className="text-stone-500">الدرجة الكاملة</span>
+                      <span className="font-medium text-stone-800">{homework.maxScore}</span>
+                    </div>
+                    {submission && submission.score !== null && (
+                      <div className="flex justify-between items-center pt-3">
+                        <span className="font-bold text-stone-800">درجتك</span>
+                        <span className="text-xl font-bold text-emerald-600">
+                          {submission.score} / {homework.maxScore}
+                        </span>
+                      </div>
+                    )}
+                    {submission && submission.feedback && (
+                      <div className="pt-3">
+                        <p className="font-medium text-stone-700 mb-2">ملاحظات المدرس:</p>
+                        <p className="text-stone-600 bg-stone-50 p-3 rounded-lg">{submission.feedback}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {!hasSubmission && (
+                    <Link
+                      href={`/dashboard/homework/${homework.id}/submit`}
+                      className="block w-full py-3 bg-[#1a3a2f] text-white rounded-lg font-bold text-center hover:bg-[#143026] transition"
+                    >
+                      {hwStatus.status === 'overdue' ? 'تسليم متأخر' : 'تسليم الواجب'}
+                    </Link>
                   )}
-                  {submission && submission.feedback && (
-                    <div className="pt-3 border-t-2">
-                      <p className="text-lg font-semibold mb-2">ملاحظات المدرس:</p>
-                      <p className="text-lg text-gray-700 bg-gray-50 p-3 rounded-lg">{submission.feedback}</p>
+
+                  {hasSubmission && (
+                    <div className="py-3 bg-emerald-50 text-emerald-700 rounded-lg text-center font-medium flex items-center justify-center gap-2">
+                      <CheckCircleIcon size={18} /> تم تسليم الواجب
                     </div>
                   )}
                 </div>
-
-                {!hasSubmission && (
-                  <Link
-                    href={`/dashboard/homework/${homework.id}/submit`}
-                    className="block w-full px-6 py-4 bg-primary text-white rounded-lg font-bold text-lg text-center hover:bg-primary-dark transition btn-large"
-                  >
-                    {hwStatus.status === 'overdue' ? 'تسليم متأخر' : 'تسليم الواجب'}
-                  </Link>
-                )}
-
-                {hasSubmission && (
-                  <div className="px-6 py-4 bg-green-50 text-green-700 rounded-lg text-center font-semibold text-lg">
-                    ✓ تم تسليم الواجب
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

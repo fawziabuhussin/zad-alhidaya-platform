@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { ExamIcon, PlusIcon, EditIcon, TrashIcon, ClockIcon, ChartIcon, UsersIcon } from '@/components/Icons';
 
 interface Exam {
   id: string;
@@ -102,30 +103,63 @@ export default function AdminExamsPage() {
     }
   };
 
+  const totalAttempts = exams.reduce((sum, e) => sum + (e._count?.attempts || 0), 0);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8" style={{ overflow: 'visible', position: 'relative', maxWidth: '100%', width: '100%' }}>
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">إدارة الامتحانات</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition btn-large"
-        >
-          + امتحان جديد
-        </button>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <ExamIcon size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold">إدارة الامتحانات</h1>
+                <p className="text-white/70 text-sm">{exams.length} امتحان</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a227] text-white rounded-xl font-bold hover:bg-[#b08f20] transition-all shadow-lg"
+            >
+              <PlusIcon size={18} />
+              امتحان جديد
+            </button>
+          </div>
+        </div>
       </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-[#1a3a2f]">{exams.length}</p>
+            <p className="text-sm text-stone-500">إجمالي الامتحانات</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-sky-600">{totalAttempts}</p>
+            <p className="text-sm text-stone-500">إجمالي المحاولات</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100 hidden md:block">
+            <p className="text-2xl font-bold text-amber-600">{courses.length}</p>
+            <p className="text-sm text-stone-500">دورات بها امتحانات</p>
+          </div>
+        </div>
+
       {showForm && (
-        <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-primary" style={{ overflow: 'visible', position: 'relative', zIndex: 100 }}>
-          <h2 className="text-2xl font-bold mb-6">إنشاء امتحان جديد</h2>
-          <form onSubmit={handleSubmit} className="space-y-6" style={{ overflow: 'visible', position: 'relative' }}>
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-6 mb-6" style={{ overflow: 'visible', position: 'relative', zIndex: 100 }}>
+          <h2 className="text-xl font-bold text-stone-800 mb-6">إنشاء امتحان جديد</h2>
+          <form onSubmit={handleSubmit} className="space-y-5" style={{ overflow: 'visible', position: 'relative' }}>
             <div className="relative w-full">
               <label className="block text-lg font-semibold mb-3 text-gray-800">الدورة *</label>
               <div className="relative w-full">
@@ -307,75 +341,92 @@ export default function AdminExamsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        {exams.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-xl text-gray-500 mb-6">لا توجد امتحانات</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition btn-large"
-            >
-              إنشاء امتحان جديد
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-primary text-white">
-                <tr>
-                  <th className="px-6 py-4 text-right text-lg font-bold">الامتحان</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">الدورة</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">المدة</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">تاريخ البدء</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">المحاولات</th>
-                  <th className="px-6 py-4 text-right text-lg font-bold">الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {exams.map((exam) => (
-                  <tr key={exam.id} className="hover:bg-gray-50 bg-white">
-                    <td className="px-6 py-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-800">{exam.title}</h3>
-                        {exam.description && (
-                          <p className="text-base text-gray-600 mt-1">{exam.description}</p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-lg text-gray-800 font-semibold">{exam.course?.title || 'غير محدد'}</td>
-                    <td className="px-6 py-4 text-lg text-gray-800 font-semibold">{exam.durationMinutes} دقيقة</td>
-                    <td className="px-6 py-4 text-lg text-gray-800 font-semibold">
-                      {new Date(exam.startDate).toLocaleDateString('ar-SA')} {new Date(exam.startDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="px-6 py-4 text-lg text-gray-800 font-semibold">{exam._count?.attempts || 0}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-3">
-                        <Link
-                          href={`/admin/exams/${exam.id}`}
-                          className="px-5 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-base font-semibold"
-                        >
-                          إدارة الأسئلة
-                        </Link>
-                        <Link
-                          href={`/admin/exams/${exam.id}/attempts`}
-                          className="px-5 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition text-base font-semibold"
-                        >
-                          المحاولات
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(exam.id)}
-                          className="px-5 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition text-base font-semibold"
-                        >
-                          حذف
-                        </button>
-                      </div>
-                    </td>
+        {/* Exams Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+          {exams.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ExamIcon size={32} className="text-stone-400" />
+              </div>
+              <p className="text-stone-500 text-lg mb-4">لا توجد امتحانات</p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#143026] transition"
+              >
+                <PlusIcon size={18} />
+                إنشاء امتحان جديد
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-stone-50 border-b border-stone-200">
+                  <tr>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الامتحان</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الدورة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden lg:table-cell">المدة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden sm:table-cell">تاريخ البدء</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">المحاولات</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {exams.map((exam) => (
+                    <tr key={exam.id} className="hover:bg-stone-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <h3 className="font-semibold text-stone-800">{exam.title}</h3>
+                          {exam.description && (
+                            <p className="text-sm text-stone-500 mt-1 line-clamp-1">{exam.description}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">{exam.course?.title || 'غير محدد'}</td>
+                      <td className="px-6 py-4 hidden lg:table-cell">
+                        <div className="flex items-center gap-1 text-stone-600">
+                          <ClockIcon size={14} />
+                          <span className="text-sm">{exam.durationMinutes} دقيقة</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-stone-600 hidden sm:table-cell">
+                        {new Date(exam.startDate).toLocaleDateString('ar-SA')}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1 text-stone-600">
+                          <UsersIcon size={14} />
+                          <span className="text-sm font-medium">{exam._count?.attempts || 0}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/admin/exams/${exam.id}`}
+                            className="px-3 py-1.5 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
+                          >
+                            الأسئلة
+                          </Link>
+                          <Link
+                            href={`/admin/exams/${exam.id}/attempts`}
+                            className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition text-sm font-medium"
+                          >
+                            المحاولات
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(exam.id)}
+                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                            title="حذف"
+                          >
+                            <TrashIcon size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

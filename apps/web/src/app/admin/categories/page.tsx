@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { FolderIcon, PlusIcon, EditIcon, TrashIcon, BookIcon } from '@/components/Icons';
 
 interface Category {
   id: string;
@@ -71,137 +72,184 @@ export default function AdminCategoriesPage() {
     }
   };
 
+  const totalCourses = categories.reduce((sum, c) => sum + (c._count?.courses || 0), 0);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">إدارة الفئات</h1>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setEditingCategory(null);
-            setFormData({ title: '', description: '', order: 0 });
-          }}
-          className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition"
-        >
-          + فئة جديدة
-        </button>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <FolderIcon size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold">إدارة الفئات</h1>
+                <p className="text-white/70 text-sm">{categories.length} فئة</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setShowForm(true);
+                setEditingCategory(null);
+                setFormData({ title: '', description: '', order: 0 });
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a227] text-white rounded-xl font-bold hover:bg-[#b08f20] transition-all shadow-lg"
+            >
+              <PlusIcon size={18} />
+              فئة جديدة
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Form */}
-      {showForm && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">{editingCategory ? 'تعديل الفئة' : 'إضافة فئة جديدة'}</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-800">العنوان</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary text-gray-800 bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-800">الوصف</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary text-gray-800 bg-white"
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-800">الترتيب</label>
-              <input
-                type="number"
-                value={formData.order}
-                onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary text-gray-800 bg-white"
-              />
-            </div>
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
-              >
-                حفظ
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingCategory(null);
-                }}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-              >
-                إلغاء
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Categories List */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {categories.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">لا توجد فئات</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-[#1a3a2f]">{categories.length}</p>
+            <p className="text-sm text-stone-500">إجمالي الفئات</p>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الفئة</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الترتيب</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">عدد الدورات</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {categories.map((category) => (
-                  <tr key={category.id} className="hover:bg-gray-50 bg-white">
-                    <td className="px-6 py-4">
-                      <div>
-                        <h3 className="font-semibold text-gray-800">{category.title}</h3>
-                        {category.description && (
-                          <p className="text-sm text-gray-600">{category.description}</p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-800">{category.order}</td>
-                    <td className="px-6 py-4 text-gray-800">{category._count?.courses || 0}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(category)}
-                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition text-sm"
-                        >
-                          تعديل
-                        </button>
-                        <button
-                          onClick={() => handleDelete(category.id)}
-                          className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition text-sm"
-                        >
-                          حذف
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-sky-600">{totalCourses}</p>
+            <p className="text-sm text-stone-500">إجمالي الدورات</p>
+          </div>
+        </div>
+
+        {/* Form */}
+        {showForm && (
+          <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-6 mb-6">
+            <h2 className="text-lg font-bold mb-4 text-stone-800">{editingCategory ? 'تعديل الفئة' : 'إضافة فئة جديدة'}</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-stone-700">العنوان</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                  className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-stone-700">الوصف</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white transition-all"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-stone-700">الترتيب</label>
+                <input
+                  type="number"
+                  value={formData.order}
+                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                  className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white transition-all"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-[#1a3a2f] text-white rounded-lg font-medium hover:bg-[#143026] transition"
+                >
+                  حفظ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingCategory(null);
+                  }}
+                  className="px-5 py-2.5 bg-stone-100 text-stone-700 rounded-lg font-medium hover:bg-stone-200 transition"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
           </div>
         )}
+
+        {/* Categories List */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+          {categories.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FolderIcon size={32} className="text-stone-400" />
+              </div>
+              <p className="text-stone-500 text-lg mb-4">لا توجد فئات</p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#143026] transition"
+              >
+                <PlusIcon size={18} />
+                إضافة فئة جديدة
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-stone-50 border-b border-stone-200">
+                  <tr>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الفئة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden sm:table-cell">الترتيب</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">عدد الدورات</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {categories.map((category) => (
+                    <tr key={category.id} className="hover:bg-stone-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <h3 className="font-semibold text-stone-800">{category.title}</h3>
+                          {category.description && (
+                            <p className="text-sm text-stone-500 line-clamp-1">{category.description}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-stone-600 hidden sm:table-cell">{category.order}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1 text-stone-600">
+                          <BookIcon size={14} />
+                          <span className="text-sm font-medium">{category._count?.courses || 0}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEdit(category)}
+                            className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
+                            title="تعديل"
+                          >
+                            <EditIcon size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(category.id)}
+                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                            title="حذف"
+                          >
+                            <TrashIcon size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

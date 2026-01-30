@@ -77,20 +77,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const navItems = [
-    { href: '/admin/courses', label: 'إدارة الدورات', icon: '📚', category: 'content' },
-    { href: '/admin/categories', label: 'الفئات', icon: '📁', category: 'content' },
-    { href: '/admin/users', label: 'إدارة المستخدمين', icon: '👥', category: 'users' },
-    { href: '/admin/teachers/create', label: 'إنشاء مدرس', icon: '👨‍🏫', category: 'users' },
-    { href: '/admin/enrollments', label: 'التسجيلات', icon: '✅', category: 'users' },
-    { href: '/admin/exams', label: 'الامتحانات', icon: '📝', category: 'assessments' },
-    { href: '/admin/homework', label: 'الواجبات', icon: '📋', category: 'assessments' },
-    { href: '/admin/grades', label: 'التقييمات', icon: '⭐', category: 'assessments' },
+    { href: '/admin/courses', label: 'إدارة الدورات', category: 'content' },
+    { href: '/admin/categories', label: 'الفئات', category: 'content' },
+    { href: '/admin/users', label: 'إدارة المستخدمين', category: 'users' },
+    { href: '/admin/teachers/create', label: 'إنشاء مدرس', category: 'users' },
+    { href: '/admin/enrollments', label: 'التسجيلات', category: 'users' },
+    { href: '/admin/exams', label: 'الامتحانات', category: 'assessments' },
+    { href: '/admin/homework', label: 'الواجبات', category: 'assessments' },
+    { href: '/admin/grades', label: 'التقييمات', category: 'assessments' },
   ];
 
   const categories = [
-    { id: 'content', label: 'المحتوى', icon: '📚' },
-    { id: 'users', label: 'المستخدمين', icon: '👥' },
-    { id: 'assessments', label: 'التقييمات', icon: '📊' },
+    { id: 'content', label: 'المحتوى' },
+    { id: 'users', label: 'المستخدمين' },
+    { id: 'assessments', label: 'التقييمات' },
   ];
 
   if (loading) {
@@ -102,57 +102,52 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header - Enterprise RTL Design */}
-      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-[#1a3a2f] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-14">
             {/* Right Side: Logo + Navigation (RTL) */}
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-6">
               {/* Logo */}
-              <Link href="/admin" className="flex items-center gap-3 shrink-0">
+              <Link href="/admin" className="flex items-center gap-2 shrink-0">
                 <img 
                   src="/photos/logo.jpg" 
                   alt="زاد الهداية" 
-                  className="h-10 w-auto object-contain"
+                  className="h-9 w-auto object-contain rounded"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
-                <div className="hidden sm:block">
-                  <span className="text-xl font-bold text-gray-900">زاد الهداية</span>
-                  <span className="hidden lg:inline text-xs text-purple-600 font-medium mr-2 px-2 py-0.5 bg-purple-50 rounded-full">مدير</span>
-                </div>
+                <span className="hidden sm:block text-lg font-semibold text-white">زاد الهداية</span>
               </Link>
 
               {/* Desktop Navigation */}
               <nav className="hidden lg:flex items-center gap-1">
-                {/* Dashboard - Direct Link */}
                 <Link
                   href="/admin"
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded text-sm transition-colors ${
                     pathname === '/admin' || pathname === '/admin/'
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-white/15 text-white'
+                      : 'text-stone-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  لوحة التحكم
+                  الرئيسية
                 </Link>
 
-                {/* Category Dropdowns */}
                 {categories.map((category) => {
                   const categoryItems = navItems.filter(item => item.category === category.id);
                   if (categoryItems.length === 0) return null;
                   
                   return (
                     <div key={category.id} className="relative group">
-                      <button className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors">
+                      <button className="flex items-center gap-1 px-3 py-1.5 rounded text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-colors">
                         <span>{category.label}</span>
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </button>
-                      <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                      <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded shadow-lg border border-stone-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
                         <div className="py-1">
                           {categoryItems.map((item) => {
                             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -160,14 +155,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                               <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                                className={`block px-4 py-2 text-sm ${
                                   isActive
-                                    ? 'bg-primary/10 text-primary font-medium'
-                                    : 'text-gray-700 hover:bg-gray-50'
+                                    ? 'bg-stone-100 text-[#1a3a2f] font-medium'
+                                    : 'text-stone-600 hover:bg-stone-50'
                                 }`}
                               >
-                                <span className="text-lg">{item.icon}</span>
-                                <span>{item.label}</span>
+                                {item.label}
                               </Link>
                             );
                           })}
@@ -180,55 +174,39 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
 
             {/* Left Side: User Actions (RTL) */}
-            <div className="flex items-center gap-3">
-              {/* Home Link */}
+            <div className="flex items-center gap-2">
               <Link
                 href="/"
-                className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                className="hidden md:block px-2 py-1.5 text-sm text-stone-300 hover:text-white transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                <span>الموقع</span>
+                الموقع
               </Link>
 
-              {/* Divider */}
-              <div className="hidden md:block h-6 w-px bg-gray-200"></div>
+              <div className="hidden md:block h-4 w-px bg-white/20"></div>
 
-              {/* User Profile */}
-              <div className="hidden md:flex items-center gap-3">
-                <button
-                  onClick={handleProfileClick}
-                  className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-gray-900">{user?.name || 'المدير'}</p>
-                    <p className="text-xs text-gray-500">{user?.email || ''}</p>
-                  </div>
-                  <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                    {user?.name?.charAt(0) || 'A'}
-                  </div>
-                </button>
-              </div>
-
-              {/* Logout Button */}
               <button
-                onClick={handleLogout}
-                className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                onClick={handleProfileClick}
+                className="hidden md:flex items-center gap-2 px-2 py-1 rounded hover:bg-white/10 transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span>خروج</span>
+                <span className="text-sm text-white">{user?.name || 'المدير'}</span>
+                <div className="w-7 h-7 bg-[#c9a227] rounded-full flex items-center justify-center text-white text-xs font-medium">
+                  {user?.name?.charAt(0) || 'A'}
+                </div>
               </button>
 
-              {/* Mobile Menu Button */}
+              <button
+                onClick={handleLogout}
+                className="hidden md:block px-2 py-1.5 text-sm text-stone-400 hover:text-red-400 transition-colors"
+              >
+                خروج
+              </button>
+
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="lg:hidden p-1.5 text-stone-300 hover:text-white rounded"
                 aria-label="القائمة"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {menuOpen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
@@ -242,30 +220,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="lg:hidden border-t border-gray-200 bg-white">
-            <nav className="px-4 py-3 space-y-1 max-h-[75vh] overflow-y-auto">
-              {/* Dashboard - Direct Link */}
+          <div className="lg:hidden border-t border-white/10 bg-[#1a3a2f]">
+            <nav className="px-4 py-3 space-y-1">
               <Link
                 href="/admin"
                 onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`block px-3 py-2 rounded text-sm ${
                   pathname === '/admin' || pathname === '/admin/'
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-white/15 text-white'
+                    : 'text-stone-300 hover:bg-white/10'
                 }`}
               >
-                <span className="text-lg">📊</span>
-                <span>لوحة التحكم</span>
+                الرئيسية
               </Link>
 
-              {/* Category Sections */}
               {categories.map((category) => {
                 const categoryItems = navItems.filter(item => item.category === category.id);
                 if (categoryItems.length === 0) return null;
                 
                 return (
-                  <div key={category.id} className="mb-3">
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <div key={category.id}>
+                    <div className="px-3 py-1.5 text-xs font-medium text-[#c9a227]">
                       {category.label}
                     </div>
                     {categoryItems.map((item) => {
@@ -275,14 +250,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                           key={item.href}
                           href={item.href}
                           onClick={() => setMenuOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          className={`block px-3 py-2 rounded text-sm mr-2 ${
                             isActive
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-gray-700 hover:bg-gray-50'
+                              ? 'bg-white/15 text-white'
+                              : 'text-stone-300 hover:bg-white/10'
                           }`}
                         >
-                          <span className="text-lg">{item.icon}</span>
-                          <span>{item.label}</span>
+                          {item.label}
                         </Link>
                       );
                     })}
@@ -290,35 +264,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 );
               })}
               
-              {/* Mobile User Section */}
-              <div className="border-t border-gray-200 pt-3 mt-3">
-                <div className="flex items-center gap-3 px-3 py-2 mb-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+              <div className="border-t border-white/10 pt-3 mt-3">
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <div className="w-8 h-8 bg-[#c9a227] rounded-full flex items-center justify-center text-white text-sm font-medium">
                     {user?.name?.charAt(0) || 'A'}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{user?.name || 'المدير'}</p>
-                    <p className="text-xs text-gray-500">{user?.email || ''}</p>
+                    <p className="text-sm text-white">{user?.name || 'المدير'}</p>
+                    <p className="text-xs text-stone-400">{user?.email || ''}</p>
                   </div>
                 </div>
                 <Link
                   href="/"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="block px-3 py-2 text-sm text-stone-300 hover:bg-white/10 rounded"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  <span>الموقع الرئيسي</span>
+                  الموقع الرئيسي
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                  className="w-full text-right px-3 py-2 text-sm text-red-400 hover:bg-white/10 rounded"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  <span>تسجيل الخروج</span>
+                  تسجيل الخروج
                 </button>
               </div>
             </nav>
@@ -334,22 +301,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t mt-auto py-6 px-6">
+      <footer className="bg-[#1a3a2f] mt-auto py-8 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-center md:text-right text-gray-600 text-sm">
-              <p className="text-gray-800 font-semibold">© 2025 زاد الهداية - جميع الحقوق محفوظة</p>
-              <p className="mt-2 text-xs text-gray-600">منصة تعليمية إلكترونية للعلوم الشرعية</p>
+            <div className="text-center md:text-right">
+              <p className="text-white font-semibold">زاد الهداية</p>
+              <p className="mt-1 text-sm text-stone-400">منصة تعليمية للعلوم الشرعية</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <a
                 href="https://www.facebook.com/NadyHedaya1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition"
+                className="w-9 h-9 bg-white/10 text-white rounded-full flex items-center justify-center hover:bg-white/20 transition"
                 aria-label="Facebook"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
               </a>
@@ -357,13 +324,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 href="https://www.instagram.com/nadyhedaya/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center hover:from-purple-600 hover:to-pink-600 transition"
+                className="w-9 h-9 bg-white/10 text-white rounded-full flex items-center justify-center hover:bg-white/20 transition"
                 aria-label="Instagram"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                 </svg>
               </a>
+              <span className="text-xs text-stone-500 mr-4">© 2025</span>
             </div>
           </div>
         </div>

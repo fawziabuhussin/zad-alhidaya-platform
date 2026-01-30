@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { LinkIcon } from '@/components/Icons';
 
 interface Submission {
   id: string;
@@ -153,7 +154,7 @@ export default function HomeworkSubmissionsPage() {
                           rel="noopener noreferrer"
                           className="text-primary hover:underline font-semibold"
                         >
-                          📎 فتح الملف المرفق
+                          <LinkIcon size={16} className="inline ml-1" /> فتح الملف المرفق
                         </a>
                       </div>
                     )}

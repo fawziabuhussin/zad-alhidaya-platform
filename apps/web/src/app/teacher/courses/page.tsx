@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { BookIcon, PlusIcon, SearchIcon, GraduateIcon } from '@/components/Icons';
 
 interface Course {
   id: string;
@@ -98,93 +99,160 @@ export default function TeacherCoursesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
+  const publishedCount = courses.filter(c => c.status === 'PUBLISHED').length;
+  const totalStudents = courses.reduce((sum, c) => sum + c._count.enrollments, 0);
+
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">دوراتي</h1>
-        <Link
-          href="/teacher/courses/create"
-          className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition"
-        >
-          + دورة جديدة
-        </Link>
-      </div>
-
-      {/* Search */}
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <input
-          type="text"
-          placeholder="ابحث عن دورة..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-gray-800 bg-white"
-        />
-      </div>
-
-      {/* Courses Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCourses.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">
-              {search ? 'لا توجد دورات تطابق البحث' : 'لم تنشئ أي دورة بعد'}
-            </p>
-            {!search && (
-              <Link
-                href="/teacher/courses/create"
-                className="inline-block px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition"
-              >
-                إنشاء دورة جديدة
-              </Link>
-            )}
-          </div>
-        ) : (
-          filteredCourses.map((course) => (
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <BookIcon className="text-white" size={20} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">دوراتي</h1>
+                <p className="text-white/70 text-sm">{courses.length} دورة</p>
+              </div>
+            </div>
             <Link
-              key={course.id}
-              href={`/teacher/courses/${course.id}/edit`}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition"
+              href="/teacher/courses/create"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a227] text-white rounded-lg font-bold hover:bg-[#b08f20] transition"
             >
-              <div className="h-48 bg-gradient-to-br from-primary to-primary-light relative">
-                {course.coverImage ? (
-                  <img
-                    src={course.coverImage}
-                    alt={course.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
-                    {course.title.charAt(0)}
-                  </div>
-                )}
-                <div className="absolute top-2 right-2">
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                    course.status === 'PUBLISHED' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
-                  </span>
-                </div>
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2 text-gray-800">{course.title}</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{course.description}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">{course.category.title}</span>
-                  <span className="text-gray-700 font-semibold">
-                    {course._count.enrollments} طالب
-                  </span>
-                </div>
-              </div>
+              <PlusIcon size={18} />
+              دورة جديدة
             </Link>
-          ))
-        )}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center">
+                <BookIcon className="text-stone-600" size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-stone-800">{courses.length}</p>
+                <p className="text-xs text-stone-500">إجمالي</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center">
+                <BookIcon className="text-stone-600" size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-stone-800">{publishedCount}</p>
+                <p className="text-xs text-stone-500">منشورة</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center">
+                <GraduateIcon className="text-stone-600" size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-stone-800">{totalStudents}</p>
+                <p className="text-xs text-stone-500">طلاب</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-4 mb-6">
+          <div className="relative">
+            <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+            <input
+              type="text"
+              placeholder="ابحث عن دورة..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pr-10 pl-4 py-2.5 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white"
+            />
+          </div>
+        </div>
+
+        {/* Courses Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCourses.length === 0 ? (
+            <div className="col-span-full">
+              <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-12 text-center">
+                <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookIcon className="text-stone-600" size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-stone-800 mb-2">
+                  {search ? 'لا توجد دورات تطابق البحث' : 'لم تنشئ أي دورة بعد'}
+                </h3>
+                <p className="text-stone-500 mb-6">ابدأ بإنشاء دورتك الأولى</p>
+                {!search && (
+                  <Link
+                    href="/teacher/courses/create"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#143026] transition"
+                  >
+                    <PlusIcon size={18} />
+                    إنشاء دورة جديدة
+                  </Link>
+                )}
+              </div>
+            </div>
+          ) : (
+            filteredCourses.map((course) => (
+              <Link
+                key={course.id}
+                href={`/teacher/courses/${course.id}/edit`}
+                className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-stone-100"
+              >
+                <div className="h-40 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] relative">
+                  {course.coverImage ? (
+                    <img
+                      src={course.coverImage}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+                      {course.title.charAt(0)}
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      course.status === 'PUBLISHED' 
+                        ? 'bg-emerald-500 text-white' 
+                        : 'bg-stone-600 text-white'
+                    }`}>
+                      {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="text-lg font-bold mb-2 text-stone-800 group-hover:text-[#1a3a2f] transition-colors line-clamp-1">{course.title}</h3>
+                  <p className="text-stone-500 text-sm mb-4 line-clamp-2">{course.description}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-stone-500 bg-stone-100 px-2 py-1 rounded">{course.category.title}</span>
+                    <span className="text-stone-600 text-sm flex items-center gap-1">
+                      <GraduateIcon size={14} />
+                      {course._count.enrollments} طالب
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

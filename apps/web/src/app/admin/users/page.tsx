@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
+import { UsersIcon, PlusIcon, EditIcon, TrashIcon, EyeIcon, SearchIcon, FilterIcon } from '@/components/Icons';
 
 // Custom Role Filter Dropdown
 function RoleFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -237,133 +238,186 @@ export default function AdminUsersPage() {
     return matchesSearch && matchesRole;
   });
 
+  const stats = {
+    total: users.length,
+    admins: users.filter(u => u.role === 'ADMIN').length,
+    teachers: users.filter(u => u.role === 'TEACHER').length,
+    students: users.filter(u => u.role === 'STUDENT').length,
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">إدارة المستخدمين</h1>
-        <button
-          onClick={() => {
-            setShowCreateForm(true);
-            router.push('/admin/users?action=create');
-          }}
-          className="px-6 py-3 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition"
-        >
-          + إنشاء مستخدم جديد
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-md p-4 flex gap-4">
-        <input
-          type="text"
-          placeholder="ابحث عن مستخدم..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-gray-800 bg-white"
-        />
-        <RoleFilterDropdown
-          value={roleFilter}
-          onChange={(value) => setRoleFilter(value)}
-        />
-      </div>
-
-      {/* Users Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {filteredUsers.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">لا يوجد مستخدمين</p>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <UsersIcon size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold">إدارة المستخدمين</h1>
+                <p className="text-white/70 text-sm">{stats.total} مستخدم مسجل</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setShowCreateForm(true);
+                router.push('/admin/users?action=create');
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a227] text-white rounded-xl font-bold hover:bg-[#b08f20] transition-all shadow-lg"
+            >
+              <PlusIcon size={18} />
+              إنشاء مستخدم جديد
+            </button>
           </div>
-        ) : (
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-[#1a3a2f]">{stats.total}</p>
+            <p className="text-sm text-stone-500">إجمالي المستخدمين</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-violet-600">{stats.admins}</p>
+            <p className="text-sm text-stone-500">المشرفون</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-sky-600">{stats.teachers}</p>
+            <p className="text-sm text-stone-500">المدرسون</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-100">
+            <p className="text-2xl font-bold text-emerald-600">{stats.students}</p>
+            <p className="text-sm text-stone-500">الطلاب</p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-4 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <SearchIcon size={18} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-400" />
+              <input
+                type="text"
+                placeholder="ابحث عن مستخدم..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pr-10 pl-4 py-2.5 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white transition-all"
+              />
+            </div>
+            <RoleFilterDropdown
+              value={roleFilter}
+              onChange={(value) => setRoleFilter(value)}
+            />
+          </div>
+        </div>
+
+        {/* Users Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UsersIcon size={32} className="text-stone-400" />
+              </div>
+              <p className="text-stone-500 text-lg">لا يوجد مستخدمين</p>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">المستخدم</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الدور</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الإحصائيات</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الإجراءات</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">المستخدم</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الدور</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الحالة</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الإحصائيات</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-stone-100">
                 {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 bg-white">
+                  <tr key={user.id} className="hover:bg-stone-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] rounded-full flex items-center justify-center text-white font-bold text-sm">
                           {user.name.charAt(0)}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-800">{user.name}</h3>
-                          <p className="text-sm text-gray-600">{user.email}</p>
+                          <h3 className="font-semibold text-stone-800">{user.name}</h3>
+                          <p className="text-sm text-stone-500">{user.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs ${
+                      <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                         user.role === 'ADMIN' 
-                          ? 'bg-purple-100 text-purple-800'
+                          ? 'bg-violet-100 text-violet-700'
                           : user.role === 'TEACHER'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
+                          ? 'bg-sky-100 text-sky-700'
+                          : 'bg-emerald-100 text-emerald-700'
                       }`}>
-                        {user.role === 'ADMIN' ? 'أدمن' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
+                        {user.role === 'ADMIN' ? 'مشرف' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs ${
+                      <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                         user.blocked 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-green-100 text-green-800'
+                          ? 'bg-red-100 text-red-700' 
+                          : 'bg-emerald-100 text-emerald-700'
                       }`}>
                         {user.blocked ? 'محظور' : 'نشط'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-800">
+                    <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">
                       {user.role === 'TEACHER' && (
-                        <span>دورات: {user._count?.coursesTaught || 0}</span>
+                        <span className="font-medium">{user._count?.coursesTaught || 0} دورة</span>
                       )}
                       {user.role === 'STUDENT' && (
-                        <span>تسجيلات: {user._count?.enrollments || 0}</span>
+                        <span className="font-medium">{user._count?.enrollments || 0} تسجيل</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex gap-2 flex-wrap">
                         <button
                           onClick={() => handleViewProfile(user)}
-                          className="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition text-sm"
+                          className="p-2 bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition"
+                          title="ملف شخصي"
                         >
-                          ملف شخصي
+                          <EyeIcon size={16} />
                         </button>
                         <button
                           onClick={() => handleEdit(user)}
-                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition text-sm"
+                          className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
+                          title="تعديل"
                         >
-                          تعديل
+                          <EditIcon size={16} />
                         </button>
                         <button
                           onClick={() => handleBlock(user.id, user.blocked)}
-                          className={`px-3 py-1 rounded text-sm transition ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                             user.blocked
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                              : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
                           }`}
                         >
-                          {user.blocked ? 'إلغاء الحظر' : 'حظر'}
+                          {user.blocked ? 'تفعيل' : 'حظر'}
                         </button>
                         <button
                           onClick={() => handleDelete(user.id)}
-                          className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition text-sm"
+                          className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                          title="حذف"
                         >
-                          حذف
+                          <TrashIcon size={16} />
                         </button>
                       </div>
                     </td>
@@ -374,6 +428,7 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+    </div>
 
       {/* Edit User Modal */}
       <Modal
