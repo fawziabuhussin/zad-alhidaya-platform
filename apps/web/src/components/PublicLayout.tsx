@@ -52,150 +52,161 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white shadow-lg sticky top-0 z-50">
+      {/* Header - Enterprise RTL Design */}
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-3">
-              <img 
-                src="/photos/logo.jpg" 
-                alt="زاد الهداية" 
-                className="h-12 md:h-16 w-auto object-contain"
-                onError={(e) => {
-                  // Fallback to text if image fails
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  const parent = (e.target as HTMLElement).parentElement;
-                  if (parent && !parent.querySelector('.fallback-text')) {
-                    const fallback = document.createElement('div');
-                    fallback.className = 'fallback-text text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent';
-                    fallback.textContent = 'زاد الهداية';
-                    parent.appendChild(fallback);
-                  }
-                }}
-              />
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent hidden md:block">
-                زاد الهداية
-              </div>
-            </Link>
+          <div className="flex items-center justify-between h-16">
+            {/* Right Side: Logo + Navigation (RTL) */}
+            <div className="flex items-center gap-8">
+              {/* Logo */}
+              <Link href="/" className="flex items-center gap-3 shrink-0">
+                <img 
+                  src="/photos/logo.jpg" 
+                  alt="زاد الهداية" 
+                  className="h-10 w-auto object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                <span className="hidden sm:block text-xl font-bold text-gray-900">زاد الهداية</span>
+              </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
-              <Link
-                href="/"
-                className={`px-4 py-2 rounded-lg font-semibold text-lg transition ${
-                  pathname === '/'
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                الرئيسية
-              </Link>
-              <Link
-                href="/courses"
-                className={`px-4 py-2 rounded-lg font-semibold text-lg transition ${
-                  pathname === '/courses' || pathname.startsWith('/courses/')
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                الدورات
-              </Link>
-              {user && (
-                <>
-                  <Link
-                    href={
-                      user.role === 'ADMIN' 
-                        ? '/admin' 
-                        : user.role === 'TEACHER' 
-                        ? '/teacher' 
-                        : '/dashboard'
-                    }
-                    className={`px-4 py-2 rounded-lg font-semibold text-lg transition ${
-                      (user.role === 'ADMIN' && pathname.startsWith('/admin')) ||
-                      (user.role === 'TEACHER' && pathname.startsWith('/teacher')) ||
-                      (user.role === 'STUDENT' && pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/exams') && !pathname.startsWith('/dashboard/homework') && !pathname.startsWith('/dashboard/grades'))
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    لوحة التحكم
-                  </Link>
-                  <Link
-                    href="/dashboard/exams"
-                    className={`px-4 py-2 rounded-lg font-semibold text-lg transition ${
-                      pathname.startsWith('/dashboard/exams')
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    الامتحانات
-                  </Link>
-                  <Link
-                    href="/dashboard/homework"
-                    className={`px-4 py-2 rounded-lg font-semibold text-lg transition ${
-                      pathname.startsWith('/dashboard/homework')
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    الواجبات
-                  </Link>
-                  <Link
-                    href="/dashboard/grades"
-                    className={`px-4 py-2 rounded-lg font-semibold text-lg transition ${
-                      pathname.startsWith('/dashboard/grades')
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    التقييمات
-                  </Link>
-                  {user.role === 'ADMIN' && (
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex items-center gap-1">
+                <Link
+                  href="/"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname === '/'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  الرئيسية
+                </Link>
+                <Link
+                  href="/courses"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname === '/courses' || pathname.startsWith('/courses/')
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  الدورات
+                </Link>
+                {user && (
+                  <>
                     <Link
-                      href="/admin"
-                      className="px-4 py-2 rounded-lg font-semibold text-lg transition text-gray-700 hover:bg-gray-100"
+                      href={
+                        user.role === 'ADMIN' 
+                          ? '/admin' 
+                          : user.role === 'TEACHER' 
+                          ? '/teacher' 
+                          : '/dashboard'
+                      }
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        (user.role === 'ADMIN' && pathname.startsWith('/admin')) ||
+                        (user.role === 'TEACHER' && pathname.startsWith('/teacher')) ||
+                        (user.role === 'STUDENT' && pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/exams') && !pathname.startsWith('/dashboard/homework') && !pathname.startsWith('/dashboard/grades'))
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
                     >
-                      لوحة الأدمن
+                      لوحة التحكم
                     </Link>
-                  )}
-                </>
-              )}
-            </nav>
+                    {user.role === 'STUDENT' && (
+                      <>
+                        <Link
+                          href="/dashboard/exams"
+                          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                            pathname.startsWith('/dashboard/exams')
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          الامتحانات
+                        </Link>
+                        <Link
+                          href="/dashboard/homework"
+                          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                            pathname.startsWith('/dashboard/homework')
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          الواجبات
+                        </Link>
+                        <Link
+                          href="/dashboard/grades"
+                          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                            pathname.startsWith('/dashboard/grades')
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          التقييمات
+                        </Link>
+                      </>
+                    )}
+                  </>
+                )}
+              </nav>
+            </div>
 
-            {/* User Menu & Mobile Menu Button */}
-            <div className="flex items-center gap-4">
+            {/* Left Side: User Actions (RTL) */}
+            <div className="flex items-center gap-3">
               {user ? (
                 <>
+                  {/* User Profile */}
                   <div className="hidden md:flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="font-semibold text-lg">{user.name}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold text-xl">
-                      {user.name.charAt(0)}
+                    <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg">
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {user.role === 'ADMIN' ? 'مدير' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
+                        </p>
+                      </div>
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm ${
+                        user.role === 'ADMIN' 
+                          ? 'bg-gradient-to-br from-purple-600 to-purple-500'
+                          : user.role === 'TEACHER'
+                          ? 'bg-gradient-to-br from-blue-600 to-blue-500'
+                          : 'bg-gradient-to-br from-green-600 to-green-500'
+                      }`}>
+                        {user.name?.charAt(0) || 'U'}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Logout Button */}
                   <button
                     onClick={handleLogout}
-                    className="hidden md:block px-6 py-3 bg-red-50 text-red-600 rounded-lg font-semibold text-lg hover:bg-red-100 transition"
+                    className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
                   >
-                    تسجيل الخروج
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>خروج</span>
                   </button>
                 </>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="hidden md:block px-6 py-3 text-gray-700 hover:text-primary transition font-semibold text-lg"
+                    className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
                   >
-                    دخول
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    <span>دخول</span>
                   </Link>
                   <Link
                     href="/register"
-                    className="hidden md:block px-6 py-3 bg-primary text-white rounded-lg font-semibold text-lg hover:bg-primary-dark transition"
+                    className="hidden md:flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
                   >
-                    تسجيل
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    <span>تسجيل</span>
                   </Link>
                 </>
               )}
@@ -203,10 +214,10 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="md:hidden p-3 text-gray-700 hover:bg-gray-100 rounded-lg"
-                aria-label="Menu"
+                className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="القائمة"
               >
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {menuOpen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
@@ -220,30 +231,35 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="md:hidden border-t bg-white">
-            <nav className="px-4 py-4 space-y-2">
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <nav className="px-4 py-3 space-y-1 max-h-[75vh] overflow-y-auto">
               <Link
                 href="/"
                 onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-4 rounded-lg font-semibold text-lg transition ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   pathname === '/'
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                الرئيسية
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span>الرئيسية</span>
               </Link>
               <Link
                 href="/courses"
                 onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-4 rounded-lg font-semibold text-lg transition ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   pathname === '/courses' || pathname.startsWith('/courses/')
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                الدورات
+                <span className="text-lg">📚</span>
+                <span>الدورات</span>
               </Link>
+              
               {user ? (
                 <>
                   <Link
@@ -255,93 +271,112 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                         : '/dashboard'
                     }
                     onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-4 rounded-lg font-semibold text-lg transition ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       (user.role === 'ADMIN' && pathname.startsWith('/admin')) ||
                       (user.role === 'TEACHER' && pathname.startsWith('/teacher')) ||
-                      (user.role === 'STUDENT' && pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/exams') && !pathname.startsWith('/dashboard/homework') && !pathname.startsWith('/dashboard/grades'))
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
+                      (user.role === 'STUDENT' && pathname.startsWith('/dashboard'))
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    لوحة التحكم
+                    <span className="text-lg">📊</span>
+                    <span>لوحة التحكم</span>
                   </Link>
-                  <Link
-                    href="/dashboard/exams"
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-4 rounded-lg font-semibold text-lg transition ${
-                      pathname.startsWith('/dashboard/exams')
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    الامتحانات
-                  </Link>
-                  <Link
-                    href="/dashboard/homework"
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-4 rounded-lg font-semibold text-lg transition ${
-                      pathname.startsWith('/dashboard/homework')
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    الواجبات
-                  </Link>
-                  <Link
-                    href="/dashboard/grades"
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-4 rounded-lg font-semibold text-lg transition ${
-                      pathname.startsWith('/dashboard/grades')
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    التقييمات
-                  </Link>
-                  {user.role === 'ADMIN' && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-4 rounded-lg font-semibold text-lg transition text-gray-700 hover:bg-gray-100"
-                    >
-                      لوحة الأدمن
-                    </Link>
+                  
+                  {user.role === 'STUDENT' && (
+                    <>
+                      <Link
+                        href="/dashboard/exams"
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          pathname.startsWith('/dashboard/exams')
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="text-lg">📝</span>
+                        <span>الامتحانات</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/homework"
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          pathname.startsWith('/dashboard/homework')
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="text-lg">📋</span>
+                        <span>الواجبات</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/grades"
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          pathname.startsWith('/dashboard/grades')
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="text-lg">⭐</span>
+                        <span>التقييمات</span>
+                      </Link>
+                    </>
                   )}
-                  <div className="border-t pt-4 mt-4">
-                    <div className="flex items-center gap-3 px-4 py-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold text-xl">
-                        {user.name.charAt(0)}
+                  
+                  {/* Mobile User Section */}
+                  <div className="border-t border-gray-200 pt-3 mt-3">
+                    <div className="flex items-center gap-3 px-3 py-2 mb-2">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${
+                        user.role === 'ADMIN' 
+                          ? 'bg-gradient-to-br from-purple-600 to-purple-500'
+                          : user.role === 'TEACHER'
+                          ? 'bg-gradient-to-br from-blue-600 to-blue-500'
+                          : 'bg-gradient-to-br from-green-600 to-green-500'
+                      }`}>
+                        {user.name?.charAt(0) || 'U'}
                       </div>
                       <div>
-                        <p className="font-semibold text-lg">{user.name}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {user.role === 'ADMIN' ? 'مدير' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
+                        </p>
                       </div>
                     </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>تسجيل الخروج</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-4 bg-red-50 text-red-600 rounded-lg font-semibold text-lg hover:bg-red-100 transition text-right"
-                  >
-                    تسجيل الخروج
-                  </button>
                 </>
               ) : (
-                <>
+                <div className="border-t border-gray-200 pt-3 mt-3">
                   <Link
                     href="/login"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-4 rounded-lg font-semibold text-lg transition text-gray-700 hover:bg-gray-100"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    تسجيل الدخول
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    <span>تسجيل الدخول</span>
                   </Link>
                   <Link
                     href="/register"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-4 rounded-lg font-semibold text-lg transition bg-primary text-white hover:bg-primary-dark"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors mt-1"
                   >
-                    إنشاء حساب
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    <span>إنشاء حساب</span>
                   </Link>
-                </>
+                </div>
               )}
             </nav>
           </div>

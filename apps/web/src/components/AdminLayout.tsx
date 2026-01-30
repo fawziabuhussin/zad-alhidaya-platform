@@ -77,11 +77,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const navItems = [
-    { href: '/admin', label: 'لوحة التحكم', icon: '📊', category: 'main' },
     { href: '/admin/courses', label: 'إدارة الدورات', icon: '📚', category: 'content' },
+    { href: '/admin/categories', label: 'الفئات', icon: '📁', category: 'content' },
     { href: '/admin/users', label: 'إدارة المستخدمين', icon: '👥', category: 'users' },
     { href: '/admin/teachers/create', label: 'إنشاء مدرس', icon: '👨‍🏫', category: 'users' },
-    { href: '/admin/categories', label: 'الفئات', icon: '📁', category: 'content' },
     { href: '/admin/enrollments', label: 'التسجيلات', icon: '✅', category: 'users' },
     { href: '/admin/exams', label: 'الامتحانات', icon: '📝', category: 'assessments' },
     { href: '/admin/homework', label: 'الواجبات', icon: '📋', category: 'assessments' },
@@ -89,7 +88,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   const categories = [
-    { id: 'main', label: 'الرئيسية', icon: '🏠' },
     { id: 'content', label: 'المحتوى', icon: '📚' },
     { id: 'users', label: 'المستخدمين', icon: '👥' },
     { id: 'assessments', label: 'التقييمات', icon: '📊' },
@@ -105,117 +103,130 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white shadow-lg sticky top-0 z-50 border-b-2 border-primary">
+      {/* Header - Enterprise RTL Design */}
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-3">
-              <img 
-                src="/photos/logo.jpg" 
-                alt="زاد الهداية" 
-                className="h-12 md:h-16 w-auto object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent hidden md:block">
-                زاد الهداية
-              </div>
-            </Link>
+          <div className="flex items-center justify-between h-16">
+            {/* Right Side: Logo + Navigation (RTL) */}
+            <div className="flex items-center gap-8">
+              {/* Logo */}
+              <Link href="/admin" className="flex items-center gap-3 shrink-0">
+                <img 
+                  src="/photos/logo.jpg" 
+                  alt="زاد الهداية" 
+                  className="h-10 w-auto object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                <div className="hidden sm:block">
+                  <span className="text-xl font-bold text-gray-900">زاد الهداية</span>
+                  <span className="hidden lg:inline text-xs text-purple-600 font-medium mr-2 px-2 py-0.5 bg-purple-50 rounded-full">مدير</span>
+                </div>
+              </Link>
 
-            {/* Desktop Navigation - Organized by Categories */}
-            <nav className="hidden lg:flex items-center gap-2">
-              {categories.map((category) => {
-                const categoryItems = navItems.filter(item => item.category === category.id);
-                if (categoryItems.length === 0) return null;
-                
-                return (
-                  <div key={category.id} className="relative group">
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-base transition text-gray-700 hover:bg-gray-100">
-                      <span>{category.icon}</span>
-                      <span>{category.label}</span>
-                      <span className="text-xs">▼</span>
-                    </button>
-                    <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border-2 border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      <div className="py-2">
-                        {categoryItems.map((item) => {
-                          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                          return (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              className={`flex items-center gap-3 px-4 py-3 transition ${
-                                isActive
-                                  ? 'bg-primary text-white'
-                                  : 'text-gray-700 hover:bg-gray-100'
-                              }`}
-                            >
-                              <span className="text-xl">{item.icon}</span>
-                              <span className="font-semibold">{item.label}</span>
-                            </Link>
-                          );
-                        })}
+              {/* Desktop Navigation */}
+              <nav className="hidden lg:flex items-center gap-1">
+                {/* Dashboard - Direct Link */}
+                <Link
+                  href="/admin"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname === '/admin' || pathname === '/admin/'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  لوحة التحكم
+                </Link>
+
+                {/* Category Dropdowns */}
+                {categories.map((category) => {
+                  const categoryItems = navItems.filter(item => item.category === category.id);
+                  if (categoryItems.length === 0) return null;
+                  
+                  return (
+                    <div key={category.id} className="relative group">
+                      <button className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors">
+                        <span>{category.label}</span>
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                        <div className="py-1">
+                          {categoryItems.map((item) => {
+                            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                            return (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                                  isActive
+                                    ? 'bg-primary/10 text-primary font-medium'
+                                    : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                              >
+                                <span className="text-lg">{item.icon}</span>
+                                <span>{item.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </nav>
+                  );
+                })}
+              </nav>
+            </div>
 
-            {/* Mobile/Tablet Navigation - Simple List */}
-            <nav className="hidden md:flex lg:hidden items-center gap-2">
-              {navItems.slice(0, 5).map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-1 px-3 py-2 rounded-lg font-semibold text-sm transition ${
-                      isActive
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                    title={item.label}
-                  >
-                    <span>{item.icon}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* User Menu & Mobile Menu Button */}
+            {/* Left Side: User Actions (RTL) */}
             <div className="flex items-center gap-3">
-              <div className="hidden md:flex items-center gap-3">
-                <div className="text-right">
-                  <p className="font-semibold text-base text-gray-800">{user?.name || 'Admin'}</p>
-                  <p className="text-xs text-gray-600">{user?.email || ''}</p>
-                </div>
-                <button
-                  onClick={handleProfileClick}
-                  className="w-10 h-10 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold hover:opacity-80 transition cursor-pointer"
-                >
-                  {user?.name?.charAt(0) || 'A'}
-                </button>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="hidden md:block px-4 py-2 bg-red-50 text-red-600 rounded-lg font-semibold text-sm hover:bg-red-100 transition"
-              >
-                خروج
-              </button>
+              {/* Home Link */}
               <Link
                 href="/"
-                className="hidden md:block px-4 py-2 text-gray-600 hover:text-primary transition font-semibold text-sm"
+                className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
               >
-                الرئيسية
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span>الموقع</span>
               </Link>
+
+              {/* Divider */}
+              <div className="hidden md:block h-6 w-px bg-gray-200"></div>
+
+              {/* User Profile */}
+              <div className="hidden md:flex items-center gap-3">
+                <button
+                  onClick={handleProfileClick}
+                  className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900">{user?.name || 'المدير'}</p>
+                    <p className="text-xs text-gray-500">{user?.email || ''}</p>
+                  </div>
+                  <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                    {user?.name?.charAt(0) || 'A'}
+                  </div>
+                </button>
+              </div>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>خروج</span>
+              </button>
 
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                aria-label="Menu"
+                className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="القائمة"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {menuOpen ? (
@@ -231,17 +242,31 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="md:hidden border-t bg-white shadow-lg">
-            <nav className="px-4 py-4 space-y-1 max-h-[80vh] overflow-y-auto">
+          <div className="lg:hidden border-t border-gray-200 bg-white">
+            <nav className="px-4 py-3 space-y-1 max-h-[75vh] overflow-y-auto">
+              {/* Dashboard - Direct Link */}
+              <Link
+                href="/admin"
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  pathname === '/admin' || pathname === '/admin/'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-lg">📊</span>
+                <span>لوحة التحكم</span>
+              </Link>
+
+              {/* Category Sections */}
               {categories.map((category) => {
                 const categoryItems = navItems.filter(item => item.category === category.id);
                 if (categoryItems.length === 0) return null;
                 
                 return (
-                  <div key={category.id} className="mb-4">
-                    <div className="flex items-center gap-2 px-4 py-2 mb-2 bg-gray-50 rounded-lg">
-                      <span className="text-lg">{category.icon}</span>
-                      <span className="font-bold text-gray-800">{category.label}</span>
+                  <div key={category.id} className="mb-3">
+                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      {category.label}
                     </div>
                     {categoryItems.map((item) => {
                       const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -250,13 +275,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                           key={item.href}
                           href={item.href}
                           onClick={() => setMenuOpen(false)}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-base transition mr-4 ${
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                             isActive
-                              ? 'bg-primary text-white'
-                              : 'text-gray-700 hover:bg-gray-100'
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-gray-700 hover:bg-gray-50'
                           }`}
                         >
-                          <span className="text-xl">{item.icon}</span>
+                          <span className="text-lg">{item.icon}</span>
                           <span>{item.label}</span>
                         </Link>
                       );
@@ -264,29 +289,37 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </div>
                 );
               })}
-              <div className="border-t pt-4 mt-4">
-                <div className="flex items-center gap-3 px-4 py-3 mb-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold">
+              
+              {/* Mobile User Section */}
+              <div className="border-t border-gray-200 pt-3 mt-3">
+                <div className="flex items-center gap-3 px-3 py-2 mb-2">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
                     {user?.name?.charAt(0) || 'A'}
                   </div>
                   <div>
-                    <p className="font-semibold text-base text-gray-800">{user?.name || 'Admin'}</p>
-                    <p className="text-xs text-gray-600">{user?.email || ''}</p>
+                    <p className="text-sm font-medium text-gray-900">{user?.name || 'المدير'}</p>
+                    <p className="text-xs text-gray-500">{user?.email || ''}</p>
                   </div>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full px-4 py-3 bg-red-50 text-red-600 rounded-lg font-semibold text-base hover:bg-red-100 transition text-right"
-                >
-                  تسجيل الخروج
-                </button>
                 <Link
                   href="/"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-base transition text-gray-700 hover:bg-gray-100 mt-2"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  الموقع الرئيسي
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  <span>الموقع الرئيسي</span>
                 </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>تسجيل الخروج</span>
+                </button>
               </div>
             </nav>
           </div>
