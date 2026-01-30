@@ -60,6 +60,14 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
             },
           },
         },
+        resources: {
+          orderBy: { order: 'asc' },
+          include: {
+            createdBy: {
+              select: { id: true, name: true },
+            },
+          },
+        },
       },
     });
 

@@ -19,6 +19,7 @@ import examsRoutes from './routes/exams';
 import homeworkRoutes from './routes/homework';
 import gradesRoutes from './routes/grades';
 import playlistsRoutes from './routes/playlists';
+import resourcesRoutes from './routes/resources';
 
 dotenv.config();
 
@@ -116,6 +117,12 @@ app.use('/api/grades', gradesRoutes);
 app.use('/grades', gradesRoutes);
 app.use('/api/playlists', playlistsRoutes);
 app.use('/playlists', playlistsRoutes);
+
+// Resource routes (nested under courses and lessons)
+app.use('/api/courses/:courseId/resources', resourcesRoutes);
+app.use('/courses/:courseId/resources', resourcesRoutes);
+app.use('/api/lessons/:lessonId/resources', resourcesRoutes);
+app.use('/lessons/:lessonId/resources', resourcesRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
