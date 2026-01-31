@@ -21,11 +21,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [profileData, setProfileData] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [newReportsCount, setNewReportsCount] = useState(0);
+  const [newQuestionsCount, setNewQuestionsCount] = useState(0);
 
-  const loadReportsCount = useCallback(async () => {
+  const loadNotificationCounts = useCallback(async () => {
     try {
-      const res = await api.get('/reports/count/new');
-      setNewReportsCount(res.data?.count || 0);
+      const [reportsRes, questionsRes] = await Promise.all([
+        api.get('/reports/count/new').catch(() => ({ data: { count: 0 } })),
+        api.get('/questions/new-count').catch(() => ({ data: { count: 0 } })),
+      ]);
+      setNewReportsCount(reportsRes.data?.count || 0);
+      setNewQuestionsCount(questionsRes.data?.count || 0);
     } catch (error) {
       // Silently fail
     }
@@ -35,14 +40,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     checkAuth();
   }, []);
 
-  // Poll for new reports count
+  // Poll for new reports and questions count
   useEffect(() => {
     if (user) {
-      loadReportsCount();
-      const interval = setInterval(loadReportsCount, 15000); // Every 15 seconds
+      loadNotificationCounts();
+      const interval = setInterval(loadNotificationCounts, 60000); // Every 1 minute
       return () => clearInterval(interval);
     }
-  }, [user, loadReportsCount]);
+  }, [user, loadNotificationCounts]);
 
   const checkAuth = async () => {
     try {
@@ -207,6 +212,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     </span>
                   )}
                 </Link>
+
+                {/* Questions Link - Direct with Badge */}
+                <Link
+                  href="/admin/questions"
+                  className={`px-3 py-1.5 rounded text-sm transition-colors flex items-center gap-2 ${
+                    pathname === '/admin/questions' || pathname.startsWith('/admin/questions/')
+                      ? 'bg-white/15 text-white'
+                      : 'text-stone-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <span>الأسئلة</span>
+                  {newQuestionsCount > 0 && (
+                    <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse min-w-[20px] text-center">
+                      {newQuestionsCount > 99 ? '99+' : newQuestionsCount}
+                    </span>
+                  )}
+                </Link>
               </nav>
             </div>
 
@@ -315,6 +337,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 {newReportsCount > 0 && (
                   <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
                     {newReportsCount > 99 ? '99+' : newReportsCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Questions Link - Direct with Badge */}
+              <Link
+                href="/admin/questions"
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center justify-between px-3 py-2 rounded text-sm ${
+                  pathname === '/admin/questions' || pathname.startsWith('/admin/questions/')
+                    ? 'bg-white/15 text-white'
+                    : 'text-stone-300 hover:bg-white/10'
+                }`}
+              >
+                <span>الأسئلة</span>
+                {newQuestionsCount > 0 && (
+                  <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+                    {newQuestionsCount > 99 ? '99+' : newQuestionsCount}
                   </span>
                 )}
               </Link>

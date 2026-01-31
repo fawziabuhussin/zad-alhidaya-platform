@@ -8,6 +8,19 @@ import { CheckCircleIcon } from '@/components/Icons';
 import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
 import ReportErrorButton from '@/components/ReportErrorButton';
+import AskQuestionButton from '@/components/AskQuestionButton';
+
+// Helper to get user from localStorage
+const getCurrentUser = () => {
+  if (typeof window === 'undefined') return null;
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return null;
+  try {
+    return JSON.parse(userStr);
+  } catch {
+    return null;
+  }
+};
 
 interface Lesson {
   id: string;
@@ -38,9 +51,12 @@ export default function LessonPage() {
   const [completed, setCompleted] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isStudent, setIsStudent] = useState(false);
 
   useEffect(() => {
     loadLesson();
+    const user = getCurrentUser();
+    setIsStudent(user?.role === 'STUDENT');
   }, [params.lessonId]);
 
   const loadLesson = async () => {
@@ -183,16 +199,28 @@ export default function LessonPage() {
               </button>
             </div>
             
-            {/* Report Error Button - Left Side (RTL) */}
+            {/* Report Error & Ask Question Buttons - Left Side (RTL) */}
             {lesson.module?.course && (
-              <ReportErrorButton
-                courseId={lesson.module.course.id}
-                courseName={lesson.module.course.title}
-                lessonId={lesson.id}
-                lessonTitle={lesson.title}
-                lessonOrder={lesson.order || 1}
-                moduleOrder={lesson.module.order || 1}
-              />
+              <div className="flex gap-2">
+                {isStudent && (
+                  <AskQuestionButton
+                    courseId={lesson.module.course.id}
+                    courseName={lesson.module.course.title}
+                    lessonId={lesson.id}
+                    lessonTitle={lesson.title}
+                    lessonOrder={lesson.order || 1}
+                    moduleOrder={lesson.module.order || 1}
+                  />
+                )}
+                <ReportErrorButton
+                  courseId={lesson.module.course.id}
+                  courseName={lesson.module.course.title}
+                  lessonId={lesson.id}
+                  lessonTitle={lesson.title}
+                  lessonOrder={lesson.order || 1}
+                  moduleOrder={lesson.module.order || 1}
+                />
+              </div>
             )}
           </div>
         </div>
