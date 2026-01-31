@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { CheckCircleIcon } from '@/components/Icons';
+import { CheckCircleIcon, BookIcon, UserIcon, ClockIcon, AlertIcon } from '@/components/Icons';
 import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
 import ExpandableLessonCard from '@/components/ExpandableLessonCard';
@@ -77,17 +77,13 @@ export default function CourseDetailsPage() {
       setCourse(response.data);
       setIsEnrolled(response.data.enrollments && response.data.enrollments.length > 0);
       
-      // Load progress if enrolled
       if (response.data.enrollments && response.data.enrollments.length > 0 && token) {
         try {
           const progressRes = await api.get(`/progress/courses/${params.id}`);
           setProgress(progressRes.data);
-          
-          // Set completed lesson IDs from API response
           const completedIds = new Set<string>(progressRes.data.completedLessonIds || []);
           setCompletedLessonIds(completedIds);
         } catch (e) {
-          // Progress not available, calculate from lessons
           const totalLessons = response.data.modules?.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0) || 0;
           setProgress({ percentage: 0, completedLessons: 0, totalLessons });
           setCompletedLessonIds(new Set());
@@ -124,18 +120,18 @@ export default function CourseDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-500 text-lg mb-4">الدورة غير موجودة</p>
-          <Link href="/courses" className="text-primary hover:underline">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="bg-white rounded-xl border border-stone-200 p-8 text-center">
+          <p className="text-stone-600 mb-4">الدورة غير موجودة</p>
+          <Link href="/courses" className="text-[#1a3a2f] hover:underline">
             العودة إلى قائمة الدورات
           </Link>
         </div>
@@ -144,101 +140,100 @@ export default function CourseDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Course Header */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-          <div className="h-64 bg-gradient-to-br from-primary to-primary-light relative">
-            {course.coverImage ? (
-              <img
-                src={course.coverImage}
-                alt={course.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold">
-                {course.title.charAt(0)}
+    <div className="min-h-screen bg-stone-50">
+      {/* Course Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-3 py-1 bg-white/10 rounded-lg text-sm">
+                  {course.category.title}
+                </span>
+                <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                  course.price === 0 || !course.price 
+                    ? 'bg-emerald-500/20 text-emerald-200' 
+                    : 'bg-white/10'
+                }`}>
+                  {course.price === 0 || !course.price ? 'مجاني' : `${course.price} ر.س`}
+                </span>
               </div>
-            )}
-          </div>
-          <div className="p-8">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h1 className="text-3xl font-bold mb-2 text-gray-800">{course.title}</h1>
-                <p className="text-gray-700 mb-4">{course.description}</p>
-                <div className="flex gap-4 text-sm text-gray-600">
-                  <span>الفئة: {course.category.title}</span>
-                  <span>المدرس: {course.teacher.name}</span>
-                  <span className="text-primary font-bold">
-                    {course.price === 0 || !course.price ? 'مجاني' : `${course.price} ر.س`}
-                  </span>
-                </div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-3">{course.title}</h1>
+              <p className="text-white/80 mb-4">{course.description}</p>
+              <div className="flex items-center gap-4 text-sm text-white/70">
+                <span className="flex items-center gap-1">
+                  <UserIcon size={14} />
+                  {course.teacher.name}
+                </span>
+                <span className="flex items-center gap-1">
+                  <BookIcon size={14} />
+                  {course.modules.reduce((sum, m) => sum + m.lessons.length, 0)} درس
+                </span>
               </div>
-              {!isEnrolled && (
+            </div>
+            
+            <div className="flex-shrink-0">
+              {!isEnrolled ? (
                 <button
                   onClick={handleEnroll}
                   disabled={enrolling}
-                  className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition disabled:opacity-50"
+                  className="px-6 py-3 bg-white text-[#1a3a2f] rounded-lg font-bold hover:bg-stone-100 transition disabled:opacity-50"
                 >
                   {enrolling ? 'جاري التسجيل...' : 'سجل في الدورة'}
                 </button>
-              )}
-              {isEnrolled && (
-                <span className="px-6 py-3 bg-green-100 text-green-800 rounded-lg font-bold">
+              ) : (
+                <span className="px-6 py-3 bg-emerald-500/20 text-emerald-200 rounded-lg font-bold flex items-center gap-2">
+                  <CheckCircleIcon size={18} />
                   مسجل في الدورة
                 </span>
               )}
             </div>
-            
-            {/* Progress Tracker */}
-            {isEnrolled && progress && (
-              <div className="mt-6 bg-gray-50 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-4">
-                    <h3 className="text-xl font-bold text-gray-800">تقدمك في الدورة</h3>
-                    {progress.percentage === 100 && (
-                      <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-bold text-sm flex items-center gap-1">
-                        <CheckCircleIcon size={16} /> تم إكمال الدورة
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-2xl font-bold text-primary">{progress.percentage}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-6 mb-2">
-                  <div
-                    className={`h-6 rounded-full transition-all duration-300 ${
-                      progress.percentage === 100 ? 'bg-green-500' : 'bg-primary'
-                    }`}
-                    style={{ width: `${progress.percentage}%` }}
-                  ></div>
-                </div>
-                <p className="text-gray-700 text-sm">
-                  {progress.completedLessons} من {progress.totalLessons} درس مكتمل
-                  {progress.percentage === 100 && (
-                    <span className="mr-2 text-green-600 font-bold">• الدورة مكتملة</span>
-                  )}
-                </p>
-              </div>
-            )}
           </div>
         </div>
+      </div>
 
-        {/* Course Resources Section - Only for enrolled users with resources */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Progress Tracker */}
+        {isEnrolled && progress && (
+          <div className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-3">
+                <h3 className="font-bold text-stone-800">تقدمك في الدورة</h3>
+                {progress.percentage === 100 && (
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-sm flex items-center gap-1">
+                    <CheckCircleIcon size={14} /> مكتملة
+                  </span>
+                )}
+              </div>
+              <span className="text-2xl font-bold text-[#1a3a2f]">{progress.percentage}%</span>
+            </div>
+            <div className="w-full bg-stone-100 rounded-full h-3 mb-2">
+              <div
+                className={`h-3 rounded-full transition-all ${
+                  progress.percentage === 100 ? 'bg-emerald-500' : 'bg-[#1a3a2f]'
+                }`}
+                style={{ width: `${progress.percentage}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-stone-600">
+              {progress.completedLessons} من {progress.totalLessons} درس مكتمل
+            </p>
+          </div>
+        )}
+
+        {/* Course Resources */}
         {isEnrolled && course.resources && course.resources.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">مواد الدورة</h2>
-            <ResourceList
-              resources={course.resources}
-              showActions={false}
-            />
+          <div className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+            <h2 className="text-lg font-bold mb-4 text-stone-800">مواد الدورة</h2>
+            <ResourceList resources={course.resources} showActions={false} />
           </div>
         )}
 
         {/* Exams Section */}
         {isEnrolled && course.exams && course.exams.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-            <h2 className="text-2xl font-bold mb-6">الامتحانات</h2>
-            <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+            <h2 className="text-lg font-bold mb-4 text-stone-800">الامتحانات</h2>
+            <div className="space-y-3">
               {course.exams.map((exam) => {
                 const now = new Date();
                 const start = new Date(exam.startDate);
@@ -247,44 +242,41 @@ export default function CourseDetailsPage() {
                 const isUpcoming = now < start;
                 
                 return (
-                  <div key={exam.id} className="border-2 border-gray-200 rounded-lg p-6 hover:border-primary transition bg-white">
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={exam.id} className="border border-stone-200 rounded-lg p-4 hover:border-stone-300 transition">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="text-xl font-bold mb-2 text-gray-800">{exam.title}</h3>
+                        <h3 className="font-bold text-stone-800 mb-1">{exam.title}</h3>
                         {exam.description && (
-                          <p className="text-gray-700 mb-2">{exam.description}</p>
+                          <p className="text-sm text-stone-600 mb-2">{exam.description}</p>
                         )}
-                        <div className="flex gap-4 text-sm text-gray-600">
+                        <div className="flex flex-wrap gap-3 text-xs text-stone-500">
                           <span>الدرجة الكاملة: {exam.maxScore}</span>
                           <span>
-                            من {new Date(exam.startDate).toLocaleDateString('ar-SA')} {new Date(exam.startDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
-                            {' '}إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')} {new Date(exam.endDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                            من {new Date(exam.startDate).toLocaleDateString('ar-SA')} إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')}
                           </span>
                         </div>
                       </div>
-                      <span className={`px-4 py-2 rounded-lg font-semibold ${
-                        isActive ? 'bg-yellow-100 text-yellow-800' :
-                        isUpcoming ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
+                      <span className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                        isActive ? 'bg-amber-50 text-amber-700' :
+                        isUpcoming ? 'bg-stone-100 text-stone-600' :
+                        'bg-stone-100 text-stone-500'
                       }`}>
                         {isActive ? 'متاح الآن' : isUpcoming ? 'قادم' : 'منتهي'}
                       </span>
                     </div>
                     {isActive && (
-                      <>
-                        {progress && progress.percentage === 100 ? (
-                          <Link
-                            href={`/dashboard/exams/${exam.id}/take`}
-                            className="inline-block px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition"
-                          >
-                            بدء الامتحان
-                          </Link>
-                        ) : (
-                          <div className="inline-block px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-bold cursor-not-allowed">
-                            يجب إكمال جميع دروس الدورة أولاً
-                          </div>
-                        )}
-                      </>
+                      progress && progress.percentage === 100 ? (
+                        <Link
+                          href={`/dashboard/exams/${exam.id}/take`}
+                          className="inline-block px-4 py-2 bg-[#1a3a2f] text-white rounded-lg text-sm hover:bg-[#2d5a4a] transition"
+                        >
+                          بدء الامتحان
+                        </Link>
+                      ) : (
+                        <span className="inline-block px-4 py-2 bg-stone-100 text-stone-500 rounded-lg text-sm">
+                          يجب إكمال جميع الدروس أولاً
+                        </span>
+                      )
                     )}
                   </div>
                 );
@@ -295,36 +287,37 @@ export default function CourseDetailsPage() {
 
         {/* Homework Section */}
         {isEnrolled && course.homeworks && course.homeworks.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">الواجبات</h2>
-            <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+            <h2 className="text-lg font-bold mb-4 text-stone-800">الواجبات</h2>
+            <div className="space-y-3">
               {course.homeworks.map((homework) => {
                 const now = new Date();
                 const due = new Date(homework.dueDate);
                 const isOverdue = now > due;
                 
                 return (
-                  <div key={homework.id} className="border-2 border-gray-200 rounded-lg p-6 hover:border-primary transition bg-white">
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={homework.id} className="border border-stone-200 rounded-lg p-4 hover:border-stone-300 transition">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="text-xl font-bold mb-2 text-gray-800">{homework.title}</h3>
-                        <p className="text-gray-700 mb-2">{homework.description}</p>
-                        <div className="flex gap-4 text-sm text-gray-600">
+                        <h3 className="font-bold text-stone-800 mb-1">{homework.title}</h3>
+                        <p className="text-sm text-stone-600 mb-2">{homework.description}</p>
+                        <div className="flex flex-wrap gap-3 text-xs text-stone-500">
                           <span>الدرجة الكاملة: {homework.maxScore}</span>
-                          <span className={isOverdue ? 'text-red-700 font-bold' : 'text-gray-600'}>
+                          <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                            <ClockIcon size={12} className="inline ml-1" />
                             موعد التسليم: {new Date(homework.dueDate).toLocaleDateString('ar-SA')}
                           </span>
                         </div>
                       </div>
                       {isOverdue && (
-                        <span className="px-4 py-2 bg-red-100 text-red-800 rounded-lg font-semibold">
-                          متأخر
+                        <span className="px-3 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-medium flex items-center gap-1">
+                          <AlertIcon size={12} /> متأخر
                         </span>
                       )}
                     </div>
                     <Link
                       href={`/dashboard/homework/${homework.id}/submit`}
-                      className="inline-block px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition"
+                      className="inline-block px-4 py-2 bg-[#1a3a2f] text-white rounded-lg text-sm hover:bg-[#2d5a4a] transition"
                     >
                       {isOverdue ? 'تسليم الواجب (متأخر)' : 'تسليم الواجب'}
                     </Link>
@@ -336,11 +329,11 @@ export default function CourseDetailsPage() {
         )}
 
         {/* Modules and Lessons */}
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold mb-6">محتوى الدورة</h2>
+        <div className="bg-white rounded-xl border border-stone-200 p-6">
+          <h2 className="text-lg font-bold mb-4 text-stone-800">محتوى الدورة</h2>
           {course.modules.map((module) => (
-            <div key={module.id} className="mb-8">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">{module.title}</h3>
+            <div key={module.id} className="mb-6 last:mb-0">
+              <h3 className="font-bold text-stone-700 mb-3">{module.title}</h3>
               <div className="space-y-2">
                 {module.lessons.map((lesson) => {
                   const isCompleted = completedLessonIds.has(lesson.id);
@@ -362,4 +355,3 @@ export default function CourseDetailsPage() {
     </div>
   );
 }
-

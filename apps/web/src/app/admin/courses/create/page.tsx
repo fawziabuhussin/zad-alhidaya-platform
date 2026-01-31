@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { BookIcon, PlusIcon } from '@/components/Icons';
 
 interface Category {
   id: string;
@@ -36,7 +37,6 @@ export default function CreateCoursePage() {
     try {
       const response = await api.get('/categories');
       setCategories(response.data || []);
-      // Auto-select first category if available
       if (response.data && response.data.length > 0 && !formData.categoryId) {
         setFormData(prev => ({ ...prev, categoryId: response.data[0].id }));
       }
@@ -46,11 +46,10 @@ export default function CreateCoursePage() {
   };
 
   const extractPlaylistId = (url: string) => {
-    // Try multiple patterns to extract playlist ID
     const patterns = [
-      /[?&]list=([^#&?]*)/,  // Standard: ?list=... or &list=...
-      /\/playlist\?list=([^#&?]*)/,  // /playlist?list=...
-      /list=([^#&?]*)/,  // Just list=...
+      /[?&]list=([^#&?]*)/,
+      /\/playlist\?list=([^#&?]*)/,
+      /list=([^#&?]*)/,
     ];
     
     for (const pattern of patterns) {
@@ -87,25 +86,6 @@ export default function CreateCoursePage() {
     setLoadingPlaylist(true);
 
     try {
-      // Create course first
-      const courseData: any = {
-        title: formData.title.trim(),
-        description: formData.description.trim() || `دورة من قائمة تشغيل YouTube`,
-        categoryId: formData.categoryId,
-        price: formData.price || 0,
-        status: formData.status,
-      };
-
-      if (formData.coverImage && formData.coverImage.trim()) {
-        try {
-          new URL(formData.coverImage.trim());
-          courseData.coverImage = formData.coverImage.trim();
-        } catch {
-          // Invalid URL, skip it
-        }
-      }
-
-      // Use the playlist API endpoint
       const response = await api.post('/playlists/create-course', {
         playlistUrl: playlistUrl.trim(),
         courseTitle: formData.title.trim(),
@@ -120,7 +100,7 @@ export default function CreateCoursePage() {
       if (videosCount > 0) {
         alert(`تم إنشاء الدورة بنجاح مع ${videosCount} درس من قائمة التشغيل!`);
       } else {
-        alert('تم إنشاء الدورة من قائمة التشغيل. سيتم استخدام قائمة التشغيل المدمجة.');
+        alert('تم إنشاء الدورة من قائمة التشغيل.');
       }
       router.push(`/admin/courses/${response.data.course.id}/edit`);
     } catch (error: any) {
@@ -142,7 +122,6 @@ export default function CreateCoursePage() {
     setErrors({});
 
     try {
-      // Validate
       if (!formData.title.trim()) {
         setErrors({ title: 'العنوان مطلوب' });
         setLoading(false);
@@ -159,7 +138,6 @@ export default function CreateCoursePage() {
         return;
       }
 
-      // Validate categoryId is a valid UUID
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(formData.categoryId)) {
         setErrors({ categoryId: 'يجب اختيار فئة صحيحة' });
         setLoading(false);
@@ -178,9 +156,7 @@ export default function CreateCoursePage() {
         try {
           new URL(formData.coverImage.trim());
           courseData.coverImage = formData.coverImage.trim();
-        } catch {
-          // Invalid URL, skip it
-        }
+        } catch {}
       }
 
       const response = await api.post('/courses', courseData);
@@ -203,284 +179,242 @@ export default function CreateCoursePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 bg-gray-50 min-h-screen">
-      <div className="mb-6">
-        <button
-          onClick={() => router.back()}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition mb-4"
-        >
-          ← العودة
-        </button>
-        <h1 className="text-3xl font-bold text-gray-800">إنشاء دورة جديدة</h1>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <PlusIcon className="text-white" size={20} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">إنشاء دورة جديدة</h1>
+              <p className="text-white/70 text-sm">إضافة دورة للمنصة</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8 space-y-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">إنشاء دورة يدوياً</h2>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+          <h2 className="text-lg font-bold mb-4 text-stone-800">إنشاء دورة يدوياً</h2>
 
-        <div>
-          <label className="block text-lg font-semibold mb-2 text-gray-800">عنوان الدورة *</label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => {
-              setFormData({ ...formData, title: e.target.value });
-              if (errors.title) setErrors({ ...errors, title: '' });
-            }}
-            required
-            className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
-              errors.title ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="مثال: مبادئ الفقه الإسلامي"
-          />
-          {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
-        </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-stone-700">عنوان الدورة</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => {
+                  setFormData({ ...formData, title: e.target.value });
+                  if (errors.title) setErrors({ ...errors, title: '' });
+                }}
+                required
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800 ${
+                  errors.title ? 'border-red-500' : 'border-stone-200'
+                }`}
+                placeholder="مثال: مبادئ الفقه الإسلامي"
+              />
+              {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
+            </div>
 
-        <div>
-          <label className="block text-lg font-semibold mb-2 text-gray-800">وصف الدورة *</label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => {
-              setFormData({ ...formData, description: e.target.value });
-              if (errors.description) setErrors({ ...errors, description: '' });
-            }}
-            required
-            rows={6}
-            className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
-              errors.description ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="اكتب وصفاً شاملاً للدورة..."
-          />
-          {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
-        </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-stone-700">وصف الدورة</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => {
+                  setFormData({ ...formData, description: e.target.value });
+                  if (errors.description) setErrors({ ...errors, description: '' });
+                }}
+                required
+                rows={5}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800 ${
+                  errors.description ? 'border-red-500' : 'border-stone-200'
+                }`}
+                placeholder="اكتب وصفاً شاملاً للدورة..."
+              />
+              {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="relative w-full">
-            <label className="block text-lg font-semibold mb-2 text-gray-800">الفئة *</label>
-            <div className="relative w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative">
+                <label className="block text-sm font-medium mb-2 text-stone-700">الفئة</label>
+                <button
+                  type="button"
+                  onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                  className={`w-full px-4 py-3 border rounded-lg bg-white text-stone-800 text-right flex items-center justify-between ${
+                    errors.categoryId ? 'border-red-500' : 'border-stone-200'
+                  }`}
+                >
+                  <span>
+                    {formData.categoryId 
+                      ? categories.find(c => c.id === formData.categoryId)?.title || 'اختر الفئة'
+                      : 'اختر الفئة'
+                    }
+                  </span>
+                  <svg className={`w-5 h-5 transition-transform ${categoryDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {categoryDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setCategoryDropdownOpen(false)} />
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-stone-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setFormData({ ...formData, categoryId: cat.id });
+                            if (errors.categoryId) setErrors({ ...errors, categoryId: '' });
+                            setCategoryDropdownOpen(false);
+                          }}
+                          className={`w-full text-right px-4 py-3 hover:bg-stone-50 ${
+                            formData.categoryId === cat.id ? 'bg-[#1a3a2f] text-white' : 'text-stone-800'
+                          }`}
+                        >
+                          {cat.title}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-stone-700">السعر (ر.س)</label>
+                <input
+                  type="number"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-stone-700">رابط الصورة (اختياري)</label>
+              <input
+                type="url"
+                value={formData.coverImage}
+                onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+                className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
+                placeholder="https://example.com/image.jpg"
+              />
+              {formData.coverImage && (
+                <div className="mt-3">
+                  <img
+                    src={formData.coverImage}
+                    alt="Preview"
+                    className="w-full max-w-md h-40 object-cover rounded-lg border border-stone-200"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="relative">
+              <label className="block text-sm font-medium mb-2 text-stone-700">الحالة</label>
               <button
                 type="button"
-                onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-                className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary bg-white text-gray-800 font-medium text-right flex items-center justify-between ${
-                  errors.categoryId ? 'border-red-500' : 'border-gray-300'
-                }`}
-                style={{ minHeight: '56px' }}
+                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                className="w-full px-4 py-3 border border-stone-200 rounded-lg bg-white text-stone-800 text-right flex items-center justify-between"
               >
-                <span className="flex-1 text-right">
-                  {formData.categoryId 
-                    ? categories.find(c => c.id === formData.categoryId)?.title || 'اختر الفئة'
-                    : 'اختر الفئة'
-                  }
-                </span>
-                <svg 
-                  className={`w-5 h-5 transition-transform ${categoryDropdownOpen ? 'transform rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
+                <span>{formData.status === 'DRAFT' ? 'مسودة' : 'منشور'}</span>
+                <svg className={`w-5 h-5 transition-transform ${statusDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               
-              {categoryDropdownOpen && (
+              {statusDropdownOpen && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={() => setCategoryDropdownOpen(false)}
-                  />
-                  <div 
-                    className="absolute z-20 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                    style={{ direction: 'rtl' }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, categoryId: '' });
-                        setCategoryDropdownOpen(false);
-                      }}
-                      className={`w-full text-right px-4 py-3 text-lg hover:bg-gray-100 transition ${
-                        formData.categoryId === '' ? 'bg-primary text-white' : 'text-gray-800'
-                      }`}
-                    >
-                      اختر الفئة
-                    </button>
-                    {categories.map((cat) => (
+                  <div className="fixed inset-0 z-10" onClick={() => setStatusDropdownOpen(false)} />
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-stone-200 rounded-lg shadow-lg">
+                    {[
+                      { value: 'DRAFT', label: 'مسودة' },
+                      { value: 'PUBLISHED', label: 'منشور' },
+                    ].map((option) => (
                       <button
-                        key={cat.id}
+                        key={option.value}
                         type="button"
                         onClick={() => {
-                          setFormData({ ...formData, categoryId: cat.id });
-                          if (errors.categoryId) setErrors({ ...errors, categoryId: '' });
-                          setCategoryDropdownOpen(false);
+                          setFormData({ ...formData, status: option.value as any });
+                          setStatusDropdownOpen(false);
                         }}
-                        className={`w-full text-right px-4 py-3 text-lg hover:bg-gray-100 transition border-t border-gray-200 ${
-                          formData.categoryId === cat.id ? 'bg-primary text-white' : 'text-gray-800'
+                        className={`w-full text-right px-4 py-3 hover:bg-stone-50 ${
+                          formData.status === option.value ? 'bg-[#1a3a2f] text-white' : 'text-stone-800'
                         }`}
                       >
-                        {cat.title}
+                        {option.label}
                       </button>
                     ))}
                   </div>
                 </>
               )}
             </div>
-            {errors.categoryId && <p className="text-red-500 text-sm mt-1">{errors.categoryId}</p>}
-            {categories.length === 0 && (
-              <p className="text-yellow-600 text-sm mt-1">جاري تحميل الفئات...</p>
-            )}
           </div>
 
-          <div>
-            <label className="block text-lg font-semibold mb-2 text-gray-800">السعر (ر.س)</label>
-            <input
-              type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-              min="0"
-              step="0.01"
-              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-            />
+          <div className="flex gap-3 mt-6">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-[#1a3a2f] text-white rounded-lg font-medium hover:bg-[#2d5a4a] transition disabled:opacity-50"
+            >
+              {loading ? 'جاري الإنشاء...' : 'إنشاء الدورة'}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-6 py-3 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition"
+            >
+              إلغاء
+            </button>
           </div>
-        </div>
+        </form>
 
-        <div>
-          <label className="block text-lg font-semibold mb-2 text-gray-800">رابط الصورة (اختياري)</label>
-          <input
-            type="url"
-            value={formData.coverImage}
-            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-            className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-            placeholder="https://example.com/image.jpg"
-          />
-          {formData.coverImage && (
-            <div className="mt-4">
-              <img
-                src={formData.coverImage}
-                alt="Preview"
-                className="w-full max-w-md h-48 object-cover rounded-lg border-2 border-gray-300"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
+        {/* Playlist Option */}
+        <div className="bg-white rounded-xl border border-stone-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-stone-800">إنشاء من قائمة تشغيل YouTube</h2>
+            <button
+              onClick={() => setShowPlaylistOption(!showPlaylistOption)}
+              className="px-4 py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition text-sm"
+            >
+              {showPlaylistOption ? 'إخفاء' : 'إظهار'}
+            </button>
+          </div>
+
+          {showPlaylistOption && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-stone-700">رابط قائمة التشغيل</label>
+                <input
+                  type="url"
+                  value={playlistUrl}
+                  onChange={(e) => setPlaylistUrl(e.target.value)}
+                  className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
+                  placeholder="https://www.youtube.com/watch?v=...&list=..."
+                />
+                <p className="text-xs text-stone-500 mt-2">
+                  سيتم إنشاء دورة كاملة من قائمة التشغيل تلقائياً
+                </p>
+              </div>
+              <button
+                onClick={handleCreateFromPlaylist}
+                disabled={loadingPlaylist}
+                className="w-full px-6 py-3 bg-[#1a3a2f] text-white rounded-lg font-medium hover:bg-[#2d5a4a] transition disabled:opacity-50"
+              >
+                {loadingPlaylist ? 'جاري الإنشاء...' : 'إنشاء الدورة من قائمة التشغيل'}
+              </button>
             </div>
           )}
         </div>
-
-        <div className="relative w-full">
-          <label className="block text-lg font-semibold mb-2 text-gray-800">الحالة</label>
-          <div className="relative w-full">
-            <button
-              type="button"
-              onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary bg-white text-gray-800 font-medium text-right flex items-center justify-between"
-              style={{ minHeight: '56px' }}
-            >
-              <span className="flex-1 text-right">
-                {formData.status === 'DRAFT' ? 'مسودة' : 'منشور'}
-              </span>
-              <svg 
-                className={`w-5 h-5 transition-transform ${statusDropdownOpen ? 'transform rotate-180' : ''}`}
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            
-            {statusDropdownOpen && (
-              <>
-                <div 
-                  className="fixed inset-0 z-10" 
-                  onClick={() => setStatusDropdownOpen(false)}
-                />
-                <div 
-                  className="absolute z-20 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg"
-                  style={{ direction: 'rtl' }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, status: 'DRAFT' });
-                      setStatusDropdownOpen(false);
-                    }}
-                    className={`w-full text-right px-4 py-3 text-lg hover:bg-gray-100 transition ${
-                      formData.status === 'DRAFT' ? 'bg-primary text-white' : 'text-gray-800'
-                    }`}
-                  >
-                    مسودة
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, status: 'PUBLISHED' });
-                      setStatusDropdownOpen(false);
-                    }}
-                    className={`w-full text-right px-4 py-3 text-lg hover:bg-gray-100 transition border-t border-gray-200 ${
-                      formData.status === 'PUBLISHED' ? 'bg-primary text-white' : 'text-gray-800'
-                    }`}
-                  >
-                    منشور
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="flex gap-4 pt-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 px-6 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'جاري الإنشاء...' : 'إنشاء الدورة'}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-6 py-4 bg-gray-200 text-gray-700 rounded-lg font-bold text-lg hover:bg-gray-300 transition"
-          >
-            إلغاء
-          </button>
-        </div>
-      </form>
-
-      {/* Playlist Option - Moved to bottom */}
-      <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">إنشاء من قائمة تشغيل YouTube (اختياري)</h2>
-          <button
-            onClick={() => setShowPlaylistOption(!showPlaylistOption)}
-            className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-semibold shadow-sm"
-          >
-            {showPlaylistOption ? 'إخفاء' : 'إظهار'}
-          </button>
-        </div>
-
-        {showPlaylistOption && (
-          <div className="space-y-4 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-            <div>
-              <label className="block text-lg font-semibold mb-2 text-gray-800">رابط قائمة التشغيل</label>
-              <input
-                type="url"
-                value={playlistUrl}
-                onChange={(e) => setPlaylistUrl(e.target.value)}
-                className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-                placeholder="https://www.youtube.com/watch?v=...&list=..."
-              />
-              <p className="text-sm text-gray-700 mt-2">
-                سيتم إنشاء دورة كاملة من قائمة التشغيل تلقائياً
-              </p>
-            </div>
-            <button
-              onClick={handleCreateFromPlaylist}
-              disabled={loadingPlaylist}
-              className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
-            >
-              {loadingPlaylist ? 'جاري الإنشاء...' : 'إنشاء الدورة من قائمة التشغيل'}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

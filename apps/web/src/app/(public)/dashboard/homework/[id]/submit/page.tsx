@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { BookIcon, ClockIcon } from '@/components/Icons';
 
 interface Homework {
   id: string;
@@ -69,20 +70,20 @@ export default function SubmitHomeworkPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   if (!homework) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <p className="text-xl text-gray-500 mb-6">الواجب غير موجود</p>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="bg-white rounded-xl border border-stone-200 p-8 text-center max-w-md">
+          <p className="text-lg text-stone-600 mb-4">الواجب غير موجود</p>
           <Link
             href="/dashboard/homework"
-            className="inline-block px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition"
+            className="px-6 py-2 bg-[#1a3a2f] text-white rounded-lg hover:bg-[#2d5a4a] transition inline-block"
           >
             العودة للواجبات
           </Link>
@@ -92,85 +93,89 @@ export default function SubmitHomeworkPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 bg-gray-50 min-h-screen">
-      <div className="mb-6">
-        <Link
-          href="/dashboard/homework"
-          className="text-primary hover:text-primary-dark font-semibold text-lg mb-4 inline-block"
-        >
-          ← العودة للواجبات
-        </Link>
-        <h1 className="text-3xl font-bold mb-2 text-gray-800">تسليم الواجب</h1>
-        <p className="text-xl text-gray-700">{homework.course.title}</p>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">{homework.title}</h2>
-        <div className="mb-6">
-          <p className="text-lg text-gray-800 leading-relaxed whitespace-pre-wrap">{homework.description}</p>
-        </div>
-        <div className="space-y-3 text-lg">
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-800">تاريخ الاستحقاق:</span>
-            <span className="text-gray-800">{new Date(homework.dueDate).toLocaleDateString('ar-SA')}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-800">الدرجة الكاملة:</span>
-            <span className="text-gray-800">{homework.maxScore}</span>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <BookIcon className="text-white" size={20} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">تسليم الواجب</h1>
+              <p className="text-white/70 text-sm">{homework.course.title}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">إرسال الواجب</h2>
-        
-        <div className="mb-6">
-          <label className="block text-lg font-semibold mb-2 text-gray-800">
-            محتوى الواجب *
-          </label>
-          <textarea
-            value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            required
-            rows={12}
-            className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-            placeholder="اكتب إجابتك هنا..."
-          />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Homework Details */}
+        <div className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+          <h2 className="text-lg font-bold text-stone-800 mb-3">{homework.title}</h2>
+          <p className="text-stone-600 whitespace-pre-wrap mb-4">{homework.description}</p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex items-center gap-2 text-stone-600">
+              <ClockIcon size={16} />
+              <span>تاريخ الاستحقاق: {new Date(homework.dueDate).toLocaleDateString('ar-SA')}</span>
+            </div>
+            <div className="px-3 py-1 bg-stone-100 rounded-lg text-stone-700">
+              الدرجة الكاملة: {homework.maxScore}
+            </div>
+          </div>
         </div>
 
-        <div className="mb-6">
-          <label className="block text-lg font-semibold mb-2 text-gray-800">
-            روابط المرفقات (اختياري)
-          </label>
-          <input
-            type="text"
-            value={formData.attachments}
-            onChange={(e) => setFormData({ ...formData, attachments: e.target.value })}
-            className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-            placeholder="رابط ملف أو صورة (مثال: https://example.com/file.pdf)"
-          />
-          <p className="text-sm text-gray-600 mt-2">
-            يمكنك إضافة روابط للملفات أو الصور
-          </p>
-        </div>
+        {/* Submit Form */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-stone-200 p-6">
+          <h2 className="text-lg font-bold text-stone-800 mb-4">إرسال الواجب</h2>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2 text-stone-700">
+              محتوى الواجب
+            </label>
+            <textarea
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              required
+              rows={10}
+              className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
+              placeholder="اكتب إجابتك هنا..."
+            />
+          </div>
 
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? 'جاري الإرسال...' : 'تسليم الواجب'}
-          </button>
-          <Link
-            href="/dashboard/homework"
-            className="px-8 py-4 bg-gray-200 text-gray-700 rounded-lg font-bold text-lg hover:bg-gray-300 transition"
-          >
-            إلغاء
-          </Link>
-        </div>
-      </form>
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2 text-stone-700">
+              روابط المرفقات (اختياري)
+            </label>
+            <input
+              type="text"
+              value={formData.attachments}
+              onChange={(e) => setFormData({ ...formData, attachments: e.target.value })}
+              className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
+              placeholder="رابط ملف أو صورة (مثال: https://example.com/file.pdf)"
+            />
+            <p className="text-xs text-stone-500 mt-2">
+              يمكنك إضافة روابط للملفات أو الصور
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-6 py-3 bg-[#1a3a2f] text-white rounded-lg font-medium hover:bg-[#2d5a4a] transition disabled:opacity-50"
+            >
+              {submitting ? 'جاري الإرسال...' : 'تسليم الواجب'}
+            </button>
+            <Link
+              href="/dashboard/homework"
+              className="px-6 py-3 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition"
+            >
+              إلغاء
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
-

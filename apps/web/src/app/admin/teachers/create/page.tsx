@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { UserIcon } from '@/components/Icons';
 
 export default function CreateTeacherPage() {
   const router = useRouter();
@@ -18,7 +19,6 @@ export default function CreateTeacherPage() {
     e.preventDefault();
     setErrors({});
 
-    // Validation
     if (!formData.name || formData.name.length < 2) {
       setErrors({ name: 'الاسم يجب أن يكون على الأقل حرفين' });
       return;
@@ -49,95 +49,106 @@ export default function CreateTeacherPage() {
   };
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">إنشاء مدرس جديد</h1>
-        <button
-          onClick={() => router.back()}
-          className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition"
-        >
-          ← العودة
-        </button>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <UserIcon className="text-white" size={20} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">إنشاء مدرس جديد</h1>
+                <p className="text-white/70 text-sm">إضافة مدرس للمنصة</p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition text-sm"
+            >
+              العودة
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-lg font-semibold mb-2 text-gray-800">الاسم *</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => {
-                setFormData({ ...formData, name: e.target.value });
-                if (errors.name) setErrors({ ...errors, name: '' });
-              }}
-              required
-              className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="اسم المدرس"
-            />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-          </div>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white rounded-xl border border-stone-200 p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-stone-700">الاسم</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (errors.name) setErrors({ ...errors, name: '' });
+                }}
+                required
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800 ${
+                  errors.name ? 'border-red-500' : 'border-stone-200'
+                }`}
+                placeholder="اسم المدرس"
+              />
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+            </div>
 
-          <div>
-            <label className="block text-lg font-semibold mb-2 text-gray-800">البريد الإلكتروني *</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => {
-                setFormData({ ...formData, email: e.target.value });
-                if (errors.email) setErrors({ ...errors, email: '' });
-              }}
-              required
-              className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="example@email.com"
-            />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-          </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-stone-700">البريد الإلكتروني</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  if (errors.email) setErrors({ ...errors, email: '' });
+                }}
+                required
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800 ${
+                  errors.email ? 'border-red-500' : 'border-stone-200'
+                }`}
+                placeholder="example@email.com"
+              />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            </div>
 
-          <div>
-            <label className="block text-lg font-semibold mb-2 text-gray-800">كلمة المرور *</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => {
-                setFormData({ ...formData, password: e.target.value });
-                if (errors.password) setErrors({ ...errors, password: '' });
-              }}
-              required
-              className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="كلمة المرور (6 أحرف على الأقل)"
-            />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-          </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-stone-700">كلمة المرور</label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => {
+                  setFormData({ ...formData, password: e.target.value });
+                  if (errors.password) setErrors({ ...errors, password: '' });
+                }}
+                required
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800 ${
+                  errors.password ? 'border-red-500' : 'border-stone-200'
+                }`}
+                placeholder="كلمة المرور (6 أحرف على الأقل)"
+              />
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+            </div>
 
-          <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition btn-large disabled:opacity-50"
-            >
-              {loading ? 'جاري الإنشاء...' : 'إنشاء المدرس'}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-8 py-4 bg-gray-200 text-gray-700 rounded-lg font-bold text-lg hover:bg-gray-300 transition btn-large"
-            >
-              إلغاء
-            </button>
-          </div>
-        </form>
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 px-6 py-3 bg-[#1a3a2f] text-white rounded-lg font-medium hover:bg-[#2d5a4a] transition disabled:opacity-50"
+              >
+                {loading ? 'جاري الإنشاء...' : 'إنشاء المدرس'}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="px-6 py-3 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition"
+              >
+                إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
 }
-
-
-
-

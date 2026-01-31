@@ -106,7 +106,7 @@ export default function Home() {
                   href={getDashboardLink()} 
                   className="group px-8 py-4 bg-[#c9a227] text-white rounded-xl font-bold text-lg hover:bg-[#b08f20] transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                 >
-                  لوحة التحكم
+                  {user?.role === 'STUDENT' ? 'زادي' : 'لوحة التحكم'}
                 </Link>
                 <Link 
                   href="/courses" 

@@ -61,6 +61,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
     { href: '/dashboard/exams', label: 'الامتحانات' },
     { href: '/dashboard/homework', label: 'الواجبات' },
     { href: '/dashboard/grades', label: 'التقييمات' },
+    { href: '/dashboard/reports', label: 'تبليغاتي' },
   ];
 
   if (loading) {

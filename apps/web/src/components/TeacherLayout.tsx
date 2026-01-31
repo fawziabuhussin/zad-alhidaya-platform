@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
+import { AlertIcon } from '@/components/Icons';
 
 interface TeacherLayoutProps {
   children: React.ReactNode;
@@ -19,10 +20,29 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [newReportsCount, setNewReportsCount] = useState(0);
+
+  const loadReportsCount = useCallback(async () => {
+    try {
+      const res = await api.get('/reports/count/new');
+      setNewReportsCount(res.data?.count || 0);
+    } catch (error) {
+      // Silently fail
+    }
+  }, []);
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Poll for new reports count
+  useEffect(() => {
+    if (user) {
+      loadReportsCount();
+      const interval = setInterval(loadReportsCount, 15000); // Every 15 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user, loadReportsCount]);
 
   const checkAuth = async () => {
     try {
@@ -152,12 +172,14 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
     { href: '/teacher/exams', label: 'الامتحانات', category: 'assessments' },
     { href: '/teacher/homework', label: 'الواجبات', category: 'assessments' },
     { href: '/teacher/grades', label: 'التقييمات', category: 'assessments' },
+    { href: '/teacher/reports', label: 'التبليغات', category: 'reports', hasBadge: true },
   ];
 
   const categories = [
     { id: 'main', label: 'الرئيسية' },
     { id: 'content', label: 'المحتوى' },
     { id: 'assessments', label: 'التقييمات' },
+    { id: 'reports', label: 'التبليغات' },
   ];
 
   if (loading) {
@@ -189,19 +211,25 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
               </Link>
 
               <nav className="hidden lg:flex items-center gap-1">
-                {navItems.map((item) => {
+                {navItems.map((item: any) => {
                   const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                  const showBadge = item.hasBadge && newReportsCount > 0;
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                      className={`px-3 py-1.5 rounded text-sm transition-colors relative flex items-center gap-1 ${
                         isActive
                           ? 'bg-white/15 text-white'
                           : 'text-stone-300 hover:text-white hover:bg-white/10'
                       }`}
                     >
                       {item.label}
+                      {showBadge && (
+                        <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+                          {newReportsCount > 9 ? '9+' : newReportsCount}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
@@ -255,20 +283,26 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
         {menuOpen && (
           <div className="lg:hidden border-t border-white/10 bg-[#1a3a2f]">
             <nav className="px-4 py-3 space-y-1">
-              {navItems.map((item) => {
+              {navItems.map((item: any) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                const showBadge = item.hasBadge && newReportsCount > 0;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
-                    className={`block px-3 py-2 rounded text-sm ${
+                    className={`flex items-center justify-between px-3 py-2 rounded text-sm ${
                       isActive
                         ? 'bg-white/15 text-white'
                         : 'text-stone-300 hover:bg-white/10'
                     }`}
                   >
-                    {item.label}
+                    <span>{item.label}</span>
+                    {showBadge && (
+                      <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+                        {newReportsCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

@@ -7,16 +7,27 @@ import Modal from '@/components/Modal';
 import { CheckCircleIcon } from '@/components/Icons';
 import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
+import ReportErrorButton from '@/components/ReportErrorButton';
 
 interface Lesson {
   id: string;
   title: string;
   description?: string;
   type: string;
+  order: number;
   youtubeUrl?: string;
   textContent?: string;
   durationMinutes?: number;
   resources?: Resource[];
+  module?: {
+    id: string;
+    title: string;
+    order: number;
+    course?: {
+      id: string;
+      title: string;
+    };
+  };
 }
 
 export default function LessonPage() {
@@ -154,20 +165,35 @@ export default function LessonPage() {
             </div>
           )}
 
-          <div className="flex gap-4">
-            <button
-              onClick={handleComplete}
-              disabled={completed}
-              className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {completed ? <><CheckCircleIcon size={16} className="inline" /> تم الإكمال</> : <><CheckCircleIcon size={16} className="inline" /> إكمال الدرس</>}
-            </button>
-            <button
-              onClick={() => router.back()}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition"
-            >
-              العودة
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Main Actions - Right Side (RTL) */}
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={handleComplete}
+                disabled={completed}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {completed ? <><CheckCircleIcon size={16} className="inline" /> تم الإكمال</> : <><CheckCircleIcon size={16} className="inline" /> إكمال الدرس</>}
+              </button>
+              <button
+                onClick={() => router.back()}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition"
+              >
+                العودة
+              </button>
+            </div>
+            
+            {/* Report Error Button - Left Side (RTL) */}
+            {lesson.module?.course && (
+              <ReportErrorButton
+                courseId={lesson.module.course.id}
+                courseName={lesson.module.course.title}
+                lessonId={lesson.id}
+                lessonTitle={lesson.title}
+                lessonOrder={lesson.order || 1}
+                moduleOrder={lesson.module.order || 1}
+              />
+            )}
           </div>
         </div>
       </div>
