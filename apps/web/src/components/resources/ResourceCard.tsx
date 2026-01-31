@@ -30,6 +30,38 @@ export default function ResourceCard({
     if (urlWithoutQuery.endsWith('.doc') || urlWithoutQuery.endsWith('.docx')) {
       return `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(rawUrl)}`;
     }
+
+    try {
+      const parsed = new URL(rawUrl);
+      const host = parsed.hostname.toLowerCase();
+      const path = parsed.pathname;
+
+      if (host.includes('docs.google.com')) {
+        if (path.includes('/document/d/')) {
+          return `https://docs.google.com${path.replace(/\/edit.*$/, '/preview').replace(/\/view.*$/, '/preview')}`;
+        }
+        if (path.includes('/spreadsheets/d/')) {
+          return `https://docs.google.com${path.replace(/\/edit.*$/, '/preview').replace(/\/view.*$/, '/preview')}`;
+        }
+        if (path.includes('/presentation/d/')) {
+          return `https://docs.google.com${path.replace(/\/edit.*$/, '/preview').replace(/\/view.*$/, '/preview')}`;
+        }
+        if (path.includes('/document/d/e/')) {
+          const base = `https://docs.google.com${path}`;
+          return rawUrl.includes('embedded=true') ? rawUrl : `${base}?embedded=true`;
+        }
+      }
+
+      if (host.includes('drive.google.com') && path.includes('/file/d/')) {
+        const idMatch = path.match(/\/file\/d\/([^/]+)/);
+        if (idMatch?.[1]) {
+          return `https://drive.google.com/file/d/${idMatch[1]}/preview`;
+        }
+      }
+    } catch {
+      return null;
+    }
+
     return null;
   }, [resource.url]);
 
