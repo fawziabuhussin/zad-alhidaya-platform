@@ -32,6 +32,8 @@ model User {
   examAttempts ExamAttempt[]
   grades       Grade[]
   resourcesCreated Resource[] @relation("ResourceCreator")
+  reportsSubmitted ContentReport[] @relation("ReportedBy")
+  reportsReviewed  ContentReport[] @relation("ReviewedBy")
 
   @@index([email])
   @@index([role])
@@ -88,6 +90,7 @@ model Course {
   exams       Exam[]
   grades      Grade[]
   resources   Resource[]
+  contentReports ContentReport[]
 
   @@index([categoryId])
   @@index([teacherId])
@@ -125,6 +128,7 @@ model Lesson {
   module   Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   progress LessonProgress[]
   resources Resource[]
+  contentReports ContentReport[]
 
   @@index([moduleId])
   @@index([order])
@@ -364,4 +368,41 @@ model Resource {
   @@index([lessonId])
   @@index([order])
   @@index([createdById])
+}
+
+model ContentReport {
+  id          String   @id @default(uuid())
+  
+  // Reporter info
+  reporterId  String
+  reporter    User     @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  
+  // Content location
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  // Report details
+  type        String   // VIDEO_ERROR, TEXT_ERROR, AUDIO_ERROR, RESOURCE_ERROR, CONTENT_MISSING, OTHER
+  description String
+  timestamp   String?  // For video errors (e.g., "02:34")
+  
+  // Status tracking
+  status      String   @default("NEW") // NEW, IN_REVIEW, RESOLVED, DISMISSED
+  reviewerId  String?
+  reviewer    User?    @relation("ReviewedBy", fields: [reviewerId], references: [id])
+  reviewNote  String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+  
+  @@index([courseId])
+  @@index([lessonId])
+  @@index([reporterId])
+  @@index([reviewerId])
+  @@index([status])
+  @@index([createdAt])
 }

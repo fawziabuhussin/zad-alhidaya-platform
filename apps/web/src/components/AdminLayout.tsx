@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
+import { AlertIcon } from '@/components/Icons';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -19,10 +20,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [newReportsCount, setNewReportsCount] = useState(0);
+
+  const loadReportsCount = useCallback(async () => {
+    try {
+      const res = await api.get('/reports/count/new');
+      setNewReportsCount(res.data?.count || 0);
+    } catch (error) {
+      // Silently fail
+    }
+  }, []);
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Poll for new reports count
+  useEffect(() => {
+    if (user) {
+      loadReportsCount();
+      const interval = setInterval(loadReportsCount, 15000); // Every 15 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user, loadReportsCount]);
 
   const checkAuth = async () => {
     try {
@@ -149,7 +169,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       </button>
                       <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded shadow-lg border border-stone-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
                         <div className="py-1">
-                          {categoryItems.map((item) => {
+                          {categoryItems.map((item: any) => {
                             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                             return (
                               <Link
@@ -170,6 +190,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     </div>
                   );
                 })}
+
+                {/* Reports Link - Direct with Badge */}
+                <Link
+                  href="/admin/reports"
+                  className={`px-3 py-1.5 rounded text-sm transition-colors flex items-center gap-2 ${
+                    pathname === '/admin/reports' || pathname.startsWith('/admin/reports/')
+                      ? 'bg-white/15 text-white'
+                      : 'text-stone-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <span>التبليغات</span>
+                  {newReportsCount > 0 && (
+                    <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse min-w-[20px] text-center">
+                      {newReportsCount > 99 ? '99+' : newReportsCount}
+                    </span>
+                  )}
+                </Link>
               </nav>
             </div>
 
@@ -243,7 +280,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <div className="px-3 py-1.5 text-xs font-medium text-[#c9a227]">
                       {category.label}
                     </div>
-                    {categoryItems.map((item) => {
+                    {categoryItems.map((item: any) => {
                       const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                       return (
                         <Link
@@ -263,6 +300,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </div>
                 );
               })}
+
+              {/* Reports Link - Direct with Badge */}
+              <Link
+                href="/admin/reports"
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center justify-between px-3 py-2 rounded text-sm ${
+                  pathname === '/admin/reports' || pathname.startsWith('/admin/reports/')
+                    ? 'bg-white/15 text-white'
+                    : 'text-stone-300 hover:bg-white/10'
+                }`}
+              >
+                <span>التبليغات</span>
+                {newReportsCount > 0 && (
+                  <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+                    {newReportsCount > 99 ? '99+' : newReportsCount}
+                  </span>
+                )}
+              </Link>
               
               <div className="border-t border-white/10 pt-3 mt-3">
                 <div className="flex items-center gap-2 px-3 py-2">
