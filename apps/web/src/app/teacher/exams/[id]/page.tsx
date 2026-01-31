@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { CheckCircleIcon, AlertIcon } from '@/components/Icons';
+import { CheckCircleIcon, AlertIcon, TrashIcon, PlusIcon, CloseIcon, BookIcon } from '@/components/Icons';
 
 interface Question {
   id: string;
@@ -63,9 +63,7 @@ export default function TeacherExamDetailsPage() {
             loadExam();
             return;
           }
-        } catch (e) {
-          // Invalid cached user
-        }
+        } catch (e) {}
       }
 
       const token = localStorage.getItem('accessToken');
@@ -95,9 +93,7 @@ export default function TeacherExamDetailsPage() {
             loadExam();
             return;
           }
-        } catch (e) {
-          // Invalid cached user
-        }
+        } catch (e) {}
       }
       window.location.href = '/login';
     }
@@ -109,7 +105,6 @@ export default function TeacherExamDetailsPage() {
       const response = await api.get(`/exams/${examId}`);
       const examData = response.data;
       
-      // Verify teacher owns this course
       if (user && examData.course?.teacherId !== user.id && user.role !== 'ADMIN') {
         alert('ليس لديك صلاحية للوصول إلى هذا الامتحان');
         router.push('/teacher/exams');
@@ -237,191 +232,176 @@ export default function TeacherExamDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   if (!exam) {
-    return <div className="text-center py-16 text-xl text-gray-800">الامتحان غير موجود</div>;
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <p className="text-xl text-stone-600">الامتحان غير موجود</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 text-gray-800">{exam.title}</h1>
-          {exam.description && (
-            <p className="text-lg text-gray-600">{exam.description}</p>
-          )}
-          <p className="text-base text-gray-600 mt-2">الدورة: {exam.course?.title || 'N/A'}</p>
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-            <p className="text-lg font-semibold text-gray-800">
-              المجموع الكلي للنقاط: <span className="text-primary">{totalPoints}</span> / {exam.maxScore}
-              {totalPoints > exam.maxScore && (
-                <span className="text-green-600 mr-2">(يحتوي على أسئلة إضافية)</span>
-              )}
-            </p>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <BookIcon className="text-white" size={20} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">{exam.title}</h1>
+                {exam.description && <p className="text-white/70 text-sm">{exam.description}</p>}
+                <p className="text-white/50 text-xs mt-1">الدورة: {exam.course?.title || 'N/A'}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push('/teacher/exams')}
+              className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition text-sm"
+            >
+              العودة
+            </button>
           </div>
-        </div>
-        <div className="flex gap-3">
-          <Link
-            href={`/teacher/exams/${params.id}/attempts`}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 transition"
-          >
-            عرض المحاولات
-          </Link>
-          <button
-            onClick={() => router.push('/teacher/exams')}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition"
-          >
-            ← العودة
-          </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">أسئلة الامتحان ({exam.questions.length})</h2>
-          <button
-            onClick={() => setShowQuestionForm(!showQuestionForm)}
-            className="px-6 py-3 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition"
-          >
-            + إضافة سؤال
-          </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Stats Card */}
+        <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="text-center px-4 py-2 bg-stone-50 rounded-lg">
+                <p className="text-2xl font-bold text-[#1a3a2f]">{totalPoints}</p>
+                <p className="text-xs text-stone-500">مجموع النقاط</p>
+              </div>
+              <div className="text-center px-4 py-2 bg-stone-50 rounded-lg">
+                <p className="text-2xl font-bold text-[#1a3a2f]">{exam.maxScore}</p>
+                <p className="text-xs text-stone-500">الدرجة الكاملة</p>
+              </div>
+              <div className="text-center px-4 py-2 bg-stone-50 rounded-lg">
+                <p className="text-2xl font-bold text-[#1a3a2f]">{exam.questions.length}</p>
+                <p className="text-xs text-stone-500">عدد الأسئلة</p>
+              </div>
+              {totalPoints > exam.maxScore && (
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-sm">
+                  يحتوي على أسئلة إضافية
+                </span>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              <Link
+                href={`/teacher/exams/${params.id}/attempts`}
+                className="px-4 py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition text-sm"
+              >
+                عرض المحاولات
+              </Link>
+              <button
+                onClick={() => setShowQuestionForm(!showQuestionForm)}
+                className="px-4 py-2 bg-[#1a3a2f] text-white rounded-lg hover:bg-[#2d5a4a] transition text-sm flex items-center gap-2"
+              >
+                <PlusIcon size={16} />
+                إضافة سؤال
+              </button>
+            </div>
+          </div>
         </div>
 
+        {/* Add Question Form */}
         {showQuestionForm && (
-          <div className="mb-8 p-6 bg-gray-50 rounded-lg border-2 border-primary">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">سؤال جديد</h3>
+          <div className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-stone-800">سؤال جديد</h3>
+              <button onClick={() => setShowQuestionForm(false)} className="p-2 text-stone-400 hover:text-stone-600">
+                <CloseIcon size={20} />
+              </button>
+            </div>
+            
             <form onSubmit={handleAddQuestion} className="space-y-4">
               <div>
-                <label className="block text-lg font-semibold mb-2 text-gray-800">نص السؤال *</label>
+                <label className="block text-sm font-medium mb-2 text-stone-700">نص السؤال</label>
                 <textarea
                   value={questionData.prompt}
                   onChange={(e) => setQuestionData({ ...questionData, prompt: e.target.value })}
                   required
                   rows={3}
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary bg-white text-gray-800"
+                  className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] bg-white text-stone-800"
                   placeholder="اكتب السؤال هنا..."
                 />
               </div>
 
-              <div className="relative w-full">
-                <label className="block text-lg font-semibold mb-2 text-gray-800">نوع السؤال *</label>
-                <div className="relative w-full">
-                  <button
-                    type="button"
-                    onClick={() => setTypeDropdownOpen(!typeDropdownOpen)}
-                    className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary bg-white text-gray-800 font-medium text-right flex items-center justify-between mb-4"
-                    style={{ minHeight: '56px' }}
-                  >
-                    <span className="flex-1 text-right">
-                      {questionData.type === 'MULTIPLE_CHOICE' && 'اختيار من متعدد (تصحيح تلقائي)'}
-                      {questionData.type === 'TEXT' && 'سؤال نصي قصير (تصحيح يدوي)'}
-                      {questionData.type === 'ESSAY' && 'سؤال مقالي (تصحيح يدوي)'}
-                    </span>
-                    <svg 
-                      className={`w-5 h-5 transition-transform ${typeDropdownOpen ? 'transform rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  
-                  {typeDropdownOpen && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-10" 
-                        onClick={() => setTypeDropdownOpen(false)}
-                      />
-                      <div 
-                        className="absolute z-20 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg"
-                        style={{ direction: 'rtl' }}
-                      >
+              <div className="relative">
+                <label className="block text-sm font-medium mb-2 text-stone-700">نوع السؤال</label>
+                <button
+                  type="button"
+                  onClick={() => setTypeDropdownOpen(!typeDropdownOpen)}
+                  className="w-full px-4 py-3 border border-stone-200 rounded-lg bg-white text-stone-800 text-right flex items-center justify-between"
+                >
+                  <span>
+                    {questionData.type === 'MULTIPLE_CHOICE' && 'اختيار من متعدد'}
+                    {questionData.type === 'TEXT' && 'نصي قصير'}
+                    {questionData.type === 'ESSAY' && 'مقالي'}
+                  </span>
+                  <svg className={`w-5 h-5 transition-transform ${typeDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {typeDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setTypeDropdownOpen(false)} />
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-stone-200 rounded-lg shadow-lg overflow-hidden">
+                      {[
+                        { value: 'MULTIPLE_CHOICE', label: 'اختيار من متعدد' },
+                        { value: 'TEXT', label: 'نصي قصير' },
+                        { value: 'ESSAY', label: 'مقالي' },
+                      ].map((option) => (
                         <button
+                          key={option.value}
                           type="button"
                           onClick={() => {
-                            const newType = 'MULTIPLE_CHOICE';
                             setQuestionData({
                               ...questionData,
-                              type: newType,
-                              choices: questionData.choices.length > 0 ? questionData.choices : ['', '', '', ''],
-                              correctIndex: questionData.correctIndex ?? 0,
-                              explanation: questionData.explanation,
+                              type: option.value as any,
+                              choices: option.value === 'MULTIPLE_CHOICE' ? ['', '', '', ''] : [],
+                              correctIndex: option.value === 'MULTIPLE_CHOICE' ? 0 : undefined as any,
                             });
                             setTypeDropdownOpen(false);
                           }}
-                          className={`w-full text-right px-4 py-3 text-lg hover:bg-gray-100 transition ${
-                            questionData.type === 'MULTIPLE_CHOICE' ? 'bg-primary text-white' : 'text-gray-800'
-                          }`}
+                          className={`w-full text-right px-4 py-3 hover:bg-stone-50 ${questionData.type === option.value ? 'bg-[#1a3a2f] text-white' : 'text-stone-800'}`}
                         >
-                          اختيار من متعدد (تصحيح تلقائي)
+                          {option.label}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newType = 'TEXT';
-                            setQuestionData({
-                              ...questionData,
-                              type: newType,
-                              choices: [],
-                              correctIndex: undefined as any,
-                              explanation: '',
-                            });
-                            setTypeDropdownOpen(false);
-                          }}
-                          className={`w-full text-right px-4 py-3 text-lg hover:bg-gray-100 transition border-t border-gray-200 ${
-                            questionData.type === 'TEXT' ? 'bg-primary text-white' : 'text-gray-800'
-                          }`}
-                        >
-                          سؤال نصي قصير (تصحيح يدوي)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newType = 'ESSAY';
-                            setQuestionData({
-                              ...questionData,
-                              type: newType,
-                              choices: [],
-                              correctIndex: undefined as any,
-                              explanation: '',
-                            });
-                            setTypeDropdownOpen(false);
-                          }}
-                          className={`w-full text-right px-4 py-3 text-lg hover:bg-gray-100 transition border-t border-gray-200 ${
-                            questionData.type === 'ESSAY' ? 'bg-primary text-white' : 'text-gray-800'
-                          }`}
-                        >
-                          سؤال مقالي (تصحيح يدوي)
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600 mt-1 flex items-center gap-1">
+                      ))}
+                    </div>
+                  </>
+                )}
+                <p className="text-xs text-stone-500 mt-2 flex items-center gap-1">
                   {questionData.type === 'MULTIPLE_CHOICE' 
-                    ? <><CheckCircleIcon size={14} className="text-green-600" /> سيتم التصحيح تلقائياً عند إتمام الطالب للامتحان</>
-                    : <><AlertIcon size={14} className="text-yellow-600" /> سيحتاج هذا السؤال إلى تصحيح يدوي من قبل المدرس</>}
+                    ? <><CheckCircleIcon size={12} className="text-emerald-600" /> تصحيح تلقائي</>
+                    : <><AlertIcon size={12} className="text-amber-600" /> تصحيح يدوي</>}
                 </p>
               </div>
 
-              {(questionData.type === 'MULTIPLE_CHOICE' || !questionData.type) && (
+              {questionData.type === 'MULTIPLE_CHOICE' && (
                 <>
                   <div>
-                    <label className="block text-lg font-semibold mb-2 text-gray-800">الخيارات *</label>
+                    <label className="block text-sm font-medium mb-2 text-stone-700">الخيارات</label>
                     {questionData.choices.map((choice, index) => (
-                      <div key={index} className="mb-3 flex items-center gap-3">
+                      <div key={index} className="mb-2 flex items-center gap-3">
                         <input
                           type="radio"
                           name="correct"
                           checked={questionData.correctIndex === index}
                           onChange={() => setQuestionData({ ...questionData, correctIndex: index })}
-                          className="w-5 h-5 cursor-pointer"
+                          className="w-4 h-4 text-[#1a3a2f]"
                         />
                         <input
                           type="text"
@@ -432,7 +412,7 @@ export default function TeacherExamDetailsPage() {
                             setQuestionData({ ...questionData, choices: newChoices });
                           }}
                           placeholder={`الخيار ${index + 1}`}
-                          className="flex-1 px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary bg-white text-gray-800"
+                          className="flex-1 px-4 py-2 border border-stone-200 rounded-lg bg-white text-stone-800"
                         />
                         {questionData.choices.length > 2 && (
                           <button
@@ -443,9 +423,9 @@ export default function TeacherExamDetailsPage() {
                                 questionData.correctIndex > index ? questionData.correctIndex - 1 : questionData.correctIndex;
                               setQuestionData({ ...questionData, choices: newChoices, correctIndex: newCorrectIndex });
                             }}
-                            className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-semibold transition"
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                           >
-                            حذف
+                            <TrashIcon size={16} />
                           </button>
                         )}
                       </div>
@@ -453,45 +433,36 @@ export default function TeacherExamDetailsPage() {
                     <button
                       type="button"
                       onClick={() => setQuestionData({ ...questionData, choices: [...questionData.choices, ''] })}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-semibold transition"
+                      className="px-3 py-1 text-sm text-stone-600 hover:bg-stone-100 rounded-lg"
                     >
                       + إضافة خيار
                     </button>
                   </div>
-                  
-                  <div className="mt-4">
-                    <label className="block text-lg font-semibold mb-2 text-gray-800">
-                      شرح الإجابة الصحيحة (اختياري)
-                    </label>
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-stone-700">شرح الإجابة (اختياري)</label>
                     <textarea
                       value={questionData.explanation}
                       onChange={(e) => setQuestionData({ ...questionData, explanation: e.target.value })}
-                      rows={3}
-                      className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary bg-white text-gray-800"
-                      placeholder="اكتب شرحاً للإجابة الصحيحة - سيظهر للطالب بعد إتمام الامتحان..."
+                      rows={2}
+                      className="w-full px-4 py-3 border border-stone-200 rounded-lg bg-white text-stone-800"
+                      placeholder="شرح للإجابة الصحيحة..."
                     />
-                    <p className="text-sm text-gray-600 mt-2">
-                      هذا الشرح سيظهر للطالب بعد إتمام الامتحان لمساعدته على فهم الإجابة الصحيحة
-                    </p>
                   </div>
                 </>
               )}
 
               {(questionData.type === 'TEXT' || questionData.type === 'ESSAY') && (
-                <div className="p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
-                  <p className="text-base text-yellow-800 font-semibold mb-2 flex items-center gap-2">
-                    <AlertIcon size={18} className="text-yellow-700 shrink-0" />
-                    هذا سؤال {questionData.type === 'TEXT' ? 'نصي قصير' : 'مقالي'} - سيتم تصحيحه يدوياً من قبل المدرس
-                  </p>
-                  <p className="text-sm text-yellow-700">
-                    بعد إضافة هذا السؤال، سيحتاج الامتحان إلى تصحيح يدوي. يمكنك إضافة ملاحظات أو معايير التصحيح في حقل الوصف.
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-sm text-amber-800 flex items-center gap-2">
+                    <AlertIcon size={16} className="text-amber-600" />
+                    {questionData.type === 'TEXT' ? 'سؤال نصي قصير' : 'سؤال مقالي'} - يحتاج تصحيح يدوي
                   </p>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-lg font-semibold mb-2 text-gray-800">النقاط *</label>
+                  <label className="block text-sm font-medium mb-2 text-stone-700">النقاط</label>
                   <input
                     type="number"
                     value={questionData.points}
@@ -499,7 +470,7 @@ export default function TeacherExamDetailsPage() {
                     min="0.5"
                     step="0.5"
                     required
-                    className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary bg-white text-gray-800"
+                    className="w-full px-4 py-3 border border-stone-200 rounded-lg bg-white text-stone-800"
                   />
                 </div>
                 <div className="flex items-end">
@@ -508,42 +479,18 @@ export default function TeacherExamDetailsPage() {
                       type="checkbox"
                       checked={questionData.allowBonus}
                       onChange={(e) => setQuestionData({ ...questionData, allowBonus: e.target.checked })}
-                      className="w-5 h-5 cursor-pointer"
+                      className="w-4 h-4 text-[#1a3a2f] rounded"
                     />
-                    <span className="text-lg text-gray-800 font-medium">سؤال إضافي (bonus)</span>
+                    <span className="text-sm text-stone-700">سؤال إضافي (bonus)</span>
                   </label>
                 </div>
               </div>
 
-              <div className={`p-4 rounded-lg border-2 ${
-                totalPoints + questionData.points > exam.maxScore 
-                  ? 'bg-yellow-50 border-yellow-300' 
-                  : 'bg-green-50 border-green-300'
-              }`}>
-                <p className={`text-sm font-semibold ${
-                  totalPoints + questionData.points > exam.maxScore 
-                    ? 'text-yellow-800' 
-                    : 'text-green-800'
-                }`}>
-                  المجموع بعد إضافة هذا السؤال: <span className="font-bold">{totalPoints + questionData.points}</span> / {exam.maxScore}
-                  {totalPoints + questionData.points > exam.maxScore && !questionData.allowBonus && (
-                    <span className="mt-1 flex items-center gap-1"><AlertIcon size={14} className="text-yellow-600" /> سيتم اعتبار هذا السؤال إضافياً (bonus) إذا تجاوز المجموع</span>
-                  )}
-                </p>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition"
-                >
+              <div className="flex gap-3">
+                <button type="submit" className="px-6 py-2 bg-[#1a3a2f] text-white rounded-lg hover:bg-[#2d5a4a] transition">
                   إضافة السؤال
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowQuestionForm(false)}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold text-lg hover:bg-gray-300 transition"
-                >
+                <button type="button" onClick={() => setShowQuestionForm(false)} className="px-6 py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200">
                   إلغاء
                 </button>
               </div>
@@ -551,75 +498,76 @@ export default function TeacherExamDetailsPage() {
           </div>
         )}
 
+        {/* Questions List */}
         <div className="space-y-4">
           {exam.questions.length === 0 ? (
-            <p className="text-center py-12 text-xl text-gray-500">لا توجد أسئلة</p>
+            <div className="bg-white rounded-xl border border-stone-200 p-12 text-center">
+              <p className="text-stone-500">لا توجد أسئلة بعد</p>
+              <button onClick={() => setShowQuestionForm(true)} className="mt-4 px-4 py-2 bg-[#1a3a2f] text-white rounded-lg hover:bg-[#2d5a4a] text-sm">
+                إضافة سؤال جديد
+              </button>
+            </div>
           ) : (
             exam.questions.map((question, index) => (
-              <div key={question.id} className="p-6 bg-white border-2 border-gray-200 rounded-lg">
+              <div key={question.id} className="bg-white rounded-xl border border-stone-200 p-5">
                 <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl font-bold text-primary">{index + 1}</span>
-                    <p className="text-xl font-semibold flex-1 text-gray-800">{question.prompt}</p>
+                  <div className="flex items-start gap-3">
+                    <span className="w-8 h-8 bg-[#1a3a2f] text-white rounded-lg flex items-center justify-center font-bold text-sm">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="text-stone-800 font-medium">{question.prompt}</p>
+                      {question.type && question.type !== 'MULTIPLE_CHOICE' && (
+                        <span className="text-xs text-amber-600 mt-1 inline-block">
+                          {question.type === 'TEXT' ? 'نصي قصير' : 'مقالي'} - تصحيح يدوي
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-semibold">
-                        {question.points} نقطة
-                      </span>
-                      <input
-                        type="number"
-                        value={question.points}
-                        onChange={(e) => handleUpdateQuestion(question.id, parseFloat(e.target.value))}
-                        min="0.5"
-                        step="0.5"
-                        className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-gray-800"
-                      />
-                    </div>
-                    <button
-                      onClick={() => handleDeleteQuestion(question.id)}
-                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition font-semibold"
-                    >
-                      حذف
+                    <span className="px-2 py-1 bg-stone-100 text-stone-700 rounded text-sm">{question.points} نقطة</span>
+                    <input
+                      type="number"
+                      value={question.points}
+                      onChange={(e) => handleUpdateQuestion(question.id, parseFloat(e.target.value))}
+                      min="0.5"
+                      step="0.5"
+                      className="w-16 px-2 py-1 border border-stone-200 rounded text-center text-sm"
+                    />
+                    <button onClick={() => handleDeleteQuestion(question.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                      <TrashIcon size={16} />
                     </button>
                   </div>
                 </div>
+                
                 {(question.type === 'MULTIPLE_CHOICE' || !question.type) && question.choices && (
-                  <div className="space-y-2 pr-12">
+                  <div className="space-y-2 mr-11">
                     {question.choices.map((choice, choiceIndex) => (
-                      <div
-                        key={choiceIndex}
-                        className={`p-4 rounded-lg border-2 ${
-                          choiceIndex === question.correctIndex
-                            ? 'bg-green-50 border-green-500'
-                            : 'bg-gray-50 border-gray-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-semibold text-gray-800">
-                            {String.fromCharCode(1570 + choiceIndex)}.
-                          </span>
-                          <span className="text-lg text-gray-800">{choice}</span>
+                      <div key={choiceIndex} className={`p-3 rounded-lg border ${choiceIndex === question.correctIndex ? 'bg-emerald-50 border-emerald-300' : 'bg-stone-50 border-stone-200'}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-stone-600">{String.fromCharCode(1570 + choiceIndex)}.</span>
+                          <span className="text-sm text-stone-800">{choice}</span>
                           {choiceIndex === question.correctIndex && (
-                            <span className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-bold flex items-center gap-1">
-                              <CheckCircleIcon size={14} /> الإجابة الصحيحة
+                            <span className="px-2 py-0.5 bg-emerald-500 text-white rounded text-xs flex items-center gap-1">
+                              <CheckCircleIcon size={12} /> صحيح
                             </span>
                           )}
                         </div>
                       </div>
                     ))}
                     {question.explanation && (
-                      <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
-                        <h4 className="text-lg font-bold text-blue-900 mb-2">شرح الإجابة الصحيحة:</h4>
-                        <p className="text-base text-blue-800 leading-relaxed">{question.explanation}</p>
+                      <div className="mt-3 p-3 bg-stone-50 border border-stone-200 rounded-lg">
+                        <p className="text-xs font-medium text-stone-600 mb-1">شرح الإجابة:</p>
+                        <p className="text-sm text-stone-700">{question.explanation}</p>
                       </div>
                     )}
                   </div>
                 )}
+                
                 {(question.type === 'TEXT' || question.type === 'ESSAY') && (
-                  <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-300">
-                    <p className="text-lg text-blue-800 font-semibold">
-                      {question.type === 'TEXT' ? 'سؤال نصي قصير' : 'سؤال مقالي'} - يحتاج تصحيح يدوي
+                  <div className="mr-11 p-3 bg-stone-50 rounded-lg border border-stone-200">
+                    <p className="text-sm text-stone-600">
+                      {question.type === 'TEXT' ? 'إجابة نصية قصيرة' : 'إجابة مقالية'} - يحتاج تصحيح يدوي
                     </p>
                   </div>
                 )}
@@ -631,7 +579,3 @@ export default function TeacherExamDetailsPage() {
     </div>
   );
 }
-
-
-
-

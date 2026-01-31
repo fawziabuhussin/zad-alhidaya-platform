@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { LinkIcon } from '@/components/Icons';
+import { LinkIcon, BookIcon } from '@/components/Icons';
 
 interface Submission {
   id: string;
@@ -66,7 +66,6 @@ export default function HomeworkSubmissionsPage() {
         feedback,
       });
 
-      // Clear editing state
       const newEditingScore = { ...editingScore };
       const newEditingFeedback = { ...editingFeedback };
       delete newEditingScore[submissionId];
@@ -82,95 +81,125 @@ export default function HomeworkSubmissionsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen p-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 text-gray-800">{homework?.title}</h1>
-          <p className="text-lg text-gray-700 mb-2">{homework?.description}</p>
-          <p className="text-lg font-semibold text-gray-800">الدرجة الكاملة: {homework?.maxScore}</p>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <BookIcon className="text-white" size={20} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">{homework?.title}</h1>
+                <p className="text-white/70 text-sm">الدرجة الكاملة: {homework?.maxScore}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition text-sm"
+            >
+              العودة
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => router.back()}
-          className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition"
-        >
-          ← العودة
-        </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        {submissions.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-xl text-gray-500">لا توجد إجابات بعد</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
+            <p className="text-2xl font-bold text-[#1a3a2f]">{submissions.length}</p>
+            <p className="text-sm text-stone-500">إجمالي الإجابات</p>
           </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {submissions.map((submission) => {
+          <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
+            <p className="text-2xl font-bold text-emerald-600">
+              {submissions.filter(s => s.score !== null && s.score !== undefined).length}
+            </p>
+            <p className="text-sm text-stone-500">تم التصحيح</p>
+          </div>
+          <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
+            <p className="text-2xl font-bold text-amber-600">
+              {submissions.filter(s => s.score === null || s.score === undefined).length}
+            </p>
+            <p className="text-sm text-stone-500">في الانتظار</p>
+          </div>
+        </div>
+
+        {/* Submissions */}
+        <div className="space-y-4">
+          {submissions.length === 0 ? (
+            <div className="bg-white rounded-xl border border-stone-200 p-12 text-center">
+              <p className="text-stone-500">لا توجد إجابات بعد</p>
+            </div>
+          ) : (
+            submissions.map((submission) => {
               const isGraded = submission.score !== null && submission.score !== undefined;
               const currentScore = editingScore[submission.id] ?? submission.score ?? 0;
               const currentFeedback = editingFeedback[submission.id] ?? submission.feedback ?? '';
 
               return (
-                <div key={submission.id} className="p-6 hover:bg-gray-50 bg-white">
+                <div key={submission.id} className="bg-white rounded-xl border border-stone-200 p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-xl font-bold mb-1 text-gray-800">{submission.user.name}</h3>
-                      <p className="text-base text-gray-700">{submission.user.email}</p>
-                      <p className="text-sm text-gray-600 mt-2">
+                      <h3 className="font-bold text-stone-800">{submission.user.name}</h3>
+                      <p className="text-sm text-stone-500">{submission.user.email}</p>
+                      <p className="text-xs text-stone-400 mt-2">
                         تم الإرسال: {new Date(submission.submittedAt).toLocaleString('ar-SA')}
                       </p>
                       {isGraded && submission.gradedAt && (
-                        <p className="text-sm text-green-700 mt-1">
+                        <p className="text-xs text-emerald-600 mt-1">
                           تم التصحيح: {new Date(submission.gradedAt).toLocaleString('ar-SA')}
                         </p>
                       )}
                     </div>
                     {isGraded && (
                       <div className="text-left">
-                        <div className="text-2xl font-bold text-primary">
+                        <div className="text-2xl font-bold text-[#1a3a2f]">
                           {submission.score} / {homework?.maxScore}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-xs text-stone-500">
                           {((submission.score! / homework!.maxScore) * 100).toFixed(1)}%
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="text-lg font-semibold mb-2 text-gray-800">الإجابة:</h4>
-                    <div className="text-base whitespace-pre-wrap text-gray-800">{submission.content}</div>
+                  <div className="mb-4 p-4 bg-stone-50 rounded-lg border border-stone-200">
+                    <h4 className="text-sm font-medium mb-2 text-stone-600">الإجابة:</h4>
+                    <div className="text-stone-800 whitespace-pre-wrap">{submission.content}</div>
                     {submission.fileUrl && (
                       <div className="mt-3">
                         <a
                           href={submission.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary hover:underline font-semibold"
+                          className="text-[#1a3a2f] hover:underline text-sm flex items-center gap-1"
                         >
-                          <LinkIcon size={16} className="inline ml-1" /> فتح الملف المرفق
+                          <LinkIcon size={14} /> فتح الملف المرفق
                         </a>
                       </div>
                     )}
                   </div>
 
                   {submission.feedback && (
-                    <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                      <h4 className="text-lg font-semibold mb-2 text-gray-800">التعليقات:</h4>
-                      <div className="text-base whitespace-pre-wrap text-gray-800">{submission.feedback}</div>
+                    <div className="mb-4 p-4 bg-stone-100 rounded-lg">
+                      <h4 className="text-sm font-medium mb-2 text-stone-600">التعليقات:</h4>
+                      <div className="text-stone-800 whitespace-pre-wrap">{submission.feedback}</div>
                     </div>
                   )}
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-lg font-semibold mb-2 text-gray-800">الدرجة</label>
-                      <div className="flex items-center gap-4">
+                      <label className="block text-sm font-medium mb-2 text-stone-700">الدرجة</label>
+                      <div className="flex items-center gap-3">
                         <input
                           type="number"
                           value={currentScore}
@@ -180,11 +209,11 @@ export default function HomeworkSubmissionsPage() {
                           min="0"
                           max={homework!.maxScore}
                           step="0.5"
-                          className="w-32 px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                          className="w-24 px-3 py-2 border border-stone-200 rounded-lg text-stone-800"
                         />
-                        <span className="text-lg text-gray-800">/ {homework?.maxScore}</span>
+                        <span className="text-stone-600">/ {homework?.maxScore}</span>
                         {currentScore > 0 && (
-                          <span className="text-lg text-gray-700">
+                          <span className="text-sm text-stone-500">
                             ({((currentScore / homework!.maxScore) * 100).toFixed(1)}%)
                           </span>
                         )}
@@ -192,32 +221,31 @@ export default function HomeworkSubmissionsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-lg font-semibold mb-2 text-gray-800">التعليقات (اختياري)</label>
+                      <label className="block text-sm font-medium mb-2 text-stone-700">التعليقات (اختياري)</label>
                       <textarea
                         value={currentFeedback}
                         onChange={(e) =>
                           setEditingFeedback({ ...editingFeedback, [submission.id]: e.target.value })
                         }
-                        rows={4}
-                        className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                        rows={3}
+                        className="w-full px-4 py-3 border border-stone-200 rounded-lg text-stone-800"
                         placeholder="اكتب تعليقاتك هنا..."
                       />
                     </div>
 
                     <button
                       onClick={() => handleGrade(submission.id)}
-                      className="px-6 py-3 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition"
+                      className="px-6 py-2 bg-[#1a3a2f] text-white rounded-lg font-medium hover:bg-[#2d5a4a] transition"
                     >
                       {isGraded ? 'تحديث التصحيح' : 'تصحيح الواجب'}
                     </button>
                   </div>
                 </div>
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
       </div>
     </div>
   );
 }
-

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { BookIcon, UserIcon, SearchIcon } from '@/components/Icons';
 
 interface Course {
   id: string;
@@ -33,20 +34,10 @@ export default function CoursesPage() {
       if (selectedCategory) params.append('categoryId', selectedCategory);
       
       const url = `/courses/public${params.toString() ? `?${params.toString()}` : ''}`;
-      console.log('[Courses] Fetching from:', url);
-      
       const response = await api.get(url);
-      console.log('[Courses] Response:', response.data);
       setCourses(response.data || []);
     } catch (error: any) {
       console.error('[Courses] Failed to load courses:', error);
-      console.error('[Courses] Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        url: error.config?.url,
-        baseURL: error.config?.baseURL,
-      });
       setCourses([]);
     } finally {
       setLoading(false);
@@ -55,80 +46,95 @@ export default function CoursesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">جاري التحميل...</p>
-        </div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
-        <h1 className="text-2xl md:text-3xl font-bold mb-4 text-gray-800">الدورات المتاحة</h1>
-        
-        {/* Search and Filter */}
-        <div className="flex gap-4 flex-wrap mb-6">
-          <input
-            type="text"
-            placeholder="ابحث عن دورة..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 min-w-full sm:min-w-[200px] px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-          />
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <BookIcon className="text-white" size={20} />
+            </div>
+            <h1 className="text-2xl font-bold">الدورات المتاحة</h1>
+          </div>
+          
+          {/* Search */}
+          <div className="relative max-w-xl">
+            <SearchIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400" size={20} />
+            <input
+              type="text"
+              placeholder="ابحث عن دورة..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pr-12 pl-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+            />
+          </div>
         </div>
+      </div>
 
-        {/* Courses Grid */}
-        <div>
-          {courses.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg md:text-xl">لا توجد دورات متاحة</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {courses.map((course) => (
-                <Link
-                  key={course.id}
-                  href={`/courses/${course.id}`}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition block"
-                >
-                  <div className="h-40 md:h-48 bg-gradient-to-br from-primary to-primary-light relative">
-                    {course.coverImage ? (
-                      <img
-                        src={course.coverImage}
-                        alt={course.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
-                        {course.title.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4 md:p-6">
-                    <h3 className="text-lg md:text-xl font-bold mb-2 text-gray-800">{course.title}</h3>
-                    <p className="text-gray-700 text-base mb-4 line-clamp-2">
-                      {course.description}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">
-                        {course.category.title}
-                      </span>
-                      <span className="text-primary font-bold">
-                        {course.price === 0 || !course.price ? 'مجاني' : `${course.price} ر.س`}
-                      </span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {courses.length === 0 ? (
+          <div className="bg-white rounded-xl border border-stone-200 p-12 text-center">
+            <BookIcon className="mx-auto mb-4 text-stone-300" size={48} />
+            <p className="text-stone-500">لا توجد دورات متاحة</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course) => (
+              <Link
+                key={course.id}
+                href={`/courses/${course.id}`}
+                className="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition group"
+              >
+                <div className="h-40 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] relative">
+                  {course.coverImage ? (
+                    <img
+                      src={course.coverImage}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold opacity-50">
+                      {course.title.charAt(0)}
                     </div>
-                    <div className="mt-4 text-sm text-gray-500">
-                      المدرس: {course.teacher.name}
-                    </div>
+                  )}
+                  <div className="absolute top-3 left-3">
+                    <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      course.price === 0 || !course.price 
+                        ? 'bg-emerald-500 text-white' 
+                        : 'bg-white text-stone-800'
+                    }`}>
+                      {course.price === 0 || !course.price ? 'مجاني' : `${course.price} ر.س`}
+                    </span>
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+                </div>
+                <div className="p-5">
+                  <div className="mb-2">
+                    <span className="text-xs px-2 py-1 bg-stone-100 text-stone-600 rounded">
+                      {course.category.title}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-stone-800 mb-2 group-hover:text-[#1a3a2f] transition">
+                    {course.title}
+                  </h3>
+                  <p className="text-stone-600 text-sm mb-4 line-clamp-2">
+                    {course.description}
+                  </p>
+                  <div className="flex items-center gap-2 text-sm text-stone-500">
+                    <UserIcon size={14} />
+                    <span>{course.teacher.name}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
