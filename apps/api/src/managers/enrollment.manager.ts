@@ -57,6 +57,49 @@ export class EnrollmentManager {
       };
     }
 
+    type CoursePrerequisiteWithCourse = {
+      prerequisite: { id: string; title: string };
+    };
+
+    const prerequisites = (await (prisma as any).coursePrerequisite.findMany({
+      where: { courseId },
+      include: {
+        prerequisite: {
+          select: { id: true, title: true },
+        },
+      },
+    })) as CoursePrerequisiteWithCourse[];
+
+    if (prerequisites.length > 0) {
+      const prerequisiteIds = prerequisites.map((prereq) => prereq.prerequisite.id);
+      const grades = await prisma.grade.findMany({
+        where: {
+          userId: auth.userId,
+          courseId: { in: prerequisiteIds },
+          type: 'FINAL',
+        },
+        select: { courseId: true, percentage: true },
+      });
+
+      const passedCourses = new Set(
+        grades.filter((grade) => grade.percentage >= 60).map((grade) => grade.courseId)
+      );
+      const missing = prerequisites.filter(
+        (prereq) => !passedCourses.has(prereq.prerequisite.id)
+      );
+
+      if (missing.length > 0) {
+        const titles = missing.map((prereq) => prereq.prerequisite.title).join('، ');
+        return {
+          success: false,
+          error: {
+            status: 400,
+            message: `يجب إكمال المساقات السابقة والنجاح بدرجة 60 على الأقل قبل التسجيل: ${titles}`,
+          },
+        };
+      }
+    }
+
     // Check if already enrolled
     const existing = await enrollmentRepository.exists(auth.userId, courseId);
     if (existing) {

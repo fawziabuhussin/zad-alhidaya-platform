@@ -15,6 +15,7 @@ export const createCourseSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
   gradingMethod: z.string().optional(), // JSON string
   teacherId: z.string().uuid().optional(), // Only for admin creating course for another teacher
+  prerequisiteCourseIds: z.array(z.string().uuid()).optional(),
 });
 
 /**
@@ -28,6 +29,7 @@ export const updateCourseSchema = z.object({
   price: z.number().min(0).optional(),
   status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
   gradingMethod: z.string().optional(), // JSON string
+  prerequisiteCourseIds: z.array(z.string().uuid()).optional(),
 });
 
 /**

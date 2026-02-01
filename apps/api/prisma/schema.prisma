@@ -94,10 +94,23 @@ model Course {
   resources   Resource[]
   contentReports ContentReport[]
   lessonQuestions LessonQuestion[]
+  prerequisites CoursePrerequisite[] @relation("CoursePrerequisites")
+  requiredFor CoursePrerequisite[] @relation("CoursePrerequisiteOf")
 
   @@index([categoryId])
   @@index([teacherId])
   @@index([status])
+}
+
+model CoursePrerequisite {
+  courseId             String
+  prerequisiteCourseId String
+
+  course        Course @relation("CoursePrerequisites", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisite  Course @relation("CoursePrerequisiteOf", fields: [prerequisiteCourseId], references: [id], onDelete: Restrict)
+
+  @@id([courseId, prerequisiteCourseId])
+  @@index([prerequisiteCourseId])
 }
 
 model Module {

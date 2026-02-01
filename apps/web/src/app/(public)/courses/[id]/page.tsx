@@ -18,6 +18,9 @@ interface Course {
   category: { title: string };
   teacher: { name: string };
   resources?: Resource[];
+  prerequisites?: Array<{
+    prerequisite: { id: string; title: string };
+  }>;
   modules: Array<{
     id: string;
     title: string;
@@ -189,6 +192,22 @@ export default function CourseDetailsPage() {
               )}
             </div>
           </div>
+          {course.prerequisites && course.prerequisites.length > 0 && (
+            <div className="mt-6 bg-white/10 border border-white/20 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold mb-2">
+                <AlertIcon size={16} />
+                المساقات السابقة المطلوبة
+              </div>
+              <p className="text-sm text-white/80 mb-2">
+                يجب إكمال المساقات التالية والنجاح بنسبة 60% على الأقل قبل التسجيل.
+              </p>
+              <ul className="text-sm text-white/90 list-disc list-inside space-y-1">
+                {course.prerequisites.map((prereq) => (
+                  <li key={prereq.prerequisite.id}>{prereq.prerequisite.title}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 
