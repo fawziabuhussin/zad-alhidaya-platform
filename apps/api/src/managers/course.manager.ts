@@ -5,6 +5,7 @@
 import { courseRepository } from '../repositories/course.repository';
 import { AuthContext } from '../types/common.types';
 import { CreateCourseDTO, UpdateCourseDTO, CourseWithRelations, CourseListFilters } from '../types/course.types';
+import { prisma } from '../utils/prisma';
 
 /**
  * Result types for manager operations
@@ -134,9 +135,27 @@ export class CourseManager {
       ? data.teacherId
       : auth.userId;
 
+    let prerequisiteCourseIds = data.prerequisiteCourseIds;
+    if (prerequisiteCourseIds) {
+      prerequisiteCourseIds = Array.from(new Set(prerequisiteCourseIds));
+      if (prerequisiteCourseIds.length > 0) {
+        const existing = await prisma.course.findMany({
+          where: { id: { in: prerequisiteCourseIds } },
+          select: { id: true },
+        });
+        if (existing.length !== prerequisiteCourseIds.length) {
+          return {
+            success: false,
+            error: { status: 400, message: 'بعض المساقات السابقة غير موجودة' },
+          };
+        }
+      }
+    }
+
     const courseData: CreateCourseDTO = {
       ...data,
       teacherId,
+      prerequisiteCourseIds,
     };
 
     const course = await courseRepository.create(courseData);
@@ -168,6 +187,27 @@ export class CourseManager {
         success: false,
         error: { status: 403, message: 'غير مسموح بالتعديل' },
       };
+    }
+
+    if (data.prerequisiteCourseIds) {
+      const uniquePrereqs = Array.from(new Set(data.prerequisiteCourseIds)).filter(
+        (id) => id !== courseId
+      );
+
+      if (uniquePrereqs.length > 0) {
+        const existing = await prisma.course.findMany({
+          where: { id: { in: uniquePrereqs } },
+          select: { id: true },
+        });
+        if (existing.length !== uniquePrereqs.length) {
+          return {
+            success: false,
+            error: { status: 400, message: 'بعض المساقات السابقة غير موجودة' },
+          };
+        }
+      }
+
+      data.prerequisiteCourseIds = uniquePrereqs;
     }
 
     const updated = await courseRepository.update(courseId, data);
