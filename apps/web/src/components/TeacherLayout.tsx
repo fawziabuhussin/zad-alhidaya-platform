@@ -21,11 +21,16 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
   const [profileData, setProfileData] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [newReportsCount, setNewReportsCount] = useState(0);
+  const [newQuestionsCount, setNewQuestionsCount] = useState(0);
 
-  const loadReportsCount = useCallback(async () => {
+  const loadNotificationCounts = useCallback(async () => {
     try {
-      const res = await api.get('/reports/count/new');
-      setNewReportsCount(res.data?.count || 0);
+      const [reportsRes, questionsRes] = await Promise.all([
+        api.get('/reports/count/new').catch(() => ({ data: { count: 0 } })),
+        api.get('/questions/new-count').catch(() => ({ data: { count: 0 } })),
+      ]);
+      setNewReportsCount(reportsRes.data?.count || 0);
+      setNewQuestionsCount(questionsRes.data?.count || 0);
     } catch (error) {
       // Silently fail
     }
@@ -35,14 +40,14 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
     checkAuth();
   }, []);
 
-  // Poll for new reports count
+  // Poll for new reports and questions count
   useEffect(() => {
     if (user) {
-      loadReportsCount();
-      const interval = setInterval(loadReportsCount, 15000); // Every 15 seconds
+      loadNotificationCounts();
+      const interval = setInterval(loadNotificationCounts, 60000); // Every 1 minute
       return () => clearInterval(interval);
     }
-  }, [user, loadReportsCount]);
+  }, [user, loadNotificationCounts]);
 
   const checkAuth = async () => {
     try {
@@ -172,7 +177,8 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
     { href: '/teacher/exams', label: 'الامتحانات', category: 'assessments' },
     { href: '/teacher/homework', label: 'الواجبات', category: 'assessments' },
     { href: '/teacher/grades', label: 'التقييمات', category: 'assessments' },
-    { href: '/teacher/reports', label: 'التبليغات', category: 'reports', hasBadge: true },
+    { href: '/teacher/reports', label: 'التبليغات', category: 'reports', hasBadge: true, badgeType: 'reports' },
+    { href: '/teacher/questions', label: 'الأسئلة', category: 'questions', hasBadge: true, badgeType: 'questions' },
   ];
 
   const categories = [
@@ -180,6 +186,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
     { id: 'content', label: 'المحتوى' },
     { id: 'assessments', label: 'التقييمات' },
     { id: 'reports', label: 'التبليغات' },
+    { id: 'questions', label: 'الأسئلة' },
   ];
 
   if (loading) {
@@ -213,7 +220,8 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
               <nav className="hidden lg:flex items-center gap-1">
                 {navItems.map((item: any) => {
                   const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                  const showBadge = item.hasBadge && newReportsCount > 0;
+                  const badgeCount = item.badgeType === 'reports' ? newReportsCount : item.badgeType === 'questions' ? newQuestionsCount : 0;
+                  const showBadge = item.hasBadge && badgeCount > 0;
                   return (
                     <Link
                       key={item.href}
@@ -227,7 +235,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
                       {item.label}
                       {showBadge && (
                         <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
-                          {newReportsCount > 9 ? '9+' : newReportsCount}
+                          {badgeCount > 9 ? '9+' : badgeCount}
                         </span>
                       )}
                     </Link>
@@ -285,7 +293,8 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
             <nav className="px-4 py-3 space-y-1">
               {navItems.map((item: any) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                const showBadge = item.hasBadge && newReportsCount > 0;
+                const badgeCount = item.badgeType === 'reports' ? newReportsCount : item.badgeType === 'questions' ? newQuestionsCount : 0;
+                const showBadge = item.hasBadge && badgeCount > 0;
                 return (
                   <Link
                     key={item.href}
@@ -300,7 +309,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
                     <span>{item.label}</span>
                     {showBadge && (
                       <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
-                        {newReportsCount}
+                        {badgeCount}
                       </span>
                     )}
                   </Link>

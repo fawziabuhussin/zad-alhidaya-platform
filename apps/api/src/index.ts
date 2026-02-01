@@ -21,6 +21,7 @@ import gradesRoutes from './routes/grades';
 import playlistsRoutes from './routes/playlists';
 import resourcesRoutes from './routes/resources';
 import reportsRoutes from './routes/reports';
+import questionsRoutes from './routes/questions';
 
 dotenv.config();
 
@@ -120,6 +121,8 @@ app.use('/api/playlists', playlistsRoutes);
 app.use('/playlists', playlistsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/reports', reportsRoutes);
+app.use('/api/questions', questionsRoutes);
+app.use('/questions', questionsRoutes);
 
 // Resource routes (nested under courses and lessons)
 app.use('/api/courses/:courseId/resources', resourcesRoutes);

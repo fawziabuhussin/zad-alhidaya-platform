@@ -109,16 +109,28 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                       {user.role === 'STUDENT' ? 'زادي' : 'لوحة التحكم'}
                     </Link>
                     {user.role === 'STUDENT' && (
-                      <Link
-                        href="/dashboard/reports"
-                        className={`px-3 py-1.5 rounded text-sm transition-colors ${
-                          pathname === '/dashboard/reports'
-                            ? 'bg-white/15 text-white'
-                            : 'text-stone-300 hover:text-white hover:bg-white/10'
-                        }`}
-                      >
-                        تبليغاتي
-                      </Link>
+                      <>
+                        <Link
+                          href="/dashboard/questions"
+                          className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                            pathname === '/dashboard/questions'
+                              ? 'bg-white/15 text-white'
+                              : 'text-stone-300 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          أسئلتي
+                        </Link>
+                        <Link
+                          href="/dashboard/reports"
+                          className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                            pathname === '/dashboard/reports'
+                              ? 'bg-white/15 text-white'
+                              : 'text-stone-300 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          تبليغاتي
+                        </Link>
+                      </>
                     )}
                   </>
                 )}
@@ -222,17 +234,30 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                     {user.role === 'STUDENT' ? 'زادي' : 'لوحة التحكم'}
                   </Link>
                   {user.role === 'STUDENT' && (
-                    <Link
-                      href="/dashboard/reports"
-                      onClick={() => setMenuOpen(false)}
-                      className={`block px-3 py-2 rounded text-sm ${
-                        pathname === '/dashboard/reports'
-                          ? 'bg-white/15 text-white'
-                          : 'text-stone-300 hover:bg-white/10'
-                      }`}
-                    >
-                      تبليغاتي
-                    </Link>
+                    <>
+                      <Link
+                        href="/dashboard/questions"
+                        onClick={() => setMenuOpen(false)}
+                        className={`block px-3 py-2 rounded text-sm ${
+                          pathname === '/dashboard/questions'
+                            ? 'bg-white/15 text-white'
+                            : 'text-stone-300 hover:bg-white/10'
+                        }`}
+                      >
+                        أسئلتي
+                      </Link>
+                      <Link
+                        href="/dashboard/reports"
+                        onClick={() => setMenuOpen(false)}
+                        className={`block px-3 py-2 rounded text-sm ${
+                          pathname === '/dashboard/reports'
+                            ? 'bg-white/15 text-white'
+                            : 'text-stone-300 hover:bg-white/10'
+                        }`}
+                      >
+                        تبليغاتي
+                      </Link>
+                    </>
                   )}
                   
                   <div className="border-t border-white/10 pt-3 mt-3">
