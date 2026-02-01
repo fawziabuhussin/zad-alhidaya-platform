@@ -169,7 +169,9 @@ export class CourseRepository {
       courseData.gradingMethod = data.gradingMethod;
     }
 
-    if (data.prerequisiteCourseIds && data.prerequisiteCourseIds.length > 0) {
+    const prerequisiteIds = data.prerequisiteCourseIds ?? [];
+
+    if (prerequisiteIds.length > 0) {
       return prisma.$transaction(async (tx) => {
         const created = await tx.course.create({
           data: courseData,
@@ -177,7 +179,7 @@ export class CourseRepository {
         });
 
         await tx.coursePrerequisite.createMany({
-          data: data.prerequisiteCourseIds.map((prereqId) => ({
+          data: prerequisiteIds.map((prereqId) => ({
             courseId: created.id,
             prerequisiteCourseId: prereqId,
           })),
@@ -212,7 +214,7 @@ export class CourseRepository {
     }
 
     if (data.prerequisiteCourseIds) {
-      const prerequisiteIds = data.prerequisiteCourseIds;
+      const prerequisiteIds = data.prerequisiteCourseIds ?? [];
       return prisma.$transaction(async (tx) => {
         const updated = await tx.course.update({
           where: { id },
