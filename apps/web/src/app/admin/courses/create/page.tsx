@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 
 interface Category {
@@ -11,6 +11,8 @@ interface Category {
 
 export default function CreateCoursePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const categoryIdParam = searchParams.get('categoryId');
   const [loading, setLoading] = useState(false);
   const [loadingPlaylist, setLoadingPlaylist] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -30,16 +32,29 @@ export default function CreateCoursePage() {
 
   useEffect(() => {
     loadCategories();
-  }, []);
+  }, [categoryIdParam]);
 
   const loadCategories = async () => {
     try {
       const response = await api.get('/categories');
-      setCategories(response.data || []);
-      // Auto-select first category if available
-      if (response.data && response.data.length > 0 && !formData.categoryId) {
-        setFormData(prev => ({ ...prev, categoryId: response.data[0].id }));
-      }
+      const categoryList = response.data || [];
+      setCategories(categoryList);
+      setFormData((prev) => {
+        const hasSelection = !!prev.categoryId && prev.categoryId.trim() !== '';
+        const matchedCategory = categoryIdParam
+          ? categoryList.find((cat: Category) => cat.id === categoryIdParam)
+          : null;
+
+        if (matchedCategory) {
+          return { ...prev, categoryId: matchedCategory.id };
+        }
+
+        if (!hasSelection && categoryList.length > 0) {
+          return { ...prev, categoryId: categoryList[0].id };
+        }
+
+        return prev;
+      });
     } catch (error) {
       console.error('Failed to load categories:', error);
     }
@@ -155,13 +170,6 @@ export default function CreateCoursePage() {
       }
       if (!formData.categoryId) {
         setErrors({ categoryId: 'يجب اختيار الفئة' });
-        setLoading(false);
-        return;
-      }
-
-      // Validate categoryId is a valid UUID
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(formData.categoryId)) {
-        setErrors({ categoryId: 'يجب اختيار فئة صحيحة' });
         setLoading(false);
         return;
       }

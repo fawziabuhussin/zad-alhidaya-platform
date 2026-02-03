@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { BookIcon, PlusIcon, EditIcon, TrashIcon, SearchIcon, GraduateIcon } from '@/components/Icons';
 
@@ -12,7 +13,7 @@ interface Course {
   coverImage?: string;
   status: string;
   price?: number;
-  category: { title: string };
+  category: { id: string; title: string };
   teacher: { name: string };
   _count: { enrollments: number };
   createdAt: string;
@@ -22,6 +23,8 @@ export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const searchParams = useSearchParams();
+  const selectedCategoryId = searchParams.get('categoryId') || '';
 
   useEffect(() => {
     loadCourses();
@@ -49,10 +52,23 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const filteredCourses = courses.filter(course =>
-    course.title.toLowerCase().includes(search.toLowerCase()) ||
-    course.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCourses = useMemo(() => {
+    const searchValue = search.toLowerCase();
+    return courses.filter((course) => {
+      if (selectedCategoryId && course.category?.id !== selectedCategoryId) {
+        return false;
+      }
+      return (
+        course.title.toLowerCase().includes(searchValue) ||
+        course.description.toLowerCase().includes(searchValue)
+      );
+    });
+  }, [courses, search, selectedCategoryId]);
+
+  const selectedCategoryTitle = useMemo(() => {
+    if (!selectedCategoryId) return '';
+    return courses.find((course) => course.category?.id === selectedCategoryId)?.category?.title || '';
+  }, [courses, selectedCategoryId]);
 
   const stats = {
     total: courses.length,
@@ -117,7 +133,20 @@ export default function AdminCoursesPage() {
         </div>
 
         {/* Search */}
-        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-4 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-4 mb-6 space-y-3">
+          {selectedCategoryId && (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 text-sm font-medium">
+                الفئة: {selectedCategoryTitle || 'مختارة'}
+              </span>
+              <Link
+                href="/admin/courses"
+                className="text-sm text-stone-600 hover:text-stone-800 transition"
+              >
+                إظهار كل الدورات
+              </Link>
+            </div>
+          )}
           <div className="relative">
             <SearchIcon size={18} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-400" />
             <input
