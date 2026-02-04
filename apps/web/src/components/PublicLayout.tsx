@@ -91,18 +91,48 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                   الدورات
                 </Link>
                 {user && (
-                  <Link
-                    href={
-                      user.role === 'ADMIN' 
-                        ? '/admin' 
-                        : user.role === 'TEACHER' 
-                        ? '/teacher' 
-                        : '/dashboard'
-                    }
-                    className="px-3 py-1.5 rounded text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-colors"
-                  >
-                    {user.role === 'STUDENT' ? 'زادي' : 'لوحة التحكم'}
-                  </Link>
+                  <>
+                    <Link
+                      href={
+                        user.role === 'ADMIN' 
+                          ? '/admin' 
+                          : user.role === 'TEACHER' 
+                          ? '/teacher' 
+                          : '/dashboard'
+                      }
+                      className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                        pathname === '/dashboard' || pathname.startsWith('/dashboard/')
+                          ? 'bg-white/15 text-white'
+                          : 'text-stone-300 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {user.role === 'STUDENT' ? 'زادي' : 'لوحة التحكم'}
+                    </Link>
+                    {user.role === 'STUDENT' && (
+                      <>
+                        <Link
+                          href="/dashboard/questions"
+                          className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                            pathname === '/dashboard/questions'
+                              ? 'bg-white/15 text-white'
+                              : 'text-stone-300 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          أسئلتي
+                        </Link>
+                        <Link
+                          href="/dashboard/reports"
+                          className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                            pathname === '/dashboard/reports'
+                              ? 'bg-white/15 text-white'
+                              : 'text-stone-300 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          تبليغاتي
+                        </Link>
+                      </>
+                    )}
+                  </>
                 )}
               </nav>
             </div>
@@ -195,10 +225,40 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                         : '/dashboard'
                     }
                     onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded text-sm text-stone-300 hover:bg-white/10"
+                    className={`block px-3 py-2 rounded text-sm ${
+                      pathname === '/dashboard' || pathname.startsWith('/dashboard/')
+                        ? 'bg-white/15 text-white'
+                        : 'text-stone-300 hover:bg-white/10'
+                    }`}
                   >
                     {user.role === 'STUDENT' ? 'زادي' : 'لوحة التحكم'}
                   </Link>
+                  {user.role === 'STUDENT' && (
+                    <>
+                      <Link
+                        href="/dashboard/questions"
+                        onClick={() => setMenuOpen(false)}
+                        className={`block px-3 py-2 rounded text-sm ${
+                          pathname === '/dashboard/questions'
+                            ? 'bg-white/15 text-white'
+                            : 'text-stone-300 hover:bg-white/10'
+                        }`}
+                      >
+                        أسئلتي
+                      </Link>
+                      <Link
+                        href="/dashboard/reports"
+                        onClick={() => setMenuOpen(false)}
+                        className={`block px-3 py-2 rounded text-sm ${
+                          pathname === '/dashboard/reports'
+                            ? 'bg-white/15 text-white'
+                            : 'text-stone-300 hover:bg-white/10'
+                        }`}
+                      >
+                        تبليغاتي
+                      </Link>
+                    </>
+                  )}
                   
                   <div className="border-t border-white/10 pt-3 mt-3">
                     <div className="flex items-center gap-2 px-3 py-2">

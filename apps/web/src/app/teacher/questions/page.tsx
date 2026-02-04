@@ -1,0 +1,276 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import api from '@/lib/api';
+import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon } from '@/components/Icons';
+
+interface Question {
+  id: string;
+  question: string;
+  answer: string | null;
+  status: string;
+  createdAt: string;
+  answeredAt: string | null;
+  student: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  course: {
+    id: string;
+    title: string;
+    teacherId: string;
+  };
+  lesson: {
+    id: string;
+    title: string;
+    order: number;
+    module: {
+      id: string;
+      title: string;
+      order: number;
+    };
+  };
+  answeredBy?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+export default function TeacherQuestionsPage() {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'PENDING' | 'ANSWERED'>('all');
+  const [answeringId, setAnsweringId] = useState<string | null>(null);
+  const [answerText, setAnswerText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    loadQuestions();
+  }, []);
+
+  const loadQuestions = async () => {
+    try {
+      const response = await api.get('/questions/teacher');
+      setQuestions(response.data || []);
+    } catch (error) {
+      console.error('Failed to load questions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAnswer = async (questionId: string) => {
+    if (!answerText.trim()) {
+      alert('يرجى كتابة الإجابة');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await api.post(`/questions/${questionId}/answer`, {
+        answer: answerText.trim(),
+      });
+      setAnsweringId(null);
+      setAnswerText('');
+      loadQuestions();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'فشل إرسال الإجابة');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (questionId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا السؤال؟')) return;
+
+    try {
+      await api.delete(`/questions/${questionId}`);
+      loadQuestions();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'فشل حذف السؤال');
+    }
+  };
+
+  const filteredQuestions = questions.filter(q => 
+    filter === 'all' ? true : q.status === filter
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <HelpIcon className="text-white" size={20} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">أسئلة الطلاب</h1>
+              <p className="text-white/70 text-sm">الأسئلة المتعلقة بدوراتك</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
+            <p className="text-2xl font-bold text-[#1a3a2f]">{questions.length}</p>
+            <p className="text-sm text-stone-500">إجمالي الأسئلة</p>
+          </div>
+          <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
+            <p className="text-2xl font-bold text-emerald-600">
+              {questions.filter(q => q.status === 'ANSWERED').length}
+            </p>
+            <p className="text-sm text-stone-500">تم الإجابة</p>
+          </div>
+          <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
+            <p className="text-2xl font-bold text-amber-600">
+              {questions.filter(q => q.status === 'PENDING').length}
+            </p>
+            <p className="text-sm text-stone-500">في الانتظار</p>
+          </div>
+        </div>
+
+        {/* Filter */}
+        <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { value: 'all', label: 'الكل' },
+              { value: 'PENDING', label: 'في الانتظار' },
+              { value: 'ANSWERED', label: 'تم الإجابة' },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setFilter(option.value as any)}
+                className={`px-4 py-2 rounded-lg text-sm transition ${
+                  filter === option.value
+                    ? 'bg-[#1a3a2f] text-white'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Questions List */}
+        <div className="space-y-4">
+          {filteredQuestions.length === 0 ? (
+            <div className="bg-white rounded-xl border border-stone-200 p-12 text-center">
+              <HelpIcon className="mx-auto mb-4 text-stone-300" size={48} />
+              <p className="text-stone-500">لا توجد أسئلة</p>
+            </div>
+          ) : (
+            filteredQuestions.map((question) => (
+              <div key={question.id} className="bg-white rounded-xl border border-stone-200 p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        question.status === 'ANSWERED'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-amber-50 text-amber-700'
+                      }`}>
+                        {question.status === 'ANSWERED' ? 'تم الإجابة' : 'في الانتظار'}
+                      </span>
+                      <span className="text-xs text-stone-400">
+                        {new Date(question.createdAt).toLocaleDateString('ar-SA')}
+                      </span>
+                    </div>
+                    <p className="font-medium text-stone-800">{question.student.name}</p>
+                    <p className="text-sm text-stone-500">
+                      {question.course.title} - {question.lesson.module.order}.{question.lesson.order} {question.lesson.title}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/courses/${question.course.id}/lessons/${question.lesson.id}`}
+                      className="p-2 text-stone-400 hover:text-[#1a3a2f] hover:bg-stone-50 rounded-lg"
+                      title="عرض الدرس"
+                    >
+                      <EyeIcon size={18} />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(question.id)}
+                      className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                      title="حذف"
+                    >
+                      <TrashIcon size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Question */}
+                <div className="p-4 bg-stone-50 rounded-lg mb-3">
+                  <p className="text-sm font-medium text-stone-600 mb-1">السؤال:</p>
+                  <p className="text-stone-800 whitespace-pre-wrap">{question.question}</p>
+                </div>
+
+                {/* Answer or Answer Form */}
+                {question.status === 'ANSWERED' && question.answer ? (
+                  <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircleIcon className="text-emerald-600" size={16} />
+                      <p className="text-sm font-medium text-emerald-700">
+                        الإجابة {question.answeredBy && `من ${question.answeredBy.name}`}
+                      </p>
+                    </div>
+                    <p className="text-stone-800 whitespace-pre-wrap">{question.answer}</p>
+                  </div>
+                ) : answeringId === question.id ? (
+                  <div className="space-y-3">
+                    <textarea
+                      value={answerText}
+                      onChange={(e) => setAnswerText(e.target.value)}
+                      rows={4}
+                      placeholder="اكتب إجابتك هنا..."
+                      className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAnswer(question.id)}
+                        disabled={submitting}
+                        className="px-4 py-2 bg-[#1a3a2f] text-white rounded-lg hover:bg-[#2d5a4a] transition disabled:opacity-50"
+                      >
+                        {submitting ? 'جاري الإرسال...' : 'إرسال الإجابة'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAnsweringId(null);
+                          setAnswerText('');
+                        }}
+                        className="px-4 py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200"
+                      >
+                        إلغاء
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAnsweringId(question.id)}
+                    className="px-4 py-2 bg-[#1a3a2f] text-white rounded-lg hover:bg-[#2d5a4a] transition text-sm"
+                  >
+                    الإجابة على السؤال
+                  </button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

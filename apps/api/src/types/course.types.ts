@@ -14,6 +14,7 @@ export interface CreateCourseDTO {
   price?: number;
   status?: string;
   gradingMethod?: string;
+  prerequisiteCourseIds?: string[];
 }
 
 /**
@@ -27,6 +28,7 @@ export interface UpdateCourseDTO {
   price?: number;
   status?: string;
   gradingMethod?: string;
+  prerequisiteCourseIds?: string[];
 }
 
 /**
@@ -73,6 +75,12 @@ export interface CourseWithRelations {
   exams?: any[];
   homeworks?: any[];
   resources?: any[];
+  prerequisites?: Array<{
+    prerequisite: {
+      id: string;
+      title: string;
+    };
+  }>;
   _count?: {
     enrollments: number;
   };

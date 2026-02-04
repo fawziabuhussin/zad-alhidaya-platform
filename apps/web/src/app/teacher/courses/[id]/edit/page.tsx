@@ -137,12 +137,20 @@ interface Course {
   price: number;
   status: string;
   gradingMethod?: string;
+  prerequisites?: Array<{
+    prerequisite: { id: string; title: string };
+  }>;
   teacher?: { id: string; name: string; email: string };
   _count?: { enrollments: number };
   modules: Module[];
   exams?: Exam[];
   homeworks?: Homework[];
   resources?: Resource[];
+}
+
+interface CourseSummary {
+  id: string;
+  title: string;
 }
 
 export default function EditCoursePage() {
@@ -168,6 +176,8 @@ export default function EditCoursePage() {
   });
   const [exams, setExams] = useState<Exam[]>([]);
   const [homeworks, setHomeworks] = useState<Homework[]>([]);
+  const [availablePrerequisites, setAvailablePrerequisites] = useState<CourseSummary[]>([]);
+  const [selectedPrerequisites, setSelectedPrerequisites] = useState<string[]>([]);
   const [showExamForm, setShowExamForm] = useState(false);
   const [showHomeworkForm, setShowHomeworkForm] = useState(false);
   
@@ -229,11 +239,12 @@ export default function EditCoursePage() {
         return;
       }
 
-      const [courseRes, categoriesRes, examsRes, homeworksRes] = await Promise.all([
+      const [courseRes, categoriesRes, examsRes, homeworksRes, coursesRes] = await Promise.all([
         api.get(`/courses/${courseId}`),
         api.get('/categories'),
         api.get(`/exams/course/${courseId}`).catch(() => ({ data: [] })),
         api.get(`/homework/course/${courseId}`).catch(() => ({ data: [] })),
+        api.get('/courses/admin').catch(() => ({ data: [] })),
       ]);
 
       const courseData = courseRes.data;
@@ -266,6 +277,11 @@ export default function EditCoursePage() {
       setHomeworks(homeworksRes.data || []);
       setCourseResources(courseData.resources || []);
       setCategories(categoriesRes.data || []);
+      const allCourses = coursesRes.data || [];
+      setAvailablePrerequisites(allCourses.filter((c: CourseSummary) => c.id !== courseId));
+      setSelectedPrerequisites(
+        (courseData.prerequisites || []).map((prereq: any) => prereq.prerequisite.id)
+      );
     } catch (error: any) {
       console.error('Failed to load data:', error);
       alert(error.response?.data?.message || 'فشل تحميل البيانات');
@@ -292,6 +308,7 @@ export default function EditCoursePage() {
         price: formData.price || 0,
         status: formData.status,
         gradingMethod: JSON.stringify(gradingMethod),
+        prerequisiteCourseIds: selectedPrerequisites,
       };
 
       // Only include categoryId if it's a valid UUID (not empty string)
@@ -794,6 +811,40 @@ export default function EditCoursePage() {
                   step="0.01"
                   className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-lg font-semibold mb-2 text-gray-800">المساقات السابقة</label>
+              <p className="text-sm text-gray-600 mb-3">
+                لا يمكن للطالب التسجيل إلا بعد إكمال المساقات السابقة والنجاح بنسبة 60% على الأقل.
+              </p>
+              <div className="border-2 border-gray-200 rounded-lg p-4 max-h-56 overflow-y-auto bg-white">
+                {availablePrerequisites.length === 0 ? (
+                  <p className="text-gray-500 text-sm">لا توجد مساقات متاحة لإضافتها.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {availablePrerequisites.map((courseOption) => (
+                      <label key={courseOption.id} className="flex items-center gap-3 text-gray-800">
+                        <input
+                          type="checkbox"
+                          checked={selectedPrerequisites.includes(courseOption.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedPrerequisites([...selectedPrerequisites, courseOption.id]);
+                            } else {
+                              setSelectedPrerequisites(
+                                selectedPrerequisites.filter((id) => id !== courseOption.id)
+                              );
+                            }
+                          }}
+                          className="h-4 w-4 text-primary border-gray-300 rounded"
+                        />
+                        <span>{courseOption.title}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

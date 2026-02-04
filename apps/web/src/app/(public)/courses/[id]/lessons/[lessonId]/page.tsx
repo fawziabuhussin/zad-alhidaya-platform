@@ -7,16 +7,40 @@ import Modal from '@/components/Modal';
 import { CheckCircleIcon } from '@/components/Icons';
 import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
+import ReportErrorButton from '@/components/ReportErrorButton';
+import AskQuestionButton from '@/components/AskQuestionButton';
+
+// Helper to get user from localStorage
+const getCurrentUser = () => {
+  if (typeof window === 'undefined') return null;
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return null;
+  try {
+    return JSON.parse(userStr);
+  } catch {
+    return null;
+  }
+};
 
 interface Lesson {
   id: string;
   title: string;
   description?: string;
   type: string;
+  order: number;
   youtubeUrl?: string;
   textContent?: string;
   durationMinutes?: number;
   resources?: Resource[];
+  module?: {
+    id: string;
+    title: string;
+    order: number;
+    course?: {
+      id: string;
+      title: string;
+    };
+  };
 }
 
 export default function LessonPage() {
@@ -27,9 +51,12 @@ export default function LessonPage() {
   const [completed, setCompleted] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isStudent, setIsStudent] = useState(false);
 
   useEffect(() => {
     loadLesson();
+    const user = getCurrentUser();
+    setIsStudent(user?.role === 'STUDENT');
   }, [params.lessonId]);
 
   const loadLesson = async () => {
@@ -154,20 +181,47 @@ export default function LessonPage() {
             </div>
           )}
 
-          <div className="flex gap-4">
-            <button
-              onClick={handleComplete}
-              disabled={completed}
-              className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {completed ? <><CheckCircleIcon size={16} className="inline" /> تم الإكمال</> : <><CheckCircleIcon size={16} className="inline" /> إكمال الدرس</>}
-            </button>
-            <button
-              onClick={() => router.back()}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition"
-            >
-              العودة
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Main Actions - Right Side (RTL) */}
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={handleComplete}
+                disabled={completed}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {completed ? <><CheckCircleIcon size={16} className="inline" /> تم الإكمال</> : <><CheckCircleIcon size={16} className="inline" /> إكمال الدرس</>}
+              </button>
+              <button
+                onClick={() => router.back()}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition"
+              >
+                العودة
+              </button>
+            </div>
+            
+            {/* Report Error & Ask Question Buttons - Left Side (RTL) */}
+            {lesson.module?.course && (
+              <div className="flex gap-2">
+                {isStudent && (
+                  <AskQuestionButton
+                    courseId={lesson.module.course.id}
+                    courseName={lesson.module.course.title}
+                    lessonId={lesson.id}
+                    lessonTitle={lesson.title}
+                    lessonOrder={lesson.order || 1}
+                    moduleOrder={lesson.module.order || 1}
+                  />
+                )}
+                <ReportErrorButton
+                  courseId={lesson.module.course.id}
+                  courseName={lesson.module.course.title}
+                  lessonId={lesson.id}
+                  lessonTitle={lesson.title}
+                  lessonOrder={lesson.order || 1}
+                  moduleOrder={lesson.module.order || 1}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

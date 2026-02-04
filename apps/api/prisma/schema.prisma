@@ -32,6 +32,10 @@ model User {
   examAttempts ExamAttempt[]
   grades       Grade[]
   resourcesCreated Resource[] @relation("ResourceCreator")
+  reportsSubmitted ContentReport[] @relation("ReportedBy")
+  reportsReviewed  ContentReport[] @relation("ReviewedBy")
+  questionsAsked   LessonQuestion[] @relation("QuestionAskedBy")
+  questionsAnswered LessonQuestion[] @relation("QuestionAnsweredBy")
 
   @@index([email])
   @@index([role])
@@ -88,10 +92,25 @@ model Course {
   exams       Exam[]
   grades      Grade[]
   resources   Resource[]
+  contentReports ContentReport[]
+  lessonQuestions LessonQuestion[]
+  prerequisites CoursePrerequisite[] @relation("CoursePrerequisites")
+  requiredFor CoursePrerequisite[] @relation("CoursePrerequisiteOf")
 
   @@index([categoryId])
   @@index([teacherId])
   @@index([status])
+}
+
+model CoursePrerequisite {
+  courseId             String
+  prerequisiteCourseId String
+
+  course        Course @relation("CoursePrerequisites", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisite  Course @relation("CoursePrerequisiteOf", fields: [prerequisiteCourseId], references: [id], onDelete: Restrict)
+
+  @@id([courseId, prerequisiteCourseId])
+  @@index([prerequisiteCourseId])
 }
 
 model Module {
@@ -125,6 +144,8 @@ model Lesson {
   module   Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   progress LessonProgress[]
   resources Resource[]
+  contentReports ContentReport[]
+  lessonQuestions LessonQuestion[]
 
   @@index([moduleId])
   @@index([order])
@@ -364,4 +385,76 @@ model Resource {
   @@index([lessonId])
   @@index([order])
   @@index([createdById])
+}
+
+model ContentReport {
+  id          String   @id @default(uuid())
+  
+  // Reporter info
+  reporterId  String
+  reporter    User     @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  
+  // Content location
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  // Report details
+  type        String   // VIDEO_ERROR, TEXT_ERROR, AUDIO_ERROR, RESOURCE_ERROR, CONTENT_MISSING, OTHER
+  description String
+  timestamp   String?  // For video errors (e.g., "02:34")
+  
+  // Status tracking
+  status      String   @default("NEW") // NEW, IN_REVIEW, RESOLVED, DISMISSED
+  reviewerId  String?
+  reviewer    User?    @relation("ReviewedBy", fields: [reviewerId], references: [id])
+  reviewNote  String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+  
+  @@index([courseId])
+  @@index([lessonId])
+  @@index([reporterId])
+  @@index([reviewerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model LessonQuestion {
+  id           String   @id @default(uuid())
+  
+  // Student who asked
+  studentId    String
+  student      User     @relation("QuestionAskedBy", fields: [studentId], references: [id], onDelete: Cascade)
+  
+  // Content location
+  courseId     String
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonId     String
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  // Question content
+  question     String
+  answer       String?
+  
+  // Status tracking
+  status       String   @default("PENDING") // PENDING, ANSWERED
+  answeredById String?
+  answeredBy   User?    @relation("QuestionAnsweredBy", fields: [answeredById], references: [id])
+  answeredAt   DateTime?
+  
+  // Timestamps
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([courseId])
+  @@index([lessonId])
+  @@index([studentId])
+  @@index([answeredById])
+  @@index([status])
+  @@index([createdAt])
 }

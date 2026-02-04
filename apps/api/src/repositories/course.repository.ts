@@ -45,6 +45,13 @@ const courseFullInclude = {
       },
     },
   },
+  prerequisites: {
+    include: {
+      prerequisite: {
+        select: { id: true, title: true },
+      },
+    },
+  },
   _count: {
     select: { enrollments: true },
   },
@@ -67,6 +74,13 @@ const courseBasicInclude = {
   },
   _count: {
     select: { enrollments: true },
+  },
+  prerequisites: {
+    include: {
+      prerequisite: {
+        select: { id: true, title: true },
+      },
+    },
   },
 };
 
@@ -155,6 +169,27 @@ export class CourseRepository {
       courseData.gradingMethod = data.gradingMethod;
     }
 
+    const prerequisiteIds = data.prerequisiteCourseIds ?? [];
+
+    if (prerequisiteIds.length > 0) {
+      return prisma.$transaction(async (tx) => {
+        const created = await tx.course.create({
+          data: courseData,
+          include: courseBasicInclude,
+        });
+
+        await tx.coursePrerequisite.createMany({
+          data: prerequisiteIds.map((prereqId) => ({
+            courseId: created.id,
+            prerequisiteCourseId: prereqId,
+          })),
+          skipDuplicates: true,
+        });
+
+        return created as any;
+      });
+    }
+
     return prisma.course.create({
       data: courseData,
       include: courseBasicInclude,
@@ -176,6 +211,31 @@ export class CourseRepository {
 
     if (data.coverImage !== undefined) {
       updateData.coverImage = data.coverImage && data.coverImage.trim() !== '' ? data.coverImage : null;
+    }
+
+    if (data.prerequisiteCourseIds) {
+      const prerequisiteIds = data.prerequisiteCourseIds ?? [];
+      return prisma.$transaction(async (tx) => {
+        const updated = await tx.course.update({
+          where: { id },
+          data: updateData,
+          include: courseBasicInclude,
+        });
+
+        await tx.coursePrerequisite.deleteMany({ where: { courseId: id } });
+
+        if (prerequisiteIds.length > 0) {
+          await tx.coursePrerequisite.createMany({
+            data: prerequisiteIds.map((prereqId) => ({
+              courseId: id,
+              prerequisiteCourseId: prereqId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+
+        return updated as any;
+      });
     }
 
     return prisma.course.update({
