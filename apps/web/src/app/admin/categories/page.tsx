@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import api from '@/lib/api';
 import { FolderIcon, PlusIcon, EditIcon, TrashIcon, BookIcon } from '@/components/Icons';
 
@@ -227,6 +228,20 @@ export default function AdminCategoriesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
+                          <Link
+                            href={`/admin/courses/create?categoryId=${category.id}`}
+                            className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition"
+                            title="إضافة دورة"
+                          >
+                            <PlusIcon size={16} />
+                          </Link>
+                          <Link
+                            href={`/admin/courses?categoryId=${category.id}`}
+                            className="p-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition"
+                            title="عرض الدورات"
+                          >
+                            <BookIcon size={16} />
+                          </Link>
                           <button
                             onClick={() => handleEdit(category)}
                             className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
