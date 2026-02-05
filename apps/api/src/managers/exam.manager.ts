@@ -4,6 +4,7 @@
  */
 import { examRepository } from '../repositories/exam.repository';
 import { authorizationService } from '../services/authorization.service';
+import { examSerializer } from '../services/exam.serializer';
 import { AuthContext } from '../types/common.types';
 import {
   CreateExamDTO,
@@ -73,6 +74,8 @@ function getLetterGrade(percentage: number): string {
 export class ExamManager {
   /**
    * List all exams for a course
+   * Note: Questions are serialized to hide answers for students
+   * unless they passed AND it's after endDate
    */
   async listExams(auth: AuthContext, courseId: string): Promise<ExamListResult> {
     // Check authorization - read access required
@@ -89,11 +92,17 @@ export class ExamManager {
     }
 
     const exams = await examRepository.findByCourseId(courseId, auth.userId);
-    return { success: true, data: exams };
+    
+    // Serialize exams to hide answers based on user context
+    const serializedExams = examSerializer.serializeExams(exams, auth);
+    
+    return { success: true, data: serializedExams };
   }
 
   /**
    * Get a single exam with full details
+   * Note: Questions are serialized to hide answers for students
+   * unless they passed AND it's after endDate
    */
   async getExam(auth: AuthContext, examId: string): Promise<ExamResult> {
     const exam = await examRepository.findById(examId, auth.userId);
@@ -130,14 +139,17 @@ export class ExamManager {
       };
     }
 
+    // Serialize exam to hide answers based on user context
+    const serializedExam = examSerializer.serializeExam(exam, auth);
+
     // Format response with parsed questions
     const response: any = {
-      ...exam,
+      ...serializedExam,
       course: {
         id: exam.course?.id || exam.courseId,
         title: exam.course?.title || '',
       },
-      questions: exam.questions || [],
+      questions: serializedExam.questions || [],
       ...courseCompletionData,
     };
 
@@ -435,6 +447,25 @@ export class ExamManager {
       return {
         success: false,
         error: { status: 404, message: 'Exam not found' },
+      };
+    }
+
+    // Validate exam time window
+    const now = new Date();
+    const startDate = new Date(exam.startDate);
+    const endDate = new Date(exam.endDate);
+
+    if (now < startDate) {
+      return {
+        success: false,
+        error: { status: 400, message: 'الامتحان لم يبدأ بعد' },
+      };
+    }
+
+    if (now > endDate) {
+      return {
+        success: false,
+        error: { status: 400, message: 'انتهى وقت الامتحان' },
       };
     }
 

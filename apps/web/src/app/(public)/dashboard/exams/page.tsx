@@ -16,7 +16,7 @@ interface Exam {
   maxScore: number;
   passingScore: number;
   course: { title: string; id: string };
-  attempts: Array<{ id: string; score: number }>;
+  attempts: Array<{ id: string; score: number | null }>;
 }
 
 export default function StudentExamsPage() {
@@ -193,9 +193,49 @@ export default function StudentExamsPage() {
                   )}
 
                   {hasAttempt && (
-                    <div className="py-3 bg-emerald-50 text-emerald-700 rounded-lg text-center font-medium flex items-center justify-center gap-2">
-                      <CheckCircleIcon size={18} /> تم إكمال الامتحان
-                    </div>
+                    <>
+                      <div className="py-3 bg-emerald-50 text-emerald-700 rounded-lg text-center font-medium flex items-center justify-center gap-2">
+                        <CheckCircleIcon size={18} /> تم إكمال الامتحان
+                      </div>
+                      
+                      {/* Review button - ONLY for passed students */}
+                      {score !== null && score >= exam.passingScore && (() => {
+                        const isAfterEndDate = new Date() > new Date(exam.endDate);
+                        const endDateFormatted = new Date(exam.endDate).toLocaleDateString('ar-SA');
+                        const endTimeFormatted = new Date(exam.endDate).toLocaleTimeString('ar-SA', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        });
+
+                        if (isAfterEndDate) {
+                          // ENABLED - can review now
+                          return (
+                            <Link
+                              href={`/dashboard/exams/${exam.id}/review`}
+                              className="block w-full mt-2 py-3 bg-sky-50 text-sky-700 rounded-lg font-medium text-center hover:bg-sky-100 transition"
+                            >
+                              مراجعة الإجابات
+                            </Link>
+                          );
+                        } else {
+                          // DISABLED - show tooltip with available date
+                          return (
+                            <div className="relative group mt-2">
+                              <button
+                                disabled
+                                className="w-full py-3 bg-stone-100 text-stone-400 rounded-lg font-medium cursor-not-allowed"
+                              >
+                                مراجعة الإجابات
+                              </button>
+                              {/* Tooltip on hover */}
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-stone-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                ستتوفر الإجابات بعد {endDateFormatted} {endTimeFormatted}
+                              </div>
+                            </div>
+                          );
+                        }
+                      })()}
+                    </>
                   )}
 
                   {examStatus.status === 'upcoming' && (
