@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { showSuccess, TOAST_MESSAGES } from '@/lib/toast';
+import { SkipLink } from '@/components/Accessibility';
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -54,8 +55,11 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
   return (
     <div className="min-h-screen bg-[#fdfbf7] flex flex-col">
+      {/* Skip Navigation Link - visible on Tab */}
+      <SkipLink targetId="main-content" />
+      
       {/* Header */}
-      <header className="bg-[#1a3a2f] sticky top-0 z-50">
+      <header className="bg-[#1a3a2f] sticky top-0 z-50" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-6">
@@ -71,7 +75,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                 <span className="hidden sm:block text-lg font-semibold text-white">زاد الهداية</span>
               </Link>
 
-              <nav className="hidden md:flex items-center gap-1">
+              <nav className="hidden md:flex items-center gap-1" aria-label="التنقل الرئيسي">
                 <Link
                   href="/"
                   className={`px-3 py-1.5 rounded text-sm transition-colors ${
@@ -103,7 +107,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                           : '/dashboard'
                       }
                       className={`px-3 py-1.5 rounded text-sm transition-colors ${
-                        pathname === '/dashboard' || pathname.startsWith('/dashboard/')
+                        pathname === '/dashboard'
                           ? 'bg-white/15 text-white'
                           : 'text-stone-300 hover:text-white hover:bg-white/10'
                       }`}
@@ -228,7 +232,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                     }
                     onClick={() => setMenuOpen(false)}
                     className={`block px-3 py-2 rounded text-sm ${
-                      pathname === '/dashboard' || pathname.startsWith('/dashboard/')
+                      pathname === '/dashboard'
                         ? 'bg-white/15 text-white'
                         : 'text-stone-300 hover:bg-white/10'
                     }`}
@@ -305,12 +309,12 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
         )}
       </header>
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1 animate-fade-in" role="main">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#1a3a2f] text-white mt-auto">
+      <footer className="bg-[#1a3a2f] text-white mt-auto" role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>

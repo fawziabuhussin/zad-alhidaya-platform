@@ -11,6 +11,7 @@ import {
   ContinueLearningCardSkeleton,
   DeadlineItemSkeleton 
 } from '@/components/Skeleton';
+import { LiveRegion } from '@/components/Accessibility';
 
 interface LessonProgress {
   id: string;
@@ -239,6 +240,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      {/* Screen reader announcement */}
+      <LiveRegion>تم تحميل لوحة التحكم</LiveRegion>
+      
       {/* Welcome Header */}
       <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">

@@ -1,5 +1,8 @@
 // Professional SVG Icons for Zad Al-Hidaya Platform
 // Clean, consistent Islamic-themed iconography
+// 
+// ACCESSIBILITY: All icons have aria-hidden="true" by default (decorative).
+// When using an icon as the only content of a button, add aria-label to the button.
 
 interface IconProps {
   className?: string;

@@ -298,7 +298,12 @@ export default function LoginPage() {
             </h2>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+              <div 
+                id="login-error"
+                role="alert" 
+                aria-live="assertive"
+                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm"
+              >
                 {error}
               </div>
             )}
@@ -340,11 +345,12 @@ export default function LoginPage() {
 
               {/* Input fields */}
               <div>
-                <label className="block text-sm font-medium text-[#1a3a2f]/80 mb-2">
+                <label htmlFor={useEmail ? 'email' : 'username'} className="block text-sm font-medium text-[#1a3a2f]/80 mb-2">
                   {useEmail ? 'البريد الإلكتروني' : 'اسم المستخدم'}
                 </label>
                 {useEmail ? (
                   <input
+                    id="email"
                     type="email"
                     value={email}
                     onChange={(e) => {
@@ -352,11 +358,14 @@ export default function LoginPage() {
                       setError('');
                     }}
                     required
+                    autoComplete="email"
+                    aria-describedby={error ? 'login-error' : undefined}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200"
                     placeholder="example@email.com"
                   />
                 ) : (
                   <input
+                    id="username"
                     type="text"
                     value={username}
                     onChange={(e) => {
@@ -364,6 +373,8 @@ export default function LoginPage() {
                       setError('');
                     }}
                     required
+                    autoComplete="username"
+                    aria-describedby={error ? 'login-error' : undefined}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200"
                     placeholder="اسم المستخدم"
                   />
@@ -371,14 +382,17 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#1a3a2f]/80 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-[#1a3a2f]/80 mb-2">
                   كلمة المرور
                 </label>
                 <input
+                  id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
+                  aria-describedby={error ? 'login-error' : undefined}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200"
                   placeholder="••••••••"
                 />
@@ -418,8 +432,10 @@ export default function LoginPage() {
             {/* OAuth Buttons */}
             <div className="space-y-3">
               <button
+                type="button"
                 onClick={handleGoogleLogin}
                 disabled={loading}
+                aria-label="تسجيل الدخول باستخدام حساب Google"
                 className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -432,8 +448,10 @@ export default function LoginPage() {
               </button>
 
               <button
+                type="button"
                 onClick={handleAppleLogin}
                 disabled={loading}
+                aria-label="تسجيل الدخول باستخدام حساب Apple"
                 className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-black text-white rounded-xl font-medium hover:bg-gray-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
