@@ -79,7 +79,7 @@ export interface UpdateExamAttemptScoreDTO {
 }
 
 /**
- * Exam question with parsed choices
+ * Exam question with parsed choices (internal use - includes answers)
  */
 export interface ExamQuestionWithParsedChoices {
   id: string;
@@ -91,6 +91,43 @@ export interface ExamQuestionWithParsedChoices {
   points: number;
   order: number;
 }
+
+/**
+ * Question type enum for type safety
+ */
+export type QuestionType = 'MULTIPLE_CHOICE' | 'TEXT' | 'ESSAY';
+
+/**
+ * Base question fields (shared between student and teacher views)
+ */
+export interface ExamQuestionBase {
+  id: string;
+  prompt: string;
+  type: QuestionType;
+  choices: string[];
+  points: number;
+  order: number;
+}
+
+/**
+ * Question view for students (no answers revealed)
+ */
+export interface ExamQuestionForStudent extends ExamQuestionBase {
+  // Intentionally excludes correctIndex and explanation
+}
+
+/**
+ * Question view with answers (for teachers or passed students after endDate)
+ */
+export interface ExamQuestionWithAnswers extends ExamQuestionBase {
+  correctIndex: number | null;
+  explanation: string | null;
+}
+
+/**
+ * Union type for serialized question responses
+ */
+export type ExamQuestionResponse = ExamQuestionForStudent | ExamQuestionWithAnswers;
 
 /**
  * Exam with relations (includes related data)
