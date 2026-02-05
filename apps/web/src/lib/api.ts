@@ -59,8 +59,17 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = (originalRequest?.url || '').toLowerCase();
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip token refresh for auth endpoints (login, register, etc.)
+    // Check multiple patterns to handle different URL formats
+    const isAuthEndpoint = requestUrl.includes('auth/login') ||
+                           requestUrl.includes('auth/register') ||
+                           requestUrl.includes('auth/google') ||
+                           requestUrl.includes('auth/apple') ||
+                           requestUrl.includes('auth/refresh');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
       try {

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { CreateResourceDTO } from '@/types/resource';
 import { ResourceList, ResourceForm } from '@/components/resources';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 // Custom Lesson Type Dropdown
 function LessonTypeDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -284,7 +285,7 @@ export default function EditCoursePage() {
       );
     } catch (error: any) {
       console.error('Failed to load data:', error);
-      alert(error.response?.data?.message || 'فشل تحميل البيانات');
+      showError(error.response?.data?.message || 'فشل تحميل البيانات');
     } finally {
       setLoading(false);
     }
@@ -297,7 +298,7 @@ export default function EditCoursePage() {
     try {
       const total = gradingMethod.reading + gradingMethod.homework + gradingMethod.exam;
       if (total !== 100) {
-        alert(`المجموع يجب أن يكون 100% (حالياً: ${total}%)`);
+        showError(`المجموع يجب أن يكون 100% (حالياً: ${total}%)`);
         setSaving(false);
         return;
       }
@@ -322,15 +323,15 @@ export default function EditCoursePage() {
 
       const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
       await api.put(`/courses/${courseId}`, updateData);
-      alert('تم تحديث الدورة بنجاح!');
+      showSuccess(TOAST_MESSAGES.UPDATE_SUCCESS);
       loadData();
     } catch (error: any) {
       console.error('Failed to update course:', error);
       if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors.map((e: any) => e.message).join('\n');
-        alert(`أخطاء في التحقق:\n${errorMessages}`);
+        showError(`أخطاء في التحقق: ${errorMessages}`);
       } else {
-        alert(error.response?.data?.message || 'فشل تحديث الدورة');
+        showError(error.response?.data?.message || 'فشل تحديث الدورة');
       }
     } finally {
       setSaving(false);
@@ -355,9 +356,10 @@ export default function EditCoursePage() {
         maxScore: 100,
         passingScore: 60,
       });
+      showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل إضافة الامتحان');
+      showError(error.response?.data?.message || 'فشل إضافة الامتحان');
     }
   };
 
@@ -365,9 +367,10 @@ export default function EditCoursePage() {
     if (!confirm('هل أنت متأكد من حذف هذا الامتحان؟')) return;
     try {
       await api.delete(`/exams/${examId}`);
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف الامتحان');
+      showError(error.response?.data?.message || 'فشل حذف الامتحان');
     }
   };
 
@@ -386,9 +389,10 @@ export default function EditCoursePage() {
         dueDate: '',
         maxScore: 100,
       });
+      showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل إضافة الواجب');
+      showError(error.response?.data?.message || 'فشل إضافة الواجب');
     }
   };
 
@@ -396,9 +400,10 @@ export default function EditCoursePage() {
     if (!confirm('هل أنت متأكد من حذف هذا الواجب؟')) return;
     try {
       await api.delete(`/homework/${homeworkId}`);
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف الواجب');
+      showError(error.response?.data?.message || 'فشل حذف الواجب');
     }
   };
 
@@ -408,9 +413,10 @@ export default function EditCoursePage() {
       const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
       await api.post(`/courses/${courseId}/resources`, data);
       setShowCourseResourceForm(false);
+      showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل إضافة المادة');
+      showError(error.response?.data?.message || 'فشل إضافة المادة');
       throw error;
     }
   };
@@ -422,9 +428,10 @@ export default function EditCoursePage() {
       await api.put(`/courses/${courseId}/resources/${editingCourseResource.id}`, data);
       setEditingCourseResource(null);
       setShowCourseResourceForm(false);
+      showSuccess(TOAST_MESSAGES.UPDATE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل تحديث المادة');
+      showError(error.response?.data?.message || 'فشل تحديث المادة');
       throw error;
     }
   };
@@ -434,9 +441,10 @@ export default function EditCoursePage() {
     try {
       const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
       await api.delete(`/courses/${courseId}/resources/${resourceId}`);
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف المادة');
+      showError(error.response?.data?.message || 'فشل حذف المادة');
     }
   };
 
@@ -450,9 +458,10 @@ export default function EditCoursePage() {
     try {
       await api.post(`/lessons/${lessonId}/resources`, data);
       setShowLessonResourceForm(null);
+      showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل إضافة المادة');
+      showError(error.response?.data?.message || 'فشل إضافة المادة');
       throw error;
     }
   };
@@ -466,9 +475,10 @@ export default function EditCoursePage() {
       );
       setEditingLessonResource(null);
       setShowLessonResourceForm(null);
+      showSuccess(TOAST_MESSAGES.UPDATE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل تحديث المادة');
+      showError(error.response?.data?.message || 'فشل تحديث المادة');
       throw error;
     }
   };
@@ -477,9 +487,10 @@ export default function EditCoursePage() {
     if (!confirm('هل أنت متأكد من حذف هذه المادة؟')) return;
     try {
       await api.delete(`/lessons/${lessonId}/resources/${resourceId}`);
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف المادة');
+      showError(error.response?.data?.message || 'فشل حذف المادة');
     }
   };
 
@@ -487,14 +498,14 @@ export default function EditCoursePage() {
     e.preventDefault();
     try {
       if (!moduleFormData.title.trim()) {
-        alert('عنوان الوحدة مطلوب');
+        showError('عنوان الوحدة مطلوب');
         return;
       }
 
       const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
       
       if (!courseId) {
-        alert('معرف الدورة غير صحيح');
+        showError('معرف الدورة غير صحيح');
         return;
       }
 
@@ -505,6 +516,7 @@ export default function EditCoursePage() {
       
       setShowModuleForm(false);
       setModuleFormData({ title: '' });
+      showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       loadData();
     } catch (error: any) {
       console.error('Error adding module:', error);
@@ -512,7 +524,7 @@ export default function EditCoursePage() {
       
       if (error.response?.data) {
         if (error.response.data.errors && Array.isArray(error.response.data.errors)) {
-          errorMsg = error.response.data.errors.map((e: any) => e.message || e).join('\n');
+          errorMsg = error.response.data.errors.map((e: any) => e.message || e).join(', ');
         } else if (error.response.data.message) {
           errorMsg = error.response.data.message;
         }
@@ -520,7 +532,7 @@ export default function EditCoursePage() {
         errorMsg = error.message;
       }
       
-      alert(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -528,9 +540,10 @@ export default function EditCoursePage() {
     if (!confirm('هل أنت متأكد من حذف هذه الوحدة وجميع دروسها؟')) return;
     try {
       await api.delete(`/modules/${moduleId}`);
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف الوحدة');
+      showError(error.response?.data?.message || 'فشل حذف الوحدة');
     }
   };
 
@@ -538,7 +551,7 @@ export default function EditCoursePage() {
     e.preventDefault();
     try {
       if (!lessonFormData.title.trim()) {
-        alert('عنوان الدرس مطلوب');
+        showError('عنوان الدرس مطلوب');
         return;
       }
 
@@ -551,20 +564,20 @@ export default function EditCoursePage() {
 
       if (lessonFormData.type === 'VIDEO' || lessonFormData.type === 'LIVE') {
         if (!lessonFormData.youtubeUrl.trim()) {
-          alert('رابط YouTube مطلوب');
+          showError('رابط YouTube مطلوب');
           return;
         }
         lessonData.youtubeUrl = lessonFormData.youtubeUrl.trim();
       } else if (lessonFormData.type === 'PLAYLIST') {
         if (!lessonFormData.youtubeUrl.trim()) {
-          alert('رابط قائمة التشغيل مطلوب');
+          showError('رابط قائمة التشغيل مطلوب');
           return;
         }
         lessonData.youtubeUrl = lessonFormData.youtubeUrl.trim();
         lessonData.youtubePlaylistId = extractPlaylistId(lessonFormData.youtubeUrl) || lessonFormData.youtubePlaylistId;
       } else if (lessonFormData.type === 'TEXT') {
         if (!lessonFormData.textContent.trim()) {
-          alert('محتوى النص مطلوب');
+          showError('محتوى النص مطلوب');
           return;
         }
         lessonData.textContent = lessonFormData.textContent.trim();
@@ -574,10 +587,11 @@ export default function EditCoursePage() {
       setShowLessonForm(null);
       setEditingLesson(null);
       resetLessonForm();
+      showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       loadData();
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.response?.data?.errors?.[0]?.message || 'فشل إضافة الدرس';
-      alert(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -599,7 +613,7 @@ export default function EditCoursePage() {
     e.preventDefault();
     try {
       if (!lessonFormData.title.trim()) {
-        alert('عنوان الدرس مطلوب');
+        showError('عنوان الدرس مطلوب');
         return;
       }
 
@@ -611,20 +625,20 @@ export default function EditCoursePage() {
 
       if (lessonFormData.type === 'VIDEO' || lessonFormData.type === 'LIVE') {
         if (!lessonFormData.youtubeUrl.trim()) {
-          alert('رابط YouTube مطلوب');
+          showError('رابط YouTube مطلوب');
           return;
         }
         lessonData.youtubeUrl = lessonFormData.youtubeUrl.trim();
       } else if (lessonFormData.type === 'PLAYLIST') {
         if (!lessonFormData.youtubeUrl.trim()) {
-          alert('رابط قائمة التشغيل مطلوب');
+          showError('رابط قائمة التشغيل مطلوب');
           return;
         }
         lessonData.youtubeUrl = lessonFormData.youtubeUrl.trim();
         lessonData.youtubePlaylistId = extractPlaylistId(lessonFormData.youtubeUrl) || lessonFormData.youtubePlaylistId;
       } else if (lessonFormData.type === 'TEXT') {
         if (!lessonFormData.textContent.trim()) {
-          alert('محتوى النص مطلوب');
+          showError('محتوى النص مطلوب');
           return;
         }
         lessonData.textContent = lessonFormData.textContent.trim();
@@ -634,10 +648,11 @@ export default function EditCoursePage() {
       setShowLessonForm(null);
       setEditingLesson(null);
       resetLessonForm();
+      showSuccess(TOAST_MESSAGES.UPDATE_SUCCESS);
       loadData();
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.response?.data?.errors?.[0]?.message || 'فشل تحديث الدرس';
-      alert(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -645,9 +660,10 @@ export default function EditCoursePage() {
     if (!confirm('هل أنت متأكد من حذف هذا الدرس؟')) return;
     try {
       await api.delete(`/lessons/${lessonId}`);
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف الدرس');
+      showError(error.response?.data?.message || 'فشل حذف الدرس');
     }
   };
 

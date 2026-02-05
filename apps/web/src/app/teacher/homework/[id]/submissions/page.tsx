@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { LinkIcon, BookIcon } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Submission {
   id: string;
@@ -57,7 +58,7 @@ export default function HomeworkSubmissionsPage() {
       const feedback = editingFeedback[submissionId] || '';
 
       if (score === undefined || score < 0 || score > homework!.maxScore) {
-        alert(`الدرجة يجب أن تكون بين 0 و ${homework!.maxScore}`);
+        showError(`الدرجة يجب أن تكون بين 0 و ${homework!.maxScore}`);
         return;
       }
 
@@ -73,9 +74,10 @@ export default function HomeworkSubmissionsPage() {
       setEditingScore(newEditingScore);
       setEditingFeedback(newEditingFeedback);
 
+      showSuccess(TOAST_MESSAGES.GRADE_SUBMIT_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل تصحيح الواجب');
+      showError(error.response?.data?.message || 'فشل تصحيح الواجب');
     }
   };
 

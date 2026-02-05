@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Question {
   id: string;
@@ -63,7 +64,7 @@ export default function TeacherQuestionsPage() {
 
   const handleAnswer = async (questionId: string) => {
     if (!answerText.trim()) {
-      alert('يرجى كتابة الإجابة');
+      showError('يرجى كتابة الإجابة');
       return;
     }
 
@@ -74,9 +75,10 @@ export default function TeacherQuestionsPage() {
       });
       setAnsweringId(null);
       setAnswerText('');
+      showSuccess(TOAST_MESSAGES.QUESTION_ANSWER_SUCCESS);
       loadQuestions();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل إرسال الإجابة');
+      showError(error.response?.data?.message || 'فشل إرسال الإجابة');
     } finally {
       setSubmitting(false);
     }
@@ -87,9 +89,10 @@ export default function TeacherQuestionsPage() {
 
     try {
       await api.delete(`/questions/${questionId}`);
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
       loadQuestions();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف السؤال');
+      showError(error.response?.data?.message || 'فشل حذف السؤال');
     }
   };
 

@@ -34,7 +34,7 @@ router.get('/course/:courseId', authenticate, async (req: AuthRequest, res) => {
     res.json(result.data);
   } catch (error: any) {
     console.error('Failed to fetch homeworks:', error);
-    res.status(500).json({ message: error.message || 'Failed to fetch homeworks' });
+    res.status(500).json({ message: error.message || 'فشل في جلب الواجبات' });
   }
 });
 
@@ -46,14 +46,10 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
     const { id } = req.params;
     const { courseId } = req.query;
 
-    if (!courseId || typeof courseId !== 'string') {
-      return res.status(400).json({ message: 'courseId is required' });
-    }
-
     const result = await homeworkManager.getHomework(
       { userId: req.user!.userId, role: req.user!.role },
-      courseId,
-      id
+      id,
+      typeof courseId === 'string' ? courseId : undefined
     );
 
     if (!result.success) {
@@ -63,7 +59,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
     res.json(result.data);
   } catch (error: any) {
     console.error('Failed to fetch homework:', error);
-    res.status(500).json({ message: error.message || 'Failed to fetch homework' });
+    res.status(500).json({ message: error.message || 'فشل في جلب الواجب' });
   }
 });
 
@@ -76,7 +72,7 @@ router.post('/', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRe
     const { courseId } = req.body;
 
     if (!courseId) {
-      return res.status(400).json({ message: 'courseId is required' });
+      return res.status(400).json({ message: 'يرجى تحديد الدورة' });
     }
 
     // Convert to proper DTO format
@@ -99,7 +95,7 @@ router.post('/', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRe
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        message: 'Validation error',
+        message: 'خطأ في البيانات المدخلة',
         errors: error.errors.map((e) => ({
           path: e.path.join('.'),
           message: e.message,
@@ -107,7 +103,7 @@ router.post('/', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRe
       });
     }
     console.error('Failed to create homework:', error);
-    res.status(500).json({ message: error.message || 'Failed to create homework' });
+    res.status(500).json({ message: error.message || 'فشل في إنشاء الواجب' });
   }
 });
 
@@ -121,7 +117,7 @@ router.put('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: Auth
     const { courseId } = req.body;
 
     if (!courseId) {
-      return res.status(400).json({ message: 'courseId is required' });
+      return res.status(400).json({ message: 'يرجى تحديد الدورة' });
     }
 
     // Convert date if present
@@ -145,7 +141,7 @@ router.put('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: Auth
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        message: 'Validation error',
+        message: 'خطأ في البيانات المدخلة',
         errors: error.errors.map((e) => ({
           path: e.path.join('.'),
           message: e.message,
@@ -153,7 +149,7 @@ router.put('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: Auth
       });
     }
     console.error('Failed to update homework:', error);
-    res.status(500).json({ message: error.message || 'Failed to update homework' });
+    res.status(500).json({ message: error.message || 'فشل في تحديث الواجب' });
   }
 });
 
@@ -166,7 +162,7 @@ router.delete('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: A
     const { courseId } = req.query;
 
     if (!courseId || typeof courseId !== 'string') {
-      return res.status(400).json({ message: 'courseId is required' });
+      return res.status(400).json({ message: 'يرجى تحديد الدورة' });
     }
 
     const result = await homeworkManager.deleteHomework(
@@ -179,10 +175,10 @@ router.delete('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: A
       return res.status(result.error!.status).json({ message: result.error!.message });
     }
 
-    res.json({ message: 'Homework deleted successfully' });
+    res.json({ message: 'تم حذف الواجب بنجاح' });
   } catch (error: any) {
     console.error('Failed to delete homework:', error);
-    res.status(500).json({ message: error.message || 'Failed to delete homework' });
+    res.status(500).json({ message: error.message || 'فشل في حذف الواجب' });
   }
 });
 
@@ -208,7 +204,7 @@ router.post('/:id/submit', authenticate, authorize('STUDENT', 'ADMIN'), async (r
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        message: 'Validation error',
+        message: 'خطأ في البيانات المدخلة',
         errors: error.errors.map((e) => ({
           path: e.path.join('.'),
           message: e.message,
@@ -216,7 +212,7 @@ router.post('/:id/submit', authenticate, authorize('STUDENT', 'ADMIN'), async (r
       });
     }
     console.error('Failed to submit homework:', error);
-    res.status(500).json({ message: error.message || 'Failed to submit homework' });
+    res.status(500).json({ message: error.message || 'فشل في تسليم الواجب' });
   }
 });
 
@@ -229,7 +225,7 @@ router.get('/:id/submissions', authenticate, authorize('TEACHER', 'ADMIN'), asyn
     const { courseId } = req.query;
 
     if (!courseId || typeof courseId !== 'string') {
-      return res.status(400).json({ message: 'courseId is required' });
+      return res.status(400).json({ message: 'يرجى تحديد الدورة' });
     }
 
     const result = await homeworkManager.getSubmissions(
@@ -245,7 +241,7 @@ router.get('/:id/submissions', authenticate, authorize('TEACHER', 'ADMIN'), asyn
     res.json(result.data);
   } catch (error: any) {
     console.error('Failed to fetch submissions:', error);
-    res.status(500).json({ message: error.message || 'Failed to fetch submissions' });
+    res.status(500).json({ message: error.message || 'فشل في جلب التسليمات' });
   }
 });
 
@@ -259,7 +255,7 @@ router.post('/:id/grade/:submissionId', authenticate, authorize('TEACHER', 'ADMI
     const data = gradeHomeworkSchema.parse(req.body);
 
     if (!courseId) {
-      return res.status(400).json({ message: 'courseId is required' });
+      return res.status(400).json({ message: 'يرجى تحديد الدورة' });
     }
 
     const result = await homeworkManager.gradeSubmission(
@@ -278,7 +274,7 @@ router.post('/:id/grade/:submissionId', authenticate, authorize('TEACHER', 'ADMI
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        message: 'Validation error',
+        message: 'خطأ في البيانات المدخلة',
         errors: error.errors.map((e) => ({
           path: e.path.join('.'),
           message: e.message,
@@ -286,7 +282,7 @@ router.post('/:id/grade/:submissionId', authenticate, authorize('TEACHER', 'ADMI
       });
     }
     console.error('Failed to grade homework:', error);
-    res.status(500).json({ message: error.message || 'Failed to grade homework' });
+    res.status(500).json({ message: error.message || 'فشل في تقييم الواجب' });
   }
 });
 

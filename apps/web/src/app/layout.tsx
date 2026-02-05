@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { Toaster } from 'sonner';
+import OfflineIndicator from '@/components/OfflineIndicator';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -15,6 +17,23 @@ export default function RootLayout({
     <html lang="ar" dir="rtl">
       <body>
         {children}
+        <Toaster 
+          position="top-center" 
+          dir="rtl"
+          richColors
+          closeButton
+          toastOptions={{
+            style: {
+              fontFamily: 'inherit',
+            },
+            classNames: {
+              toast: 'rtl',
+              title: 'text-right',
+              description: 'text-right',
+            },
+          }}
+        />
+        <OfflineIndicator />
       </body>
     </html>
   );

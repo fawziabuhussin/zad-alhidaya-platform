@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { BookIcon, ClockIcon } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Homework {
   id: string;
@@ -37,7 +38,7 @@ export default function SubmitHomeworkPage() {
       setHomework(response.data);
     } catch (error: any) {
       console.error('Failed to load homework:', error);
-      alert(error.response?.data?.message || 'فشل تحميل الواجب');
+      showError(error.response?.data?.message || 'فشل تحميل الواجب');
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ export default function SubmitHomeworkPage() {
     e.preventDefault();
     
     if (!formData.content.trim()) {
-      alert('يرجى إدخال محتوى الواجب');
+      showError('يرجى إدخال محتوى الواجب');
       return;
     }
 
@@ -58,11 +59,11 @@ export default function SubmitHomeworkPage() {
         content: formData.content.trim(),
         attachments: formData.attachments.trim() || undefined,
       });
-      alert('تم تسليم الواجب بنجاح!');
+      showSuccess(TOAST_MESSAGES.HOMEWORK_SUBMIT_SUCCESS);
       router.push('/dashboard/homework');
     } catch (error: any) {
       console.error('Failed to submit homework:', error);
-      alert(error.response?.data?.message || 'فشل تسليم الواجب');
+      showError(error.response?.data?.message || TOAST_MESSAGES.HOMEWORK_SUBMIT_ERROR);
     } finally {
       setSubmitting(false);
     }

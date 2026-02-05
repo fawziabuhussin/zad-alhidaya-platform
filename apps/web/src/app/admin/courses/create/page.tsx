@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { BookIcon, PlusIcon } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Category {
   id: string;
@@ -79,23 +80,23 @@ export default function CreateCoursePage() {
 
   const handleCreateFromPlaylist = async () => {
     if (!playlistUrl.trim()) {
-      alert('يرجى إدخال رابط قائمة التشغيل');
+      showError('يرجى إدخال رابط قائمة التشغيل');
       return;
     }
 
     const playlistId = extractPlaylistId(playlistUrl);
     if (!playlistId) {
-      alert('رابط قائمة التشغيل غير صحيح');
+      showError('رابط قائمة التشغيل غير صحيح');
       return;
     }
 
     if (!formData.title.trim()) {
-      alert('يرجى إدخال عنوان الدورة');
+      showError('يرجى إدخال عنوان الدورة');
       return;
     }
 
     if (!formData.categoryId) {
-      alert('يرجى اختيار الفئة');
+      showError('يرجى اختيار الفئة');
       return;
     }
 
@@ -114,18 +115,18 @@ export default function CreateCoursePage() {
 
       const videosCount = response.data.videosCount || response.data.lessons?.length || 0;
       if (videosCount > 0) {
-        alert(`تم إنشاء الدورة بنجاح مع ${videosCount} درس من قائمة التشغيل!`);
+        showSuccess(`تم إنشاء الدورة بنجاح مع ${videosCount} درس من قائمة التشغيل!`);
       } else {
-        alert('تم إنشاء الدورة من قائمة التشغيل.');
+        showSuccess('تم إنشاء الدورة من قائمة التشغيل.');
       }
       router.push(`/admin/courses/${response.data.course.id}/edit`);
     } catch (error: any) {
       console.error('Failed to create course from playlist:', error);
       if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors.map((e: any) => e.message).join('\n');
-        alert(`أخطاء:\n${errorMessages}`);
+        showError(`أخطاء: ${errorMessages}`);
       } else {
-        alert(error.response?.data?.message || 'فشل إنشاء الدورة من قائمة التشغيل');
+        showError(error.response?.data?.message || 'فشل إنشاء الدورة من قائمة التشغيل');
       }
     } finally {
       setLoadingPlaylist(false);
@@ -170,7 +171,7 @@ export default function CreateCoursePage() {
       }
 
       const response = await api.post('/courses', courseData);
-      alert('تم إنشاء الدورة بنجاح!');
+      showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       router.push(`/admin/courses/${response.data.id}/edit`);
     } catch (error: any) {
       console.error('Failed to create course:', error);
@@ -181,7 +182,7 @@ export default function CreateCoursePage() {
         });
         setErrors(errorMap);
       } else {
-        alert(error.response?.data?.message || 'فشل إنشاء الدورة');
+        showError(error.response?.data?.message || 'فشل إنشاء الدورة');
       }
     } finally {
       setLoading(false);

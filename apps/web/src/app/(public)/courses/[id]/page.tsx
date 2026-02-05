@@ -8,6 +8,7 @@ import { CheckCircleIcon, BookIcon, UserIcon, ClockIcon, AlertIcon } from '@/com
 import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
 import ExpandableLessonCard from '@/components/ExpandableLessonCard';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 interface PrerequisiteStatus {
   prerequisite: { id: string; title: string };
@@ -117,9 +118,9 @@ export default function CourseDetailsPage() {
     try {
       await api.post('/enrollments', { courseId: params.id });
       setIsEnrolled(true);
-      // UI updates automatically - button changes to "مسجل في الدورة"
+      showSuccess(TOAST_MESSAGES.ENROLL_SUCCESS);
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل التسجيل في الدورة');
+      showError(error.response?.data?.message || TOAST_MESSAGES.ENROLL_ERROR);
     } finally {
       setEnrolling(false);
     }

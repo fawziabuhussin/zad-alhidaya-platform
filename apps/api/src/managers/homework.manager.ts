@@ -70,7 +70,7 @@ export class HomeworkManager {
     if (!access.allowed) {
       return {
         success: false,
-        error: { status: 403, message: 'Not enrolled in this course' },
+        error: { status: 403, message: 'أنت غير مسجل في هذه الدورة' },
       };
     }
 
@@ -81,13 +81,21 @@ export class HomeworkManager {
   /**
    * Get a single homework
    */
-  async getHomework(auth: AuthContext, courseId: string, homeworkId: string): Promise<HomeworkResult> {
+  async getHomework(auth: AuthContext, homeworkId: string, courseId?: string): Promise<HomeworkResult> {
     const homework = await homeworkRepository.findById(homeworkId, auth.userId);
 
-    if (!homework || homework.courseId !== courseId) {
+    if (!homework) {
       return {
         success: false,
-        error: { status: 404, message: 'Homework not found' },
+        error: { status: 404, message: 'الواجب غير موجود' },
+      };
+    }
+
+    // If courseId provided, verify it matches
+    if (courseId && homework.courseId !== courseId) {
+      return {
+        success: false,
+        error: { status: 404, message: 'الواجب غير موجود' },
       };
     }
 
@@ -101,7 +109,7 @@ export class HomeworkManager {
     if (!isEnrolled && !isTeacher && !isAdmin) {
       return {
         success: false,
-        error: { status: 403, message: 'Access denied' },
+        error: { status: 403, message: 'غير مصرح لك بالوصول لهذا الواجب' },
       };
     }
 
@@ -154,7 +162,7 @@ export class HomeworkManager {
     if (!exists) {
       return {
         success: false,
-        error: { status: 404, message: 'Homework not found' },
+        error: { status: 404, message: 'الواجب غير موجود' },
       };
     }
 
@@ -185,7 +193,7 @@ export class HomeworkManager {
     if (!exists) {
       return {
         success: false,
-        error: { status: 404, message: 'Homework not found' },
+        error: { status: 404, message: 'الواجب غير موجود' },
       };
     }
 
@@ -220,7 +228,7 @@ export class HomeworkManager {
     if (!homework) {
       return {
         success: false,
-        error: { status: 404, message: 'Homework not found' },
+        error: { status: 404, message: 'الواجب غير موجود' },
       };
     }
 
@@ -228,7 +236,7 @@ export class HomeworkManager {
     if (!isEnrolled && auth.role !== 'ADMIN') {
       return {
         success: false,
-        error: { status: 403, message: 'Not enrolled in this course' },
+        error: { status: 403, message: 'أنت غير مسجل في هذه الدورة' },
       };
     }
 
@@ -237,7 +245,7 @@ export class HomeworkManager {
     if (hasSubmitted) {
       return {
         success: false,
-        error: { status: 400, message: 'Homework already submitted' },
+        error: { status: 400, message: 'تم تسليم هذا الواجب مسبقاً' },
       };
     }
 
@@ -268,7 +276,7 @@ export class HomeworkManager {
     if (!exists) {
       return {
         success: false,
-        error: { status: 404, message: 'Homework not found' },
+        error: { status: 404, message: 'الواجب غير موجود' },
       };
     }
 
@@ -304,7 +312,7 @@ export class HomeworkManager {
     if (!homework || homework.courseId !== courseId) {
       return {
         success: false,
-        error: { status: 404, message: 'Homework not found' },
+        error: { status: 404, message: 'الواجب غير موجود' },
       };
     }
 
@@ -313,7 +321,7 @@ export class HomeworkManager {
     if (!existingSubmission || existingSubmission.homeworkId !== homeworkId) {
       return {
         success: false,
-        error: { status: 404, message: 'Submission not found' },
+        error: { status: 404, message: 'التسليم غير موجود' },
       };
     }
 

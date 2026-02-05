@@ -12,6 +12,7 @@ import {
   BookIcon,
   TrashIcon
 } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Report {
   id: string;
@@ -103,9 +104,10 @@ export default function TeacherReportsPage() {
     setUpdating(reportId);
     try {
       await api.patch(`/reports/${reportId}`, { status, reviewNote });
+      showSuccess(TOAST_MESSAGES.UPDATE_SUCCESS);
       loadReports(); // Refresh list
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل تحديث الحالة');
+      showError(error.response?.data?.message || 'فشل تحديث الحالة');
     } finally {
       setUpdating(null);
     }
@@ -117,9 +119,10 @@ export default function TeacherReportsPage() {
     setDeleting(reportId);
     try {
       await api.delete(`/reports/${reportId}`);
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
       loadReports(); // Refresh list
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف التبليغ');
+      showError(error.response?.data?.message || 'فشل حذف التبليغ');
     } finally {
       setDeleting(null);
     }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { BookIcon, PlusIcon, EditIcon, TrashIcon, SearchIcon, GraduateIcon } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Course {
   id: string;
@@ -47,8 +48,9 @@ export default function AdminCoursesPage() {
     try {
       await api.delete(`/courses/${id}`);
       setCourses(courses.filter(c => c.id !== id));
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف الدورة');
+      showError(error.response?.data?.message || 'فشل حذف الدورة');
     }
   };
 

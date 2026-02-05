@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { AlertIcon, BookIcon, ClockIcon, CheckCircleIcon } from '@/components/Icons';
+import { showSuccess, showError, showWarning, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Question {
   id: string;
@@ -112,6 +113,7 @@ export default function TakeExamPage() {
   const handleAutoSubmit = async () => {
     if (submitting) return;
     setSubmitting(true);
+    showWarning('انتهى الوقت! جاري تسليم الامتحان تلقائياً...');
     try {
       const answersObj: Record<string, any> = {};
       exam!.questions.forEach(q => {
@@ -129,9 +131,11 @@ export default function TakeExamPage() {
       });
 
       await api.post(`/exams/${params.id}/attempt`, { answers: answersObj });
+      showSuccess(TOAST_MESSAGES.EXAM_SUBMIT_SUCCESS);
       router.push('/dashboard/exams');
     } catch (error: any) {
       console.error('Auto-submit failed:', error);
+      showError(TOAST_MESSAGES.EXAM_SUBMIT_ERROR);
     } finally {
       setSubmitting(false);
     }
@@ -235,14 +239,15 @@ export default function TakeExamPage() {
         answers: answersObj,
       });
 
+      showSuccess(TOAST_MESSAGES.EXAM_SUBMIT_SUCCESS);
       router.push('/dashboard/exams');
     } catch (error: any) {
       console.error('Failed to submit exam:', error);
-      const errorMessage = error.response?.data?.message || 'فشل تسليم الامتحان';
+      const errorMessage = error.response?.data?.message || TOAST_MESSAGES.EXAM_SUBMIT_ERROR;
       if (error.response?.data?.completedLessons !== undefined) {
-        alert(`${errorMessage}\n\nالدروس المكتملة: ${error.response.data.completedLessons} من ${error.response.data.totalLessons}`);
+        showError(`${errorMessage} - الدروس المكتملة: ${error.response.data.completedLessons} من ${error.response.data.totalLessons}`);
       } else {
-        alert(errorMessage);
+        showError(errorMessage);
       }
     } finally {
       setSubmitting(false);
