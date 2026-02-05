@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { CheckCircleIcon, ExamIcon, ClockIcon, BookIcon } from '@/components/Icons';
+import { CheckCircleIcon, ExamIcon, ClockIcon, BookIcon, SearchIcon } from '@/components/Icons';
 
 interface Exam {
   id: string;
@@ -23,6 +23,8 @@ export default function StudentExamsPage() {
   const router = useRouter();
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
     loadExams();
@@ -80,6 +82,20 @@ export default function StudentExamsPage() {
     return { status: 'expired', label: 'منتهي', color: 'bg-stone-100 text-stone-600' };
   };
 
+  // Filter exams based on search and status
+  const filteredExams = exams.filter((exam) => {
+    // Search filter
+    const matchesSearch = 
+      exam.title.toLowerCase().includes(search.toLowerCase()) ||
+      exam.course.title.toLowerCase().includes(search.toLowerCase());
+    
+    // Status filter
+    const status = getExamStatus(exam).status;
+    const matchesStatus = statusFilter === 'all' || status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
@@ -99,13 +115,54 @@ export default function StudentExamsPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold">الامتحانات</h1>
-              <p className="text-white/70 text-sm">{exams.length} امتحان</p>
+              <p className="text-white/70 text-sm">
+                {search || statusFilter !== 'all' 
+                  ? `${filteredExams.length} من ${exams.length} امتحان`
+                  : `${exams.length} امتحان`}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <SearchIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400" size={20} />
+            <input
+              type="text"
+              placeholder="ابحث عن امتحان..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-4 pr-12 py-3 bg-white border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#c9a227]/20 focus:border-[#c9a227] outline-none transition-all"
+            />
+          </div>
+
+          {/* Status Filter Tabs */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {[
+              { value: 'all', label: 'الكل' },
+              { value: 'active', label: 'متاح الآن' },
+              { value: 'completed', label: 'مكتمل' },
+              { value: 'upcoming', label: 'قادم' },
+              { value: 'expired', label: 'منتهي' },
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  statusFilter === tab.value
+                    ? 'bg-[#1a3a2f] text-white'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {exams.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-12 text-center">
             <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -121,9 +178,23 @@ export default function StudentExamsPage() {
               تصفح الدورات
             </Link>
           </div>
+        ) : filteredExams.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-12 text-center">
+            <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <SearchIcon className="text-stone-400" size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-stone-800 mb-2">لا توجد نتائج مطابقة</h3>
+            <p className="text-stone-500 mb-6">جرب تغيير معايير البحث أو الفلتر</p>
+            <button
+              onClick={() => { setSearch(''); setStatusFilter('all'); }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#143026] transition"
+            >
+              إزالة الفلتر
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {exams.map((exam) => {
+            {filteredExams.map((exam) => {
               const examStatus = getExamStatus(exam);
               const hasAttempt = exam.attempts && exam.attempts.length > 0;
               const score = hasAttempt ? exam.attempts[0].score : null;
