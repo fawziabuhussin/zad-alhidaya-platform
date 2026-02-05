@@ -9,6 +9,12 @@ import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
 import ExpandableLessonCard from '@/components/ExpandableLessonCard';
 
+interface PrerequisiteStatus {
+  prerequisite: { id: string; title: string };
+  status: 'not_enrolled' | 'enrolled' | 'completed';
+  isCompleted: boolean;
+}
+
 interface Course {
   id: string;
   title: string;
@@ -18,9 +24,7 @@ interface Course {
   category: { title: string };
   teacher: { name: string };
   resources?: Resource[];
-  prerequisites?: Array<{
-    prerequisite: { id: string; title: string };
-  }>;
+  prerequisites?: PrerequisiteStatus[];
   modules: Array<{
     id: string;
     title: string;
@@ -113,7 +117,7 @@ export default function CourseDetailsPage() {
     try {
       await api.post('/enrollments', { courseId: params.id });
       setIsEnrolled(true);
-      alert('تم التسجيل في الدورة بنجاح!');
+      // UI updates automatically - button changes to "مسجل في الدورة"
     } catch (error: any) {
       alert(error.response?.data?.message || 'فشل التسجيل في الدورة');
     } finally {
@@ -176,15 +180,35 @@ export default function CourseDetailsPage() {
             </div>
             
             <div className="flex-shrink-0">
-              {!isEnrolled ? (
-                <button
-                  onClick={handleEnroll}
-                  disabled={enrolling}
-                  className="px-6 py-3 bg-white text-[#1a3a2f] rounded-lg font-bold hover:bg-stone-100 transition disabled:opacity-50"
-                >
-                  {enrolling ? 'جاري التسجيل...' : 'سجل في الدورة'}
-                </button>
-              ) : (
+              {!isEnrolled ? (() => {
+                const hasPrerequisites = course.prerequisites && course.prerequisites.length > 0;
+                const allPrereqsCompleted = !hasPrerequisites || course.prerequisites!.every((p) => p.isCompleted);
+                const canEnroll = allPrereqsCompleted;
+                
+                return canEnroll ? (
+                  <button
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                    className="px-6 py-3 bg-white text-[#1a3a2f] rounded-lg font-bold hover:bg-stone-100 transition disabled:opacity-50"
+                  >
+                    {enrolling ? 'جاري التسجيل...' : 'سجل في الدورة'}
+                  </button>
+                ) : (
+                  <div className="relative group">
+                    <button
+                      disabled
+                      className="px-6 py-3 bg-white/30 text-white/70 rounded-lg font-bold cursor-not-allowed"
+                    >
+                      سجل في الدورة
+                    </button>
+                    <div className="absolute top-full right-0 mt-2 px-4 py-3 bg-white text-stone-800 text-sm rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 min-w-[200px]">
+                      <p className="font-bold mb-1">أكمل المتطلبات السابقة أولاً</p>
+                      <p className="text-xs text-stone-500">راجع قائمة المتطلبات أدناه</p>
+                      <div className="absolute bottom-full right-6 border-8 border-transparent border-b-white"></div>
+                    </div>
+                  </div>
+                );
+              })() : (
                 <span className="px-6 py-3 bg-emerald-500/20 text-emerald-200 rounded-lg font-bold flex items-center gap-2">
                   <CheckCircleIcon size={18} />
                   مسجل في الدورة
@@ -192,22 +216,109 @@ export default function CourseDetailsPage() {
               )}
             </div>
           </div>
-          {course.prerequisites && course.prerequisites.length > 0 && (
-            <div className="mt-6 bg-white/10 border border-white/20 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold mb-2">
-                <AlertIcon size={16} />
-                المساقات السابقة المطلوبة
+          {course.prerequisites && course.prerequisites.length > 0 && (() => {
+            const allCompleted = course.prerequisites.every((p) => p.isCompleted);
+            const completedCount = course.prerequisites.filter((p) => p.isCompleted).length;
+            
+            return (
+              <div className={`mt-6 rounded-lg p-4 border ${
+                allCompleted 
+                  ? 'bg-emerald-500/10 border-emerald-400/30' 
+                  : 'bg-white/10 border-white/20'
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    {allCompleted ? (
+                      <CheckCircleIcon size={16} className="text-emerald-400" />
+                    ) : (
+                      <AlertIcon size={16} />
+                    )}
+                    المساقات السابقة المطلوبة
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    allCompleted 
+                      ? 'bg-emerald-500/20 text-emerald-300' 
+                      : 'bg-white/10 text-white/70'
+                  }`}>
+                    {completedCount} / {course.prerequisites.length} مكتمل
+                  </span>
+                </div>
+                
+                {!allCompleted && (
+                  <p className="text-sm text-white/70 mb-3">
+                    يجب إكمال المساقات التالية والنجاح بنسبة 60% على الأقل قبل التسجيل.
+                  </p>
+                )}
+                
+                <div className="space-y-2">
+                  {course.prerequisites.map((prereq) => (
+                    <div 
+                      key={prereq.prerequisite.id}
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        prereq.isCompleted 
+                          ? 'bg-emerald-500/10' 
+                          : prereq.status === 'enrolled' 
+                            ? 'bg-amber-500/10' 
+                            : 'bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {prereq.isCompleted ? (
+                          <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                            <CheckCircleIcon size={14} className="text-emerald-400" />
+                          </div>
+                        ) : prereq.status === 'enrolled' ? (
+                          <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
+                            <ClockIcon size={14} className="text-amber-400" />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
+                            <BookIcon size={14} className="text-white/50" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-white">{prereq.prerequisite.title}</p>
+                          <p className={`text-xs ${
+                            prereq.isCompleted 
+                              ? 'text-emerald-400' 
+                              : prereq.status === 'enrolled' 
+                                ? 'text-amber-400' 
+                                : 'text-white/50'
+                          }`}>
+                            {prereq.isCompleted 
+                              ? 'مكتمل ✓' 
+                              : prereq.status === 'enrolled' 
+                                ? 'قيد الدراسة' 
+                                : 'غير مسجل'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {!prereq.isCompleted && (
+                        <Link
+                          href={`/courses/${prereq.prerequisite.id}`}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                            prereq.status === 'enrolled'
+                              ? 'bg-amber-500/20 text-amber-200 hover:bg-amber-500/30'
+                              : 'bg-white/10 text-white hover:bg-white/20'
+                          }`}
+                        >
+                          {prereq.status === 'enrolled' ? 'متابعة الدورة' : 'سجل الآن'}
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {allCompleted && (
+                  <p className="text-sm text-emerald-300 mt-3 flex items-center gap-2">
+                    <CheckCircleIcon size={14} />
+                    أنت مؤهل للتسجيل في هذه الدورة
+                  </p>
+                )}
               </div>
-              <p className="text-sm text-white/80 mb-2">
-                يجب إكمال المساقات التالية والنجاح بنسبة 60% على الأقل قبل التسجيل.
-              </p>
-              <ul className="text-sm text-white/90 list-disc list-inside space-y-1">
-                {course.prerequisites.map((prereq) => (
-                  <li key={prereq.prerequisite.id}>{prereq.prerequisite.title}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 
