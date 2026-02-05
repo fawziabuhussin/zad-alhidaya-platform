@@ -25,6 +25,32 @@ const enrollmentWithCourseInclude = {
 };
 
 /**
+ * Build include config with lesson progress filtered by userId
+ */
+const getEnrollmentWithProgressInclude = (userId: string) => ({
+  course: {
+    include: {
+      category: true,
+      teacher: {
+        select: { id: true, name: true },
+      },
+      modules: {
+        include: {
+          lessons: {
+            include: {
+              progress: {
+                where: { userId },
+                select: { id: true, completedAt: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+/**
  * Include configuration for fetching enrollments with user details
  */
 const enrollmentWithUserInclude = {
@@ -35,7 +61,7 @@ const enrollmentWithUserInclude = {
 
 export class EnrollmentRepository {
   /**
-   * Find all enrollments for a user
+   * Find all enrollments for a user (includes lesson progress for progress calculation)
    */
   async findByUserId(userId: string, status?: string): Promise<EnrollmentWithRelations[]> {
     const where: any = { userId };
@@ -45,7 +71,7 @@ export class EnrollmentRepository {
 
     return prisma.enrollment.findMany({
       where,
-      include: enrollmentWithCourseInclude,
+      include: getEnrollmentWithProgressInclude(userId),
       orderBy: { enrolledAt: 'desc' },
     });
   }
