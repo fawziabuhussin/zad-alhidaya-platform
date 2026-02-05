@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { BookIcon, ExamIcon, HomeworkIcon, StarIcon, PlayIcon } from '@/components/Icons';
+import { 
+  DashboardCourseCardSkeleton, 
+  NavCardSkeleton, 
+  ContinueLearningCardSkeleton,
+  DeadlineItemSkeleton 
+} from '@/components/Skeleton';
 
 interface LessonProgress {
   id: string;
@@ -176,8 +182,57 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
+      <div className="min-h-screen bg-stone-50">
+        {/* Header Skeleton */}
+        <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <div className="h-8 bg-white/20 rounded w-48 mb-2 animate-pulse" />
+                <div className="h-5 bg-white/10 rounded w-64 animate-pulse" />
+              </div>
+              <div className="h-12 bg-white/20 rounded-xl w-36 animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Quick Stats Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <NavCardSkeleton key={i} />
+            ))}
+          </div>
+
+          {/* Continue Learning Skeleton */}
+          <div className="mb-8">
+            <div className="h-6 bg-stone-200 rounded w-32 mb-4 animate-pulse" />
+            <ContinueLearningCardSkeleton />
+          </div>
+
+          {/* My Courses Skeleton */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-6 bg-stone-200 rounded w-24 animate-pulse" />
+              <div className="h-4 bg-stone-200 rounded w-20 animate-pulse" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <DashboardCourseCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+
+          {/* Upcoming Deadlines Skeleton */}
+          <div>
+            <div className="h-6 bg-stone-200 rounded w-36 mb-4 animate-pulse" />
+            <div className="bg-white rounded-xl shadow-sm border border-stone-100">
+              {[...Array(3)].map((_, i) => (
+                <DeadlineItemSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

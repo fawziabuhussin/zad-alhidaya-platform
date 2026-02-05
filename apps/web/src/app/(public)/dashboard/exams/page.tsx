@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { CheckCircleIcon, ExamIcon, ClockIcon, BookIcon, SearchIcon } from '@/components/Icons';
+import { ExamCardSkeleton, SearchBarSkeleton } from '@/components/Skeleton';
 
 interface Exam {
   id: string;
@@ -98,8 +99,38 @@ export default function StudentExamsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
+      <div className="min-h-screen bg-stone-50">
+        {/* Header Skeleton */}
+        <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg animate-pulse" />
+              <div>
+                <div className="h-6 bg-white/20 rounded w-32 mb-1 animate-pulse" />
+                <div className="h-4 bg-white/10 rounded w-20 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Search Skeleton */}
+          <SearchBarSkeleton />
+          
+          {/* Filter Tabs Skeleton */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-9 bg-stone-200 rounded-full animate-pulse" style={{ width: `${60 + i * 10}px` }} />
+            ))}
+          </div>
+
+          {/* Exam Cards Grid Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <ExamCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
