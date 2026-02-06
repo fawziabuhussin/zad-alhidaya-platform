@@ -235,12 +235,13 @@ export class CourseRepository {
           include: courseBasicInclude,
         });
 
+        // Dedupe prerequisite IDs to prevent duplicates
+        const uniquePrereqIds = [...new Set(prerequisiteIds)];
         await tx.coursePrerequisite.createMany({
-          data: prerequisiteIds.map((prereqId) => ({
+          data: uniquePrereqIds.map((prereqId) => ({
             courseId: created.id,
             prerequisiteCourseId: prereqId,
           })),
-          skipDuplicates: true,
         });
 
         return created as any;
@@ -282,12 +283,13 @@ export class CourseRepository {
         await tx.coursePrerequisite.deleteMany({ where: { courseId: id } });
 
         if (prerequisiteIds.length > 0) {
+          // Dedupe prerequisite IDs (duplicates already removed by deleteMany above)
+          const uniquePrereqIds = [...new Set(prerequisiteIds)];
           await tx.coursePrerequisite.createMany({
-            data: prerequisiteIds.map((prereqId) => ({
+            data: uniquePrereqIds.map((prereqId) => ({
               courseId: id,
               prerequisiteCourseId: prereqId,
             })),
-            skipDuplicates: true,
           });
         }
 
