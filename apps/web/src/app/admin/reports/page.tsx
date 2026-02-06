@@ -62,14 +62,13 @@ const STATUS_STYLES: Record<string, string> = {
   DISMISSED: 'bg-stone-100 text-stone-600 border-stone-200',
 };
 
-const POLLING_INTERVAL = 15000; // 15 seconds
+const POLLING_INTERVAL = 60000; // 1 minute
 const ITEMS_PER_PAGE = 15;
 
 export default function AdminReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
-  const [newCount, setNewCount] = useState(0);
   const [updating, setUpdating] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -82,16 +81,11 @@ export default function AdminReportsPage() {
       params.append('page', currentPage.toString());
       params.append('limit', ITEMS_PER_PAGE.toString());
       
-      const [reportsRes, countRes] = await Promise.all([
-        api.get(`/reports?${params.toString()}`),
-        api.get('/reports/count/new'),
-      ]);
-      
-      const data = reportsRes.data as PaginatedResponse<Report>;
+      const res = await api.get(`/reports?${params.toString()}`);
+      const data = res.data as PaginatedResponse<Report>;
       setReports(data.data || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalReports(data.pagination?.total || 0);
-      setNewCount(countRes.data?.count || 0);
     } catch (error) {
       console.error('Failed to load reports:', error);
     } finally {
@@ -151,24 +145,14 @@ export default function AdminReportsPage() {
       {/* Header */}
       <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                <AlertIcon className="text-white" size={20} />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">تبليغات الأخطاء</h1>
-                <p className="text-white/70 text-sm">{reports.length} تبليغ</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <AlertIcon className="text-white" size={20} />
             </div>
-            
-            {/* New Reports Badge */}
-            {newCount > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-500 rounded-lg animate-pulse">
-                <span className="font-bold">{newCount}</span>
-                <span className="text-sm">تبليغات جديدة</span>
-              </div>
-            )}
+            <div>
+              <h1 className="text-xl font-bold">تبليغات الأخطاء</h1>
+              <p className="text-white/70 text-sm">إدارة تبليغات المستخدمين عن أخطاء في المحتوى (فيديو، نص، مرفقات)</p>
+            </div>
           </div>
         </div>
       </div>
@@ -182,7 +166,7 @@ export default function AdminReportsPage() {
                 <AlertIcon className="text-stone-600" size={20} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-stone-800">{reports.length}</p>
+                <p className="text-2xl font-bold text-stone-800">{totalReports}</p>
                 <p className="text-xs text-stone-500">إجمالي التبليغات</p>
               </div>
             </div>
@@ -223,21 +207,28 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Filter */}
-        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-4 mb-6">
-          <div className="flex items-center gap-3">
-            <FilterIcon className="text-stone-400" size={18} />
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="flex-1 px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white"
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+        <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <FilterIcon size={18} className="text-stone-500" />
+            <span className="text-sm font-medium text-stone-700">تصفية</span>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setStatusFilter(opt.value);
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-2 rounded-lg text-sm transition ${
+                  statusFilter === opt.value
+                    ? 'bg-[#1a3a2f] text-white'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -325,13 +316,14 @@ export default function AdminReportsPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-wrap gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <Link
                       href={`/courses/${report.course.id}/lessons/${report.lesson.id}`}
                       target="_blank"
-                      className="px-3 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition flex items-center gap-1 text-sm"
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
+                      title="عرض الدرس"
                     >
-                      <EyeIcon size={14} /> عرض الدرس
+                      <EyeIcon size={18} /> عرض الدرس
                     </Link>
                     
                     {report.status === 'NEW' && (
@@ -368,7 +360,7 @@ export default function AdminReportsPage() {
                       className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm"
                       title="حذف التبليغ"
                     >
-                      <TrashIcon size={14} />
+                      <TrashIcon size={18} />
                     </button>
                   </div>
                 </div>
@@ -390,7 +382,7 @@ export default function AdminReportsPage() {
 
         {/* Polling indicator */}
         <div className="mt-6 text-center text-sm text-stone-400">
-          يتم تحديث البيانات تلقائياً كل 15 ثانية
+          يتم تحديث البيانات تلقائياً كل دقيقة
         </div>
       </div>
     </div>

@@ -87,9 +87,15 @@ export class ReportManager {
   }
 
   /**
-   * Get reports submitted by the current user (Student)
+   * Get reports submitted by the current user (Student only - only their own)
    */
   async getMyReports(auth: AuthContext): Promise<ReportsListResult> {
+    if (auth.role !== 'STUDENT') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مصرح لك بالوصول' },
+      };
+    }
     const reports = await reportRepository.findByReporterId(auth.userId);
 
     return {
@@ -99,12 +105,18 @@ export class ReportManager {
   }
 
   /**
-   * Get reports submitted by the current user with pagination
+   * Get reports submitted by the current student with pagination (only their own)
    */
   async getMyReportsPaginated(
     auth: AuthContext,
     pagination?: PaginationParams
   ): Promise<ReportsPaginatedResult> {
+    if (auth.role !== 'STUDENT') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مصرح لك بالوصول' },
+      };
+    }
     const result = await reportRepository.findByReporterIdPaginated(auth.userId, pagination);
 
     return {
@@ -281,11 +293,12 @@ export class ReportManager {
       };
     }
 
-    // Check authorization: Admin can delete any, Teacher can delete their course's reports
+    // Check authorization: Admin, course teacher, or the reporter (student) who created it
     const isAdmin = auth.role === 'ADMIN';
     const isCourseTeacher = auth.role === 'TEACHER' && report.course.teacherId === auth.userId;
+    const isReporter = report.reporterId === auth.userId;
 
-    if (!isAdmin && !isCourseTeacher) {
+    if (!isAdmin && !isCourseTeacher && !isReporter) {
       return {
         success: false,
         error: { status: 403, message: 'غير مسموح بحذف هذا التبليغ' },

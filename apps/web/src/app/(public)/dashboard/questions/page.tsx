@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon } from '@/components/Icons';
+import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon, FilterIcon } from '@/components/Icons';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 import { showSuccess, showError } from '@/lib/toast';
 import { formatDate } from '@/lib/utils';
@@ -35,7 +35,8 @@ interface Question {
   } | null;
 }
 
-const ITEMS_PER_PAGE = 10;
+const POLLING_INTERVAL = 60000; // 1 minute
+const ITEMS_PER_PAGE = 15;
 
 export default function StudentQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -57,15 +58,8 @@ export default function StudentQuestionsPage() {
       setQuestions(data.data || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalQuestions(data.pagination?.total || 0);
-      
-      // Calculate stats from total (not just current page)
-      // For accurate stats, we need to count from all data
-      // For now, approximate from pagination total
-      setStats({
-        total: data.pagination?.total || 0,
-        answered: (data.data || []).filter(q => q.status === 'ANSWERED').length,
-        pending: (data.data || []).filter(q => q.status === 'PENDING').length,
-      });
+      // Keep total in sync from API; answered/pending stay from loadStats (full list)
+      setStats((prev) => ({ ...prev, total: data.pagination?.total ?? prev.total }));
     } catch (error) {
       console.error('Failed to load questions:', error);
     } finally {
@@ -78,24 +72,29 @@ export default function StudentQuestionsPage() {
     loadQuestions();
   }, [loadQuestions]);
 
-  // Load stats separately to get accurate counts
   useEffect(() => {
-    const loadStats = async () => {
-      try {
-        // Load first page without limit to get total stats
-        const response = await api.get('/questions/my');
-        const allQuestions = response.data || [];
-        setStats({
-          total: allQuestions.length,
-          answered: allQuestions.filter((q: Question) => q.status === 'ANSWERED').length,
-          pending: allQuestions.filter((q: Question) => q.status === 'PENDING').length,
-        });
-      } catch (error) {
-        console.error('Failed to load stats:', error);
-      }
-    };
-    loadStats();
+    const interval = setInterval(loadQuestions, POLLING_INTERVAL);
+    return () => clearInterval(interval);
+  }, [loadQuestions]);
+
+  // Load stats (full list counts) - call after delete so cards stay in sync
+  const loadStats = useCallback(async () => {
+    try {
+      const response = await api.get('/questions/my');
+      const allQuestions = response.data || [];
+      setStats({
+        total: allQuestions.length,
+        answered: allQuestions.filter((q: Question) => q.status === 'ANSWERED').length,
+        pending: allQuestions.filter((q: Question) => q.status === 'PENDING').length,
+      });
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const handleDelete = async (questionId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا السؤال؟')) return;
@@ -104,7 +103,8 @@ export default function StudentQuestionsPage() {
     try {
       await api.delete(`/questions/${questionId}`);
       showSuccess('تم حذف السؤال بنجاح');
-      loadQuestions();
+      await loadQuestions();
+      await loadStats();
     } catch (error: any) {
       showError(error.response?.data?.message || 'فشل حذف السؤال');
     } finally {
@@ -169,6 +169,10 @@ export default function StudentQuestionsPage() {
 
             {/* Filter */}
             <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <FilterIcon size={18} className="text-stone-500" />
+                <span className="text-sm font-medium text-stone-700">تصفية</span>
+              </div>
               <div className="flex gap-2 flex-wrap">
                 {[
                   { value: 'all', label: 'الكل' },
@@ -190,25 +194,12 @@ export default function StudentQuestionsPage() {
               </div>
             </div>
 
-            {/* Pagination Info */}
-            {totalQuestions > 0 && (
-              <div className="mb-4">
-                <PaginationInfo 
-                  currentPage={currentPage} 
-                  limit={ITEMS_PER_PAGE} 
-                  total={totalQuestions} 
-                  itemName="سؤال"
-                />
-              </div>
-            )}
-
             {/* Questions List */}
             <div className="space-y-4">
               {filteredQuestions.length === 0 ? (
                 <div className="bg-white rounded-xl border border-stone-200 p-12 text-center">
                   <HelpIcon className="mx-auto mb-4 text-stone-300" size={48} />
                   <p className="text-stone-500">لا توجد أسئلة</p>
-                  <p className="text-sm text-stone-400 mt-1">يمكنك طرح سؤال من صفحة الدرس</p>
                 </div>
               ) : (
                 filteredQuestions.map((question) => (
@@ -231,24 +222,22 @@ export default function StudentQuestionsPage() {
                           {question.course.title} - {question.lesson.module.order}.{question.lesson.order} {question.lesson.title}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         <Link
                           href={`/courses/${question.course.id}/lessons/${question.lesson.id}`}
-                          className="p-2 text-stone-400 hover:text-[#1a3a2f] hover:bg-stone-50 rounded-lg"
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
                           title="عرض الدرس"
                         >
-                          <EyeIcon size={18} />
+                          <EyeIcon size={18} /> عرض الدرس
                         </Link>
-                        {question.status === 'PENDING' && (
-                          <button
-                            onClick={() => handleDelete(question.id)}
-                            disabled={deleting === question.id}
-                            className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
-                            title="حذف السؤال"
-                          >
-                            <TrashIcon size={18} />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleDelete(question.id)}
+                          disabled={deleting === question.id}
+                          className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm disabled:opacity-50"
+                          title="حذف السؤال"
+                        >
+                          <TrashIcon size={18} />
+                        </button>
                       </div>
                     </div>
 
@@ -289,7 +278,13 @@ export default function StudentQuestionsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-6">
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <PaginationInfo
+                  currentPage={currentPage}
+                  limit={ITEMS_PER_PAGE}
+                  total={totalQuestions}
+                  itemName="سؤال"
+                />
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
@@ -297,6 +292,11 @@ export default function StudentQuestionsPage() {
                 />
               </div>
             )}
+
+            {/* Polling indicator */}
+            <div className="mt-6 text-center text-sm text-stone-400">
+              يتم تحديث البيانات تلقائياً كل دقيقة
+            </div>
           </div>
         </>
       )}

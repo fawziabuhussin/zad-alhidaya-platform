@@ -43,11 +43,11 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
 });
 
 /**
- * GET /my-reports - Get reports submitted by the current user
+ * GET /my-reports - Get reports submitted by the current student (only their own)
  * Supports pagination: ?page=1&limit=20
  * Without pagination params, returns array (backward compatible)
  */
-router.get('/my-reports', authenticate, async (req: AuthRequest, res) => {
+router.get('/my-reports', authenticate, authorize('STUDENT'), async (req: AuthRequest, res) => {
   try {
     const { page, limit } = req.query;
 
@@ -222,9 +222,9 @@ router.patch('/:id', authenticate, authorize('ADMIN', 'TEACHER'), async (req: Au
 });
 
 /**
- * DELETE /:id - Delete a report (Admin or Teacher of the course)
+ * DELETE /:id - Delete a report (Admin, Teacher of the course, or the reporter/student who created it)
  */
-router.delete('/:id', authenticate, authorize('ADMIN', 'TEACHER'), async (req: AuthRequest, res) => {
+router.delete('/:id', authenticate, authorize('ADMIN', 'TEACHER', 'STUDENT'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 

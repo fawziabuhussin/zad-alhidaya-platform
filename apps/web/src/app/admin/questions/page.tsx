@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/utils';
@@ -41,6 +41,7 @@ interface Question {
   } | null;
 }
 
+const POLLING_INTERVAL = 60000; // 1 minute
 const ITEMS_PER_PAGE = 15;
 
 export default function AdminQuestionsPage() {
@@ -54,11 +55,7 @@ export default function AdminQuestionsPage() {
   const [answerText, setAnswerText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadQuestions();
-  }, [currentPage]);
-
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(`/questions?page=${currentPage}&limit=${ITEMS_PER_PAGE}`);
@@ -71,7 +68,16 @@ export default function AdminQuestionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage]);
+
+  useEffect(() => {
+    loadQuestions();
+  }, [loadQuestions]);
+
+  useEffect(() => {
+    const interval = setInterval(loadQuestions, POLLING_INTERVAL);
+    return () => clearInterval(interval);
+  }, [loadQuestions]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -143,7 +149,7 @@ export default function AdminQuestionsPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
-            <p className="text-2xl font-bold text-[#1a3a2f]">{questions.length}</p>
+            <p className="text-2xl font-bold text-[#1a3a2f]">{totalQuestions}</p>
             <p className="text-sm text-stone-500">إجمالي الأسئلة</p>
           </div>
           <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
@@ -223,14 +229,14 @@ export default function AdminQuestionsPage() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/courses/${question.course.id}/lessons/${question.lesson.id}`}
-                      className="p-2 text-stone-400 hover:text-[#1a3a2f] hover:bg-stone-50 rounded-lg"
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
                       title="عرض الدرس"
                     >
-                      <EyeIcon size={18} />
+                      <EyeIcon size={18} /> عرض الدرس
                     </Link>
                     <button
                       onClick={() => handleDelete(question.id)}
-                      className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                      className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm"
                       title="حذف"
                     >
                       <TrashIcon size={18} />
@@ -316,6 +322,11 @@ export default function AdminQuestionsPage() {
               />
             </div>
           )}
+        </div>
+
+        {/* Polling indicator */}
+        <div className="mt-6 text-center text-sm text-stone-400">
+          يتم تحديث البيانات تلقائياً كل دقيقة
         </div>
       </div>
     </div>
