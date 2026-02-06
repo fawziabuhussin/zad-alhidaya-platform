@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { BookIcon, CloseIcon } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Attempt {
   id: string;
@@ -62,22 +63,24 @@ export default function ExamAttemptsPage() {
     try {
       await api.patch(`/exams/${params.id}/attempt/${attemptId}`, { bonus: bonusValue });
       setBonus({ ...bonus, [attemptId]: bonusValue });
+      showSuccess(TOAST_MESSAGES.SAVE_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل إضافة bonus');
+      showError(error.response?.data?.message || 'فشل إضافة bonus');
     }
   };
 
   const handleSetFinalScore = async (attemptId: string, finalScore: number) => {
     try {
       if (finalScore > exam!.maxScore * 1.5) {
-        alert(`الدرجة النهائية لا يمكن أن تتجاوز ${exam!.maxScore * 1.5}`);
+        showError(`الدرجة النهائية لا يمكن أن تتجاوز ${exam!.maxScore * 1.5}`);
         return;
       }
       await api.patch(`/exams/${params.id}/attempt/${attemptId}`, { finalScore });
+      showSuccess(TOAST_MESSAGES.GRADE_SUBMIT_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل تحديث الدرجة');
+      showError(error.response?.data?.message || 'فشل تحديث الدرجة');
     }
   };
 
@@ -87,7 +90,7 @@ export default function ExamAttemptsPage() {
       const finalScore = editingScore[attemptId];
       
       if (!finalScore && Object.keys(scores).length === 0) {
-        alert('يجب إدخال درجات للأسئلة أو الدرجة النهائية');
+        showError('يجب إدخال درجات للأسئلة أو الدرجة النهائية');
         return;
       }
 
@@ -99,9 +102,10 @@ export default function ExamAttemptsPage() {
       
       setGradingAttempt(null);
       setQuestionScores({ ...questionScores, [attemptId]: {} });
+      showSuccess(TOAST_MESSAGES.GRADE_SUBMIT_SUCCESS);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل تصحيح الامتحان');
+      showError(error.response?.data?.message || 'فشل تصحيح الامتحان');
     }
   };
 

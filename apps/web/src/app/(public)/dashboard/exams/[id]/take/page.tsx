@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { AlertIcon, BookIcon, ClockIcon } from '@/components/Icons';
+import { AlertIcon, BookIcon, ClockIcon, CheckCircleIcon } from '@/components/Icons';
+import { showSuccess, showError, showWarning, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Question {
   id: string;
@@ -40,7 +41,11 @@ export default function TakeExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
   const [startTime, setStartTime] = useState<Date | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [warningPlayed, setWarningPlayed] = useState(false);
+  const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     loadExam();
@@ -49,19 +54,97 @@ export default function TakeExamPage() {
   useEffect(() => {
     if (exam && startTime) {
       const interval = setInterval(() => {
-        const elapsed = Math.floor((new Date().getTime() - startTime.getTime()) / 1000 / 60);
-        const remaining = exam.durationMinutes - elapsed;
-        setTimeRemaining(Math.max(0, remaining));
+        const elapsedSeconds = Math.floor((new Date().getTime() - startTime.getTime()) / 1000);
+        const totalSeconds = exam.durationMinutes * 60;
+        const remainingSeconds = totalSeconds - elapsedSeconds;
+        
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        
+        setTimeRemaining(Math.max(0, mins));
+        setSecondsRemaining(Math.max(0, secs));
 
-        if (remaining <= 0) {
+        // Play warning sound at 5 minutes remaining
+        if (remainingSeconds <= 300 && remainingSeconds > 295 && !warningPlayed) {
+          playWarningSound();
+          setWarningPlayed(true);
+        }
+
+        // Auto-submit when time runs out
+        if (remainingSeconds <= 0) {
           clearInterval(interval);
-          handleSubmit();
+          handleAutoSubmit();
         }
       }, 1000);
 
       return () => clearInterval(interval);
     }
-  }, [exam, startTime]);
+  }, [exam, startTime, warningPlayed]);
+
+  // Play warning sound
+  const playWarningSound = () => {
+    try {
+      // Create an audio context for the warning beep
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      gainNode.gain.value = 0.3;
+      
+      oscillator.start();
+      
+      // Beep pattern: 3 short beeps
+      setTimeout(() => { gainNode.gain.value = 0; }, 200);
+      setTimeout(() => { gainNode.gain.value = 0.3; }, 400);
+      setTimeout(() => { gainNode.gain.value = 0; }, 600);
+      setTimeout(() => { gainNode.gain.value = 0.3; }, 800);
+      setTimeout(() => { gainNode.gain.value = 0; oscillator.stop(); }, 1000);
+    } catch (e) {
+      console.log('Audio warning not supported');
+    }
+  };
+
+  // Auto-submit when time runs out
+  const handleAutoSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    showWarning('انتهى الوقت! جاري تسليم الامتحان تلقائياً...');
+    try {
+      const answersObj: Record<string, any> = {};
+      exam!.questions.forEach(q => {
+        if (q.type === 'MULTIPLE_CHOICE') {
+          // Only include answered questions (skip null/undefined)
+          if (answers[q.id] !== null && answers[q.id] !== undefined) {
+            answersObj[q.id] = answers[q.id];
+          }
+        } else {
+          // For text/essay, include if not empty
+          if (answers[q.id] && answers[q.id].trim() !== '') {
+            answersObj[q.id] = answers[q.id];
+          }
+        }
+      });
+
+      await api.post(`/exams/${params.id}/attempt`, { answers: answersObj });
+      showSuccess(TOAST_MESSAGES.EXAM_SUBMIT_SUCCESS);
+      router.push('/dashboard/exams');
+    } catch (error: any) {
+      console.error('Auto-submit failed:', error);
+      showError(TOAST_MESSAGES.EXAM_SUBMIT_ERROR);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Scroll to question
+  const scrollToQuestion = (questionId: string) => {
+    questionRefs.current[questionId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   const loadExam = async () => {
     try {
@@ -113,32 +196,42 @@ export default function TakeExamPage() {
     setAnswers({ ...answers, [questionId]: value });
   };
 
-  const handleSubmit = async () => {
-    if (submitting) return;
-
-    const unanswered = exam!.questions.filter(q => {
+  // Get unanswered questions count
+  const getUnansweredCount = () => {
+    if (!exam) return 0;
+    return exam.questions.filter(q => {
       if (q.type === 'MULTIPLE_CHOICE') {
         return answers[q.id] === null || answers[q.id] === undefined;
       } else {
         return !answers[q.id] || answers[q.id].trim() === '';
       }
-    });
+    }).length;
+  };
 
-    if (unanswered.length > 0) {
-      const confirmSubmit = confirm(
-        `لديك ${unanswered.length} سؤال غير مجاب. هل تريد المتابعة والتسليم؟`
-      );
-      if (!confirmSubmit) return;
-    }
+  // Show confirmation modal
+  const handleSubmitClick = () => {
+    setShowConfirmModal(true);
+  };
 
+  // Confirm and submit
+  const handleConfirmSubmit = async () => {
+    if (submitting) return;
+    setShowConfirmModal(false);
     setSubmitting(true);
+    
     try {
       const answersObj: Record<string, any> = {};
       exam!.questions.forEach(q => {
         if (q.type === 'MULTIPLE_CHOICE') {
-          answersObj[q.id] = answers[q.id] !== null && answers[q.id] !== undefined ? answers[q.id] : null;
+          // Only include answered questions (skip null/undefined)
+          if (answers[q.id] !== null && answers[q.id] !== undefined) {
+            answersObj[q.id] = answers[q.id];
+          }
         } else {
-          answersObj[q.id] = answers[q.id] || '';
+          // For text/essay, include if not empty
+          if (answers[q.id] && answers[q.id].trim() !== '') {
+            answersObj[q.id] = answers[q.id];
+          }
         }
       });
 
@@ -146,15 +239,15 @@ export default function TakeExamPage() {
         answers: answersObj,
       });
 
-      alert('تم تسليم الامتحان بنجاح!');
+      showSuccess(TOAST_MESSAGES.EXAM_SUBMIT_SUCCESS);
       router.push('/dashboard/exams');
     } catch (error: any) {
       console.error('Failed to submit exam:', error);
-      const errorMessage = error.response?.data?.message || 'فشل تسليم الامتحان';
+      const errorMessage = error.response?.data?.message || TOAST_MESSAGES.EXAM_SUBMIT_ERROR;
       if (error.response?.data?.completedLessons !== undefined) {
-        alert(`${errorMessage}\n\nالدروس المكتملة: ${error.response.data.completedLessons} من ${error.response.data.totalLessons}`);
+        showError(`${errorMessage} - الدروس المكتملة: ${error.response.data.completedLessons} من ${error.response.data.totalLessons}`);
       } else {
-        alert(errorMessage);
+        showError(errorMessage);
       }
     } finally {
       setSubmitting(false);
@@ -262,131 +355,303 @@ export default function TakeExamPage() {
     );
   }
 
-  const formatTime = (minutes: number) => {
+  const formatTime = (minutes: number, seconds: number) => {
     const hours = Math.floor(minutes / 60);
-    const mins = Math.floor(minutes % 60);
-    return hours > 0 ? `${hours}:${mins.toString().padStart(2, '0')}` : `${mins} دقيقة`;
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${seconds.toString().padStart(2, '0')}`;
   };
+
+  // Check if question is answered
+  const isQuestionAnswered = (questionId: string) => {
+    const answer = answers[questionId];
+    const question = exam?.questions.find(q => q.id === questionId);
+    if (!question) return false;
+    if (question.type === 'MULTIPLE_CHOICE') {
+      return answer !== null && answer !== undefined;
+    }
+    return answer && answer.trim() !== '';
+  };
+
+  const answeredCount = Object.values(answers).filter(a => a !== null && a !== '' && a !== undefined).length;
+  const unansweredCount = getUnansweredCount();
+  const isLowTime = timeRemaining < 5;
+  const isWarningTime = timeRemaining < 10 && timeRemaining >= 5;
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Fixed Timer Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <div>
-            <h1 className="font-bold text-stone-800">{exam.title}</h1>
-            <p className="text-xs text-stone-500">{exam.questions.length} سؤال</p>
-          </div>
-          <div className={`text-xl font-bold px-4 py-2 rounded-lg ${
-            timeRemaining < 10 ? 'bg-red-50 text-red-600' : 
-            timeRemaining < 30 ? 'bg-amber-50 text-amber-600' : 
-            'bg-emerald-50 text-emerald-600'
-          }`}>
-            {formatTime(timeRemaining)}
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Exam Info */}
-        <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
-          <div className="flex flex-wrap gap-4 text-sm text-stone-600">
-            <span>الدرجة الكاملة: {exam.maxScore}</span>
-            <span>درجة النجاح: {exam.passingScore}</span>
-            <span>المدة: {exam.durationMinutes} دقيقة</span>
-          </div>
-        </div>
-
-        {/* Questions */}
-        <div className="space-y-4 mb-6">
-          {exam.questions && exam.questions.length > 0 ? (
-            exam.questions.map((question, index) => (
-              <div key={question.id} className="bg-white rounded-xl border border-stone-200 p-5">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-start gap-3">
-                    <span className="w-8 h-8 bg-[#1a3a2f] text-white rounded-lg flex items-center justify-center font-bold text-sm">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <p className="text-stone-800 font-medium whitespace-pre-wrap">{question.prompt}</p>
-                      <p className="text-xs text-stone-500 mt-1">{question.points} نقطة</p>
-                    </div>
-                  </div>
-                </div>
-
-                {question.type === 'MULTIPLE_CHOICE' && question.choices && question.choices.length > 0 && (
-                  <div className="space-y-2 mr-11">
-                    {question.choices.map((choice: string, choiceIndex: number) => (
-                      <label
-                        key={choiceIndex}
-                        className={`flex items-center p-3 border rounded-lg cursor-pointer transition ${
-                          answers[question.id] === choiceIndex 
-                            ? 'border-[#1a3a2f] bg-[#1a3a2f]/5' 
-                            : 'border-stone-200 hover:border-stone-300'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name={`question-${question.id}`}
-                          value={choiceIndex}
-                          checked={answers[question.id] === choiceIndex}
-                          onChange={() => handleAnswerChange(question.id, choiceIndex)}
-                          className="w-4 h-4 text-[#1a3a2f]"
-                        />
-                        <span className="mr-3 text-stone-800">{choice}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-
-                {question.type === 'TEXT' && (
-                  <div className="mr-11">
-                    <input
-                      type="text"
-                      value={answers[question.id] || ''}
-                      onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                      className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
-                      placeholder="اكتب إجابتك هنا..."
-                    />
-                  </div>
-                )}
-
-                {question.type === 'ESSAY' && (
-                  <div className="mr-11">
-                    <textarea
-                      value={answers[question.id] || ''}
-                      onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                      rows={5}
-                      className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
-                      placeholder="اكتب إجابتك هنا..."
-                    />
-                  </div>
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${
+                unansweredCount > 0 ? 'bg-amber-100' : 'bg-emerald-100'
+              }`}>
+                {unansweredCount > 0 ? (
+                  <AlertIcon size={32} className="text-amber-600" />
+                ) : (
+                  <CheckCircleIcon size={32} className="text-emerald-600" />
                 )}
               </div>
-            ))
-          ) : (
-            <div className="bg-white rounded-xl border border-stone-200 p-8 text-center">
-              <p className="text-stone-600 mb-2">لا توجد أسئلة في هذا الامتحان</p>
-              <p className="text-sm text-stone-500">يرجى التواصل مع المعلم لإضافة أسئلة</p>
+              <h3 className="text-xl font-bold text-stone-800 mb-2">
+                {unansweredCount > 0 ? 'تأكيد التسليم' : 'هل أنت متأكد؟'}
+              </h3>
+              <p className="text-stone-600">
+                {unansweredCount > 0 
+                  ? `لديك ${unansweredCount} سؤال غير مجاب. هل تريد التسليم على أي حال؟`
+                  : 'أجبت على جميع الأسئلة. هل تريد تسليم الامتحان؟'}
+              </p>
             </div>
-          )}
-        </div>
-
-        {/* Submit */}
-        <div className="bg-white rounded-xl border border-stone-200 p-4 sticky bottom-4">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-stone-600">
-              تم الإجابة على {Object.values(answers).filter(a => a !== null && a !== '' && a !== undefined).length} من {exam.questions.length} سؤال
-            </p>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="px-6 py-2 bg-[#1a3a2f] text-white rounded-lg font-medium hover:bg-[#2d5a4a] transition disabled:opacity-50"
-            >
-              {submitting ? 'جاري التسليم...' : 'تسليم الامتحان'}
-            </button>
+            
+            <div className="bg-stone-50 rounded-lg p-4 mb-6">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-stone-600">الأسئلة المجاب عليها</span>
+                <span className="font-bold text-emerald-600">{answeredCount}</span>
+              </div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-stone-600">الأسئلة المتبقية</span>
+                <span className={`font-bold ${unansweredCount > 0 ? 'text-amber-600' : 'text-stone-400'}`}>
+                  {unansweredCount}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-stone-600">الوقت المتبقي</span>
+                <span className={`font-bold ${isLowTime ? 'text-red-600' : 'text-stone-800'}`}>
+                  {formatTime(timeRemaining, secondsRemaining)}
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 px-4 py-3 border border-stone-300 text-stone-700 rounded-xl font-medium hover:bg-stone-50 transition"
+              >
+                مراجعة الإجابات
+              </button>
+              <button
+                onClick={handleConfirmSubmit}
+                disabled={submitting}
+                className="flex-1 px-4 py-3 bg-[#1a3a2f] text-white rounded-xl font-medium hover:bg-[#2d5a4a] transition disabled:opacity-50"
+              >
+                {submitting ? 'جاري التسليم...' : 'تأكيد التسليم'}
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Fixed Header - Timer, Progress, Navigation (Two Rows) */}
+      <div className="fixed top-14 left-0 right-0 z-40 bg-white border-b border-stone-200 shadow-md">
+        {/* Row 1: Title, Progress, Timer */}
+        <div className="max-w-5xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* Title & Progress */}
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-stone-800 truncate">{exam.title}</h1>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-xs text-stone-500">{answeredCount}/{exam.questions.length}</span>
+                <div className="flex-1 max-w-32 bg-stone-100 rounded-full h-1.5">
+                  <div
+                    className="bg-emerald-500 h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${(answeredCount / exam.questions.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Timer */}
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono ${
+              isLowTime 
+                ? 'bg-red-100 text-red-700 animate-pulse' 
+                : isWarningTime 
+                  ? 'bg-amber-100 text-amber-700' 
+                  : 'bg-emerald-100 text-emerald-700'
+            }`}>
+              <ClockIcon size={18} />
+              <span className="text-xl font-bold tabular-nums">
+                {formatTime(timeRemaining, secondsRemaining)}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Row 2: Question Navigation */}
+        <div className="bg-stone-50 border-t border-stone-200 mt-1">
+          <div className="max-w-5xl mx-auto px-4 py-2">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <span className="text-xs text-stone-500 flex-shrink-0 ml-2">الأسئلة:</span>
+              {exam.questions.map((q, index) => (
+                <button
+                  key={q.id}
+                  onClick={() => scrollToQuestion(q.id)}
+                  className={`w-8 h-8 rounded-lg font-medium text-sm transition-all flex-shrink-0 ${
+                    isQuestionAnswered(q.id)
+                      ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                      : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+                  }`}
+                  title={`السؤال ${index + 1}${isQuestionAnswered(q.id) ? ' (تم الإجابة)' : ''}`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+              <div className="flex-shrink-0 mr-2">
+                <button
+                  onClick={handleSubmitClick}
+                  disabled={submitting}
+                  className="px-4 py-1.5 bg-[#1a3a2f] text-white rounded-lg font-medium hover:bg-[#2d5a4a] transition disabled:opacity-50 text-sm whitespace-nowrap"
+                >
+                  تسليم
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Low time warning bar */}
+        {isLowTime && (
+          <div className="bg-red-600 text-white text-center py-1 text-sm font-medium animate-pulse">
+            ⚠️ الوقت ينفد! تبقى أقل من 5 دقائق
+          </div>
+        )}
+      </div>
+
+      {/* Spacer for fixed header (approx height of the two rows) */}
+      <div className="h-32"></div>
+
+      {/* Main Content */}
+      <div className="max-w-5xl mx-auto px-4 py-6">
+          {/* Exam Info */}
+          <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
+            <div className="flex flex-wrap gap-4 text-sm text-stone-600">
+              <span className="flex items-center gap-1">
+                <span className="font-medium">الدرجة الكاملة:</span> {exam.maxScore}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="font-medium">درجة النجاح:</span> {exam.passingScore}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="font-medium">المدة:</span> {exam.durationMinutes} دقيقة
+              </span>
+            </div>
+          </div>
+
+          {/* Questions */}
+          <div className="space-y-4 mb-6">
+            {exam.questions && exam.questions.length > 0 ? (
+              exam.questions.map((question, index) => (
+                <div 
+                  key={question.id} 
+                  ref={(el) => { questionRefs.current[question.id] = el; }}
+                  data-question-id={question.id}
+                  className={`bg-white rounded-xl border-2 p-5 transition-all ${
+                    isQuestionAnswered(question.id) 
+                      ? 'border-emerald-200' 
+                      : 'border-stone-200'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-start gap-3">
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+                        isQuestionAnswered(question.id)
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-[#1a3a2f] text-white'
+                      }`}>
+                        {index + 1}
+                      </span>
+                      <div>
+                        <p className="text-stone-800 font-medium whitespace-pre-wrap">{question.prompt}</p>
+                        <p className="text-xs text-stone-500 mt-1">{question.points} نقطة</p>
+                      </div>
+                    </div>
+                    {isQuestionAnswered(question.id) && (
+                      <CheckCircleIcon size={20} className="text-emerald-500 flex-shrink-0" />
+                    )}
+                  </div>
+
+                  {question.type === 'MULTIPLE_CHOICE' && question.choices && question.choices.length > 0 && (
+                    <div className="space-y-2 mr-11">
+                      {question.choices.map((choice: string, choiceIndex: number) => (
+                        <label
+                          key={choiceIndex}
+                          className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition ${
+                            answers[question.id] === choiceIndex 
+                              ? 'border-[#1a3a2f] bg-[#1a3a2f]/5' 
+                              : 'border-stone-200 hover:border-stone-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`question-${question.id}`}
+                            value={choiceIndex}
+                            checked={answers[question.id] === choiceIndex}
+                            onChange={() => handleAnswerChange(question.id, choiceIndex)}
+                            className="w-4 h-4 text-[#1a3a2f]"
+                          />
+                          <span className="mr-3 text-stone-800">{choice}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {question.type === 'TEXT' && (
+                    <div className="mr-11">
+                      <input
+                        type="text"
+                        value={answers[question.id] || ''}
+                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                        className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
+                        placeholder="اكتب إجابتك هنا..."
+                      />
+                    </div>
+                  )}
+
+                  {question.type === 'ESSAY' && (
+                    <div className="mr-11">
+                      <textarea
+                        value={answers[question.id] || ''}
+                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                        rows={5}
+                        className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800"
+                        placeholder="اكتب إجابتك هنا..."
+                      />
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="bg-white rounded-xl border border-stone-200 p-8 text-center">
+                <p className="text-stone-600 mb-2">لا توجد أسئلة في هذا الامتحان</p>
+                <p className="text-sm text-stone-500">يرجى التواصل مع المعلم لإضافة أسئلة</p>
+              </div>
+            )}
+          </div>
+
+          {/* Submit */}
+          <div className="bg-white rounded-xl border border-stone-200 p-4 sticky bottom-4 shadow-lg">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-stone-600">
+                  <span className="font-bold text-emerald-600">{answeredCount}</span> من {exam.questions.length} سؤال
+                </span>
+                {unansweredCount > 0 && (
+                  <span className="text-amber-600">
+                    ({unansweredCount} متبقي)
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={handleSubmitClick}
+                disabled={submitting}
+                className="w-full sm:w-auto px-8 py-3 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#2d5a4a] transition disabled:opacity-50"
+              >
+                {submitting ? 'جاري التسليم...' : 'تسليم الامتحان'}
+              </button>
+            </div>
+          </div>
       </div>
     </div>
   );

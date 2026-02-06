@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { FolderIcon, PlusIcon, EditIcon, TrashIcon, BookIcon } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 interface Category {
   id: string;
@@ -40,15 +41,17 @@ export default function AdminCategoriesPage() {
     try {
       if (editingCategory) {
         await api.put(`/categories/${editingCategory.id}`, formData);
+        showSuccess(TOAST_MESSAGES.UPDATE_SUCCESS);
       } else {
         await api.post('/categories', formData);
+        showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       }
       setShowForm(false);
       setEditingCategory(null);
       setFormData({ title: '', description: '', order: 0 });
       loadCategories();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حفظ الفئة');
+      showError(error.response?.data?.message || 'فشل حفظ الفئة');
     }
   };
 
@@ -67,9 +70,10 @@ export default function AdminCategoriesPage() {
 
     try {
       await api.delete(`/categories/${id}`);
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
       loadCategories();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف الفئة');
+      showError(error.response?.data?.message || 'فشل حذف الفئة');
     }
   };
 

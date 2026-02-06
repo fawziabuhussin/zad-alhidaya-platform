@@ -6,6 +6,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { AlertIcon } from '@/components/Icons';
+import { showSuccess, TOAST_MESSAGES } from '@/lib/toast';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -81,6 +82,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
+      showSuccess(TOAST_MESSAGES.LOGOUT_SUCCESS);
       window.location.href = '/login';
     }
   };

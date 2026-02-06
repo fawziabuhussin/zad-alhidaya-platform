@@ -6,6 +6,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { UsersIcon, PlusIcon, EditIcon, TrashIcon, EyeIcon, SearchIcon, FilterIcon } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 // Custom Role Filter Dropdown
 function RoleFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -121,8 +122,9 @@ export default function AdminUsersPage() {
     try {
       await api.patch(`/users/${id}`, { blocked: !blocked });
       setUsers(users.map(u => u.id === id ? { ...u, blocked: !blocked } : u));
+      showSuccess(blocked ? 'تم إلغاء الحظر' : 'تم حظر المستخدم');
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل تحديث المستخدم');
+      showError(error.response?.data?.message || 'فشل تحديث المستخدم');
     }
   };
 
@@ -132,8 +134,9 @@ export default function AdminUsersPage() {
     try {
       await api.delete(`/users/${id}`);
       setUsers(users.filter(u => u.id !== id));
+      showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل حذف المستخدم');
+      showError(error.response?.data?.message || 'فشل حذف المستخدم');
     }
   };
 
@@ -159,9 +162,9 @@ export default function AdminUsersPage() {
       setUsers(users.map(u => u.id === editingUser.id ? { ...u, name: editFormData.name } : u));
       setEditingUser(null);
       setEditFormData({ name: '', password: '' });
-      alert('تم تحديث بيانات المستخدم بنجاح!');
+      showSuccess(TOAST_MESSAGES.UPDATE_SUCCESS);
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل تحديث بيانات المستخدم');
+      showError(error.response?.data?.message || 'فشل تحديث بيانات المستخدم');
     }
   };
 
@@ -206,13 +209,13 @@ export default function AdminUsersPage() {
         }
       }
       
-      alert('تم إنشاء المستخدم بنجاح!');
+      showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       setShowCreateForm(false);
       setCreateFormData({ name: '', email: '', password: '', role: 'STUDENT' });
       router.push('/admin/users');
       loadUsers();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل إنشاء المستخدم');
+      showError(error.response?.data?.message || 'فشل إنشاء المستخدم');
     }
   };
 
@@ -225,7 +228,7 @@ export default function AdminUsersPage() {
       setProfileData(response.data);
     } catch (error) {
       console.error('Failed to load profile:', error);
-      alert('فشل تحميل الملف الشخصي');
+      showError('فشل تحميل الملف الشخصي');
     } finally {
       setProfileLoading(false);
     }

@@ -114,6 +114,73 @@ export class CourseManager {
       }
     }
 
+    // Enrich prerequisites with user's completion status
+    if (auth && course.prerequisites && course.prerequisites.length > 0) {
+      const prerequisiteIds = course.prerequisites.map((p: any) => p.prerequisite.id);
+      
+      // Get user's grades for prerequisite courses (to check if passed)
+      const userGrades = await prisma.grade.findMany({
+        where: {
+          userId: auth.userId,
+          courseId: { in: prerequisiteIds },
+        },
+        select: {
+          courseId: true,
+          percentage: true,
+        },
+      });
+
+      // Get user's enrollments for prerequisite courses
+      const userEnrollments = await prisma.enrollment.findMany({
+        where: {
+          userId: auth.userId,
+          courseId: { in: prerequisiteIds },
+        },
+        select: {
+          courseId: true,
+          status: true,
+        },
+      });
+
+      // Calculate average grade per course and check if passed (>= 60%)
+      const courseGrades = new Map<string, number[]>();
+      userGrades.forEach((g: { courseId: string; percentage: number }) => {
+        const grades = courseGrades.get(g.courseId) || [];
+        grades.push(g.percentage);
+        courseGrades.set(g.courseId, grades);
+      });
+
+      const passedCourses = new Set<string>();
+      courseGrades.forEach((grades, courseId) => {
+        const avgGrade = grades.reduce((a, b) => a + b, 0) / grades.length;
+        if (avgGrade >= 60) {
+          passedCourses.add(courseId);
+        }
+      });
+
+      const enrollmentMap = new Map(userEnrollments.map((e: { courseId: string; status: string }) => [e.courseId, e.status]));
+
+      // Enrich prerequisites with status
+      (course as any).prerequisites = course.prerequisites.map((p: any) => {
+        const prereqId = p.prerequisite.id;
+        const enrollmentStatus = enrollmentMap.get(prereqId);
+        const isPassed = passedCourses.has(prereqId);
+        
+        let status: 'not_enrolled' | 'enrolled' | 'completed' = 'not_enrolled';
+        if (isPassed) {
+          status = 'completed';
+        } else if (enrollmentStatus === 'ACTIVE') {
+          status = 'enrolled';
+        }
+
+        return {
+          ...p,
+          status,
+          isCompleted: isPassed,
+        };
+      });
+    }
+
     return { success: true, data: course };
   }
 

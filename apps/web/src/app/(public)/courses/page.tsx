@@ -4,6 +4,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { BookIcon, UserIcon, SearchIcon } from '@/components/Icons';
+import { CourseCardSkeleton, SearchBarSkeleton, CategoryFilterSkeleton } from '@/components/Skeleton';
+
+interface Category {
+  id: string;
+  title: string;
+}
 
 interface Course {
   id: string;
@@ -11,24 +17,46 @@ interface Course {
   description: string;
   coverImage?: string;
   price?: number;
-  category: { title: string };
+  category: { id: string; title: string };
   teacher: { name: string };
   _count: { enrollments: number };
 }
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [filtering, setFiltering] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Load courses when search or category changes
   useEffect(() => {
     loadCourses();
   }, [search, selectedCategory]);
 
+  const loadCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      setCategories(response.data || []);
+    } catch (error: any) {
+      console.error('[Courses] Failed to load categories:', error);
+      setCategories([]);
+    }
+  };
+
   const loadCourses = async () => {
     try {
-      setLoading(true);
+      // Only show filtering indicator after initial load
+      if (!initialLoading) {
+        setFiltering(true);
+      }
+      
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (selectedCategory) params.append('categoryId', selectedCategory);
@@ -40,14 +68,42 @@ export default function CoursesPage() {
       console.error('[Courses] Failed to load courses:', error);
       setCourses([]);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setFiltering(false);
     }
   };
 
-  if (loading) {
+  // Skeleton loading on initial load
+  if (initialLoading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
+      <div className="min-h-screen bg-stone-50">
+        {/* Header Skeleton */}
+        <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg animate-pulse" />
+              <div>
+                <div className="h-7 bg-white/20 rounded w-40 mb-1 animate-pulse" />
+                <div className="h-4 bg-white/10 rounded w-24 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Search Skeleton */}
+          <SearchBarSkeleton />
+          
+          {/* Category Filter Skeleton */}
+          <CategoryFilterSkeleton />
+
+          {/* Course Cards Grid Skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            {[...Array(6)].map((_, i) => (
+              <CourseCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -75,14 +131,55 @@ export default function CoursesPage() {
               className="w-full pr-12 pl-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
             />
           </div>
+
+          {/* Category Filter */}
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              <button
+                onClick={() => setSelectedCategory('')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedCategory === ''
+                    ? 'bg-[#c9a227] text-white'
+                    : 'bg-white/10 text-white/80 hover:bg-white/20'
+                }`}
+              >
+                الكل
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedCategory === category.id
+                      ? 'bg-[#c9a227] text-white'
+                      : 'bg-white/10 text-white/80 hover:bg-white/20'
+                  }`}
+                >
+                  {category.title}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 transition-opacity duration-200 ${filtering ? 'opacity-50' : 'opacity-100'}`}>
         {courses.length === 0 ? (
           <div className="bg-white rounded-xl border border-stone-200 p-12 text-center">
             <BookIcon className="mx-auto mb-4 text-stone-300" size={48} />
-            <p className="text-stone-500">لا توجد دورات متاحة</p>
+            <p className="text-stone-500">
+              {search || selectedCategory 
+                ? 'لا توجد نتائج مطابقة للبحث' 
+                : 'لا توجد دورات متاحة'}
+            </p>
+            {(search || selectedCategory) && (
+              <button
+                onClick={() => { setSearch(''); setSelectedCategory(''); }}
+                className="mt-4 text-[#1a3a2f] font-medium hover:underline"
+              >
+                إزالة الفلتر
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

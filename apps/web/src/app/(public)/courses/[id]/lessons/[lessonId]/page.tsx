@@ -9,6 +9,7 @@ import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
 import ReportErrorButton from '@/components/ReportErrorButton';
 import AskQuestionButton from '@/components/AskQuestionButton';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 // Helper to get user from localStorage
 const getCurrentUser = () => {
@@ -89,10 +90,13 @@ export default function LessonPage() {
     try {
       await api.post(`/progress/lessons/${params.lessonId}/complete`);
       setCompleted(true);
+      showSuccess(TOAST_MESSAGES.LESSON_COMPLETE);
       setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Failed to mark lesson as complete:', error);
-      setErrorMessage(error.response?.data?.message || 'فشل في إكمال الدرس');
+      const errorMsg = error.response?.data?.message || 'فشل في إكمال الدرس';
+      setErrorMessage(errorMsg);
+      showError(errorMsg);
     }
   };
 

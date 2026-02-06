@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,6 +32,8 @@ export default function RegisterPage() {
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('user', JSON.stringify(user));
     
+    showSuccess(TOAST_MESSAGES.LOGIN_SUCCESS);
+    
     // Determine redirect path based on role
     let redirectPath = '/dashboard';
     const userRole = user.role?.toUpperCase() || user.role;
@@ -52,9 +55,12 @@ export default function RegisterPage() {
 
     try {
       await api.post('/auth/register', { name, email, password });
+      showSuccess(TOAST_MESSAGES.REGISTER_SUCCESS);
       router.push('/login?registered=true');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'فشل التسجيل');
+      const errorMessage = err.response?.data?.message || 'فشل التسجيل';
+      setError(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -84,7 +90,9 @@ export default function RegisterPage() {
 
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       if (!clientId) {
-        setError('Google Client ID غير موجود. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local');
+        const errorMsg = 'Google Client ID غير موجود. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local';
+        setError(errorMsg);
+        showError(errorMsg);
         setLoading(false);
         return;
       }
@@ -99,7 +107,9 @@ export default function RegisterPage() {
             handleLoginSuccess(user, accessToken);
           } catch (err: any) {
             console.error('Google OAuth error:', err);
-            setError(err.response?.data?.message || 'فشل تسجيل الدخول باستخدام Google');
+            const errorMsg = err.response?.data?.message || 'فشل تسجيل الدخول باستخدام Google';
+            setError(errorMsg);
+            showError(errorMsg);
             setLoading(false);
           }
         },
@@ -110,7 +120,9 @@ export default function RegisterPage() {
       setLoading(false);
     } catch (err: any) {
       console.error('Google login error:', err);
-      setError('فشل تحميل Google Sign-In. تأكد من إضافة NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local');
+      const errorMsg = 'فشل تحميل Google Sign-In. تأكد من إضافة NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local';
+      setError(errorMsg);
+      showError(errorMsg);
       setLoading(false);
     }
   };
@@ -138,14 +150,18 @@ export default function RegisterPage() {
       }
     } catch (err: any) {
       console.error('Apple login error:', err);
-      setError('فشل تسجيل الدخول باستخدام Apple');
+      const errorMsg = 'فشل تسجيل الدخول باستخدام Apple';
+      setError(errorMsg);
+      showError(errorMsg);
       setLoading(false);
     }
   };
 
   const initializeAppleSignIn = () => {
     if (typeof window === 'undefined' || !(window as any).AppleID) {
-      setError('فشل تحميل Apple Sign-In');
+      const errorMsg = 'فشل تحميل Apple Sign-In';
+      setError(errorMsg);
+      showError(errorMsg);
       setLoading(false);
       return;
     }
@@ -169,12 +185,16 @@ export default function RegisterPage() {
         handleLoginSuccess(user, accessToken);
       } catch (err: any) {
         console.error('Apple OAuth error:', err);
-        setError(err.response?.data?.message || 'فشل تسجيل الدخول باستخدام Apple');
+        const errorMsg = err.response?.data?.message || 'فشل تسجيل الدخول باستخدام Apple';
+        setError(errorMsg);
+        showError(errorMsg);
         setLoading(false);
       }
     }).catch((err: any) => {
       console.error('Apple Sign-In error:', err);
-      setError('فشل تسجيل الدخول باستخدام Apple');
+      const errorMsg = 'فشل تسجيل الدخول باستخدام Apple';
+      setError(errorMsg);
+      showError(errorMsg);
       setLoading(false);
     });
   };

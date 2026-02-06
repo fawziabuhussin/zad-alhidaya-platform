@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { showSuccess, TOAST_MESSAGES } from '@/lib/toast';
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -46,6 +47,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       setUser(null);
+      showSuccess(TOAST_MESSAGES.LOGOUT_SUCCESS);
       window.location.href = '/';
     }
   };

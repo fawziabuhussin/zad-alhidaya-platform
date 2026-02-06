@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { UsersIcon, BookIcon, CalendarIcon, FilterIcon } from '@/components/Icons';
+import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 
 // Custom Status Filter Dropdown
 function StatusFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -157,8 +158,9 @@ export default function AdminEnrollmentsPage() {
       setEnrollments(enrollments.map(e => 
         e.id === id ? { ...e, status: newStatus } : e
       ));
+      showSuccess(TOAST_MESSAGES.UPDATE_SUCCESS);
     } catch (error: any) {
-      alert(error.response?.data?.message || 'فشل تحديث التسجيل');
+      showError(error.response?.data?.message || 'فشل تحديث التسجيل');
     }
   };
 

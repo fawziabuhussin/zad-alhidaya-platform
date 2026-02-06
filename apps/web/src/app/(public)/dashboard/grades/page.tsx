@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { StarIcon, ChartIcon, FilterIcon } from '@/components/Icons';
+import { GradeItemSkeleton, StatCardSkeleton, FilterSkeleton } from '@/components/Skeleton';
 
 interface Grade {
   id: string;
@@ -75,8 +76,38 @@ export default function StudentGradesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
+      <div className="min-h-screen bg-stone-50">
+        {/* Header Skeleton */}
+        <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg animate-pulse" />
+              <div>
+                <div className="h-6 bg-white/20 rounded w-28 mb-1 animate-pulse" />
+                <div className="h-4 bg-white/10 rounded w-16 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Statistics Skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            {[...Array(3)].map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))}
+          </div>
+
+          {/* Filter Skeleton */}
+          <FilterSkeleton />
+
+          {/* Grade Items Skeleton */}
+          <div className="space-y-4">
+            {[...Array(4)].map((_, i) => (
+              <GradeItemSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
