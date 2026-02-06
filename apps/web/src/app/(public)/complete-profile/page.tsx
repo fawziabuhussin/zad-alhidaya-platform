@@ -17,6 +17,7 @@ interface FormData {
   profession: string;
   gender: 'MALE' | 'FEMALE' | '';
   idNumber: string;
+  location: string;
 }
 
 interface FormErrors {
@@ -28,6 +29,7 @@ interface FormErrors {
   profession?: string;
   gender?: string;
   idNumber?: string;
+  location?: string;
 }
 
 export default function CompleteProfilePage() {
@@ -41,6 +43,7 @@ export default function CompleteProfilePage() {
     profession: '',
     gender: '',
     idNumber: '',
+    location: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [generalError, setGeneralError] = useState('');
@@ -101,6 +104,9 @@ export default function CompleteProfilePage() {
     } else if (!/^[0-9]+$/.test(formData.idNumber)) {
       newErrors.idNumber = 'رقم الهوية يجب أن يحتوي على أرقام فقط';
     }
+    if (!formData.location || formData.location.length < 2) {
+      newErrors.location = 'البلد مطلوب';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -126,6 +132,7 @@ export default function CompleteProfilePage() {
         profession: formData.profession,
         gender: formData.gender,
         idNumber: formData.idNumber,
+        location: formData.location,
       });
 
       // Update stored user data
@@ -337,6 +344,24 @@ export default function CompleteProfilePage() {
                   maxLength={9}
                 />
                 {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1a3a2f]/80 mb-2">
+                  البلد <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => {
+                    setFormData({ ...formData, location: e.target.value });
+                    if (errors.location) setErrors({ ...errors, location: '' });
+                  }}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200 ${
+                    errors.location ? 'border-red-500' : 'border-gray-200'
+                  }`}
+                  placeholder="البلد"
+                />
+                {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
               </div>
             </div>
 

@@ -87,6 +87,7 @@ interface User {
   profession?: string;
   gender?: string;
   idNumber?: string;
+  location?: string;
   createdAt: string;
   _count: {
     coursesTaught?: number;
@@ -117,6 +118,7 @@ export default function AdminUsersPage() {
     profession: '',
     gender: '' as 'MALE' | 'FEMALE' | '',
     idNumber: '',
+    location: '',
     password: '',
   });
   const [showCreateForm, setShowCreateForm] = useState(action === 'create');
@@ -132,6 +134,7 @@ export default function AdminUsersPage() {
     profession: '',
     gender: '' as 'MALE' | 'FEMALE' | '',
     idNumber: '',
+    location: '',
   });
   const [createErrors, setCreateErrors] = useState<{ [key: string]: string }>({});
   const [editErrors, setEditErrors] = useState<{ [key: string]: string }>({});
@@ -195,6 +198,7 @@ export default function AdminUsersPage() {
       profession: user.profession || '',
       gender: (user.gender as 'MALE' | 'FEMALE' | '') || '',
       idNumber: user.idNumber || '',
+      location: user.location || '',
       password: '',
     });
     setEditErrors({});
@@ -233,6 +237,9 @@ export default function AdminUsersPage() {
     } else if (!/^[0-9]+$/.test(editFormData.idNumber)) {
       errors.idNumber = 'رقم الهوية يجب أن يحتوي على أرقام فقط';
     }
+    if (!editFormData.location || editFormData.location.length < 2) {
+      errors.location = 'البلد مطلوب';
+    }
     if (editFormData.password && editFormData.password.length < 6) {
       errors.password = 'كلمة المرور يجب أن تكون على الأقل 6 أحرف';
     }
@@ -256,6 +263,7 @@ export default function AdminUsersPage() {
         profession: editFormData.profession,
         gender: editFormData.gender,
         idNumber: editFormData.idNumber,
+        location: editFormData.location,
       };
       if (editFormData.password) {
         updateData.password = editFormData.password;
@@ -274,6 +282,7 @@ export default function AdminUsersPage() {
         profession: '',
         gender: '',
         idNumber: '',
+        location: '',
         password: '',
       });
       setEditErrors({});
@@ -323,6 +332,9 @@ export default function AdminUsersPage() {
     } else if (!/^[0-9]+$/.test(createFormData.idNumber)) {
       errors.idNumber = 'رقم الهوية يجب أن يحتوي على أرقام فقط';
     }
+    if (!createFormData.location || createFormData.location.length < 2) {
+      errors.location = 'البلد مطلوب';
+    }
 
     if (Object.keys(errors).length > 0) {
       setCreateErrors(errors);
@@ -344,6 +356,7 @@ export default function AdminUsersPage() {
         profession: createFormData.profession,
         gender: createFormData.gender,
         idNumber: createFormData.idNumber,
+        location: createFormData.location,
       });
 
       showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
@@ -360,6 +373,7 @@ export default function AdminUsersPage() {
         profession: '',
         gender: '',
         idNumber: '',
+        location: '',
       });
       router.push('/admin/users');
       loadUsers();
@@ -612,6 +626,7 @@ export default function AdminUsersPage() {
             profession: '',
             gender: '',
             idNumber: '',
+            location: '',
             password: '',
           });
           setEditErrors({});
@@ -768,6 +783,24 @@ export default function AdminUsersPage() {
                 />
                 {editErrors.idNumber && <p className="text-red-500 text-xs mt-1">{editErrors.idNumber}</p>}
               </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-800">
+                  البلد <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.location}
+                  onChange={(e) => {
+                    setEditFormData({ ...editFormData, location: e.target.value });
+                    if (editErrors.location) setEditErrors({ ...editErrors, location: '' });
+                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                    editErrors.location ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="البلد"
+                />
+                {editErrors.location && <p className="text-red-500 text-xs mt-1">{editErrors.location}</p>}
+              </div>
             </div>
           </div>
 
@@ -810,6 +843,7 @@ export default function AdminUsersPage() {
                   profession: '',
                   gender: '',
                   idNumber: '',
+                  location: '',
                   password: '',
                 });
                 setEditErrors({});
@@ -840,6 +874,7 @@ export default function AdminUsersPage() {
             profession: '',
             gender: '',
             idNumber: '',
+            location: '',
           });
           setCreateErrors({});
         }}
@@ -1049,6 +1084,24 @@ export default function AdminUsersPage() {
                 />
                 {createErrors.idNumber && <p className="text-red-500 text-xs mt-1">{createErrors.idNumber}</p>}
               </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-800">
+                  البلد <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={createFormData.location}
+                  onChange={(e) => {
+                    setCreateFormData({ ...createFormData, location: e.target.value });
+                    if (createErrors.location) setCreateErrors({ ...createErrors, location: '' });
+                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                    createErrors.location ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="البلد"
+                />
+                {createErrors.location && <p className="text-red-500 text-xs mt-1">{createErrors.location}</p>}
+              </div>
             </div>
           </div>
 
@@ -1075,6 +1128,7 @@ export default function AdminUsersPage() {
                   profession: '',
                   gender: '',
                   idNumber: '',
+                  location: '',
                 });
                 setCreateErrors({});
               }}

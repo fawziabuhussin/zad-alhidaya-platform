@@ -16,6 +16,7 @@ CREATE TABLE "User" (
     "profession" TEXT,
     "gender" TEXT,
     "idNumber" TEXT,
+    "location" TEXT,
     "profileComplete" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL

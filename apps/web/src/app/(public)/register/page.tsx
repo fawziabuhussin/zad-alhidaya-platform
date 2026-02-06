@@ -22,6 +22,7 @@ interface FormData {
   profession: string;
   gender: 'MALE' | 'FEMALE' | '';
   idNumber: string;
+  location: string;
 }
 
 interface FormErrors {
@@ -35,6 +36,7 @@ interface FormErrors {
   profession?: string;
   gender?: string;
   idNumber?: string;
+  location?: string;
 }
 
 export default function RegisterPage() {
@@ -51,6 +53,7 @@ export default function RegisterPage() {
     profession: '',
     gender: '',
     idNumber: '',
+    location: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [generalError, setGeneralError] = useState('');
@@ -59,14 +62,6 @@ export default function RegisterPage() {
 
   useEffect(() => {
     setMounted(true);
-    // Load Google Sign-In script on mount
-    if (typeof window !== 'undefined' && !(window as any).google) {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
   }, []);
 
   const handleLoginSuccess = (user: any, accessToken: string) => {
@@ -132,6 +127,9 @@ export default function RegisterPage() {
     } else if (!/^[0-9]+$/.test(formData.idNumber)) {
       newErrors.idNumber = 'رقم الهوية يجب أن يحتوي على أرقام فقط';
     }
+    if (!formData.location || formData.location.length < 2) {
+      newErrors.location = 'البلد مطلوب';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -166,6 +164,7 @@ export default function RegisterPage() {
         profession: formData.profession,
         gender: formData.gender,
         idNumber: formData.idNumber,
+        location: formData.location,
       });
       showSuccess(TOAST_MESSAGES.REGISTER_SUCCESS);
       navigateTo('/login?registered=true', router);
@@ -180,63 +179,95 @@ export default function RegisterPage() {
 
   const handleGoogleLogin = async () => {
     if (loading) return;
-
+    
     setGeneralError('');
     setLoading(true);
 
-    try {
-      // Wait for Google script to load
-      if (typeof window === 'undefined' || !(window as any).google) {
-        // Load Google Sign-In script
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-
-        await new Promise((resolve, reject) => {
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
-
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-      if (!clientId) {
-        const errorMsg = 'Google Client ID غير موجود. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local';
-        setGeneralError(errorMsg);
-        showError(errorMsg);
-        setLoading(false);
-        return;
-      }
-
-      // Initialize Google Sign-In
-      (window as any).google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response: any) => {
-          try {
-            const res = await api.post('/auth/google', { token: response.credential });
-            const { accessToken, user } = res.data;
-            handleLoginSuccess(user, accessToken);
-          } catch (err: any) {
-            console.error('Google OAuth error:', err);
-            const errorMsg = err.response?.data?.message || 'فشل تسجيل الدخول باستخدام Google';
-            setGeneralError(errorMsg);
-            showError(errorMsg);
-            setLoading(false);
-          }
-        },
-      });
-
-      // Trigger sign-in popup
-      (window as any).google.accounts.id.prompt();
-      setLoading(false);
-    } catch (err: any) {
-      console.error('Google login error:', err);
-      const errorMsg = 'فشل تحميل Google Sign-In. تأكد من إضافة NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local';
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      const errorMsg = 'Google Client ID غير موجود. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local';
       setGeneralError(errorMsg);
       showError(errorMsg);
       setLoading(false);
+      return;
     }
+
+    // OAuth 2.0 popup flow parameters
+    const redirectUri = window.location.origin + '/auth/google/callback';
+    const scope = 'openid email profile';
+    const responseType = 'token id_token';
+    const state = Math.random().toString(36).substring(7);
+    
+    // Store state for verification
+    sessionStorage.setItem('google_oauth_state', state);
+
+    // Build OAuth URL
+    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    authUrl.searchParams.append('client_id', clientId);
+    authUrl.searchParams.append('redirect_uri', redirectUri);
+    authUrl.searchParams.append('response_type', responseType);
+    authUrl.searchParams.append('scope', scope);
+    authUrl.searchParams.append('state', state);
+    authUrl.searchParams.append('nonce', Math.random().toString(36).substring(7));
+
+    // Open popup window
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      authUrl.toString(),
+      'Google Sign In',
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+    );
+
+    if (!popup) {
+      const errorMsg = 'فشل فتح نافذة Google. قد يكون المتصفح قد حظر النوافذ المنبثقة.';
+      setGeneralError(errorMsg);
+      showError(errorMsg);
+      setLoading(false);
+      return;
+    }
+
+    // Listen for message from popup
+    const handleMessage = async (event: MessageEvent) => {
+      // Verify origin
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data.type === 'GOOGLE_AUTH_SUCCESS' && event.data.idToken) {
+        window.removeEventListener('message', handleMessage);
+        
+        try {
+          const res = await api.post('/auth/google', { token: event.data.idToken });
+          const { accessToken, user } = res.data;
+          handleLoginSuccess(user, accessToken);
+        } catch (err: any) {
+          console.error('Google OAuth error:', err);
+          const errorMsg = err.response?.data?.message || 'فشل التسجيل باستخدام Google';
+          setGeneralError(errorMsg);
+          showError(errorMsg);
+          setLoading(false);
+        }
+      } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+        window.removeEventListener('message', handleMessage);
+        const errorMsg = event.data.error || 'فشل التسجيل باستخدام Google';
+        setGeneralError(errorMsg);
+        showError(errorMsg);
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Check if popup was closed
+    const checkPopup = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopup);
+        window.removeEventListener('message', handleMessage);
+        setLoading(false);
+      }
+    }, 500);
   };
 
   const handleAppleLogin = async () => {
@@ -622,6 +653,24 @@ export default function RegisterPage() {
                       />
                       {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber}</p>}
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#1a3a2f]/80 mb-2">
+                        البلد <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => {
+                          setFormData({ ...formData, location: e.target.value });
+                          if (errors.location) setErrors({ ...errors, location: '' });
+                        }}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200 ${
+                          errors.location ? 'border-red-500' : 'border-gray-200'
+                        }`}
+                        placeholder="البلد"
+                      />
+                      {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+                    </div>
                   </div>
 
                   <div className="flex gap-3 mt-4">
@@ -686,6 +735,7 @@ export default function RegisterPage() {
                 {/* OAuth Buttons */}
                 <div className="space-y-3">
                   <button
+                    type="button"
                     onClick={handleGoogleLogin}
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -712,6 +762,7 @@ export default function RegisterPage() {
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleAppleLogin}
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-black text-white rounded-xl font-medium hover:bg-gray-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"

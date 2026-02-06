@@ -24,6 +24,7 @@ const userListSelect = {
   profession: true,
   gender: true,
   idNumber: true,
+  location: true,
   createdAt: true,
   _count: {
     select: {
@@ -51,6 +52,7 @@ const userProfileSelect = {
   profession: true,
   gender: true,
   idNumber: true,
+  location: true,
   provider: true,
   createdAt: true,
   _count: {
@@ -120,6 +122,7 @@ const userSimpleSelect = {
   profession: true,
   gender: true,
   idNumber: true,
+  location: true,
   provider: true,
   createdAt: true,
   updatedAt: true,
@@ -211,6 +214,7 @@ export class UserRepository {
     profession?: string;
     gender?: string;
     idNumber?: string;
+    location?: string;
     profileComplete?: boolean;
   }): Promise<UserWithRelations> {
     return prisma.user.create({
@@ -228,6 +232,7 @@ export class UserRepository {
         profession: data.profession,
         gender: data.gender,
         idNumber: data.idNumber,
+        location: data.location,
         profileComplete: data.profileComplete ?? true,
       },
       select: userSimpleSelect,
@@ -278,6 +283,7 @@ export class UserRepository {
     if (data.profession !== undefined) updateData.profession = data.profession;
     if (data.gender !== undefined) updateData.gender = data.gender;
     if (data.idNumber !== undefined) updateData.idNumber = data.idNumber;
+    if (data.location !== undefined) updateData.location = data.location;
     if (passwordHash !== undefined) updateData.passwordHash = passwordHash;
 
     return prisma.user.update({

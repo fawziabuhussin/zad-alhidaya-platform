@@ -78,6 +78,7 @@ export class AuthRepository {
     profession?: string;
     gender?: string;
     idNumber?: string;
+    location?: string;
     profileComplete?: boolean;
   }): Promise<AuthUserInfo & { createdAt: Date }> {
     return prisma.user.create({
@@ -101,6 +102,7 @@ export class AuthRepository {
       profession?: string;
       gender?: string;
       idNumber?: string;
+      location?: string;
       profileComplete?: boolean;
     }
   ): Promise<AuthUserInfo & { createdAt: Date }> {

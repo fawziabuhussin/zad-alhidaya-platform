@@ -22,6 +22,7 @@ export default function CreateTeacherPage() {
     profession: '',
     gender: '' as 'MALE' | 'FEMALE' | '',
     idNumber: '',
+    location: '',
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -66,6 +67,9 @@ export default function CreateTeacherPage() {
     } else if (!/^[0-9]+$/.test(formData.idNumber)) {
       newErrors.idNumber = 'رقم الهوية يجب أن يحتوي على أرقام فقط';
     }
+    if (!formData.location || formData.location.length < 2) {
+      newErrors.location = 'البلد مطلوب';
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -89,6 +93,7 @@ export default function CreateTeacherPage() {
         profession: formData.profession,
         gender: formData.gender,
         idNumber: formData.idNumber,
+        location: formData.location,
       });
       showSuccess('تم إنشاء المدرس بنجاح!');
       router.push('/admin/users');
@@ -312,6 +317,24 @@ export default function CreateTeacherPage() {
                     maxLength={9}
                   />
                   {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-stone-700">
+                    البلد <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => {
+                      setFormData({ ...formData, location: e.target.value });
+                      if (errors.location) setErrors({ ...errors, location: '' });
+                    }}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a3a2f] text-stone-800 ${
+                      errors.location ? 'border-red-500' : 'border-stone-200'
+                    }`}
+                    placeholder="البلد"
+                  />
+                  {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
                 </div>
               </div>
             </div>
