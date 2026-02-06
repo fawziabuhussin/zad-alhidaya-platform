@@ -3,8 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { AlertIcon, BookIcon, ClockIcon, CheckCircleIcon } from '@/components/Icons';
+import { AlertIcon, BookIcon, ClockIcon, CheckCircleIcon, ExamIcon } from '@/components/Icons';
 import { showSuccess, showError, showWarning, TOAST_MESSAGES } from '@/lib/toast';
+import PageLoading from '@/components/PageLoading';
 
 interface Question {
   id: string;
@@ -256,9 +257,10 @@ export default function TakeExamPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="جاري تحميل الامتحان..." 
+        icon={<ExamIcon className="text-white" size={20} />}
+      />
     );
   }
 

@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { AlertIcon } from '@/components/Icons';
 import { showSuccess, TOAST_MESSAGES } from '@/lib/toast';
+import { navigateTo, handleLogout as performLogout } from '@/lib/navigation';
 
 interface TeacherLayoutProps {
   children: React.ReactNode;
@@ -82,7 +83,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
 
       // If no cached user, check token and fetch from API
       if (!token) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
         return;
       }
 
@@ -93,9 +94,9 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
       if (userData.role !== 'TEACHER' && userData.role !== 'ADMIN') {
         // If user is STUDENT, redirect to student dashboard
         if (userData.role === 'STUDENT') {
-          window.location.href = '/dashboard';
+          navigateTo('/dashboard', router);
         } else {
-          window.location.href = '/login';
+          navigateTo('/login', router);
         }
         return;
       }
@@ -120,7 +121,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
       
       // Only redirect to login if we have no valid cached user
       if (error.response?.status === 401 || error.response?.status === 403) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
       } else {
         // Network error or other issue, try to use cached user
         const userStr = localStorage.getItem('user');
@@ -137,7 +138,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           }
         }
         // If no cached user and API failed, redirect to login
-        window.location.href = '/login';
+        navigateTo('/login', router);
       }
     } finally {
       setLoading(false);
@@ -150,10 +151,8 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
       showSuccess(TOAST_MESSAGES.LOGOUT_SUCCESS);
-      window.location.href = '/login';
+      performLogout();
     }
   };
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { handleLoginRedirect } from '@/lib/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,18 +36,8 @@ export default function LoginPage() {
     
     showSuccess(TOAST_MESSAGES.LOGIN_SUCCESS);
     
-    // Determine redirect path based on role
-    let redirectPath = '/dashboard';
-    const userRole = user.role?.toUpperCase() || user.role;
-    
-    if (userRole === 'ADMIN') {
-      redirectPath = '/admin';
-    } else if (userRole === 'TEACHER') {
-      redirectPath = '/teacher';
-    }
-    
-    // Force page reload to new location
-    window.location.replace(redirectPath);
+    // Use centralized login redirect (hard navigation to refresh app state)
+    handleLoginRedirect(user.role);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

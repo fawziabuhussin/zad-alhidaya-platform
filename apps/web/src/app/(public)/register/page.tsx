@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { handleLoginRedirect, navigateTo } from '@/lib/navigation';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -34,18 +35,8 @@ export default function RegisterPage() {
     
     showSuccess(TOAST_MESSAGES.LOGIN_SUCCESS);
     
-    // Determine redirect path based on role
-    let redirectPath = '/dashboard';
-    const userRole = user.role?.toUpperCase() || user.role;
-    
-    if (userRole === 'ADMIN') {
-      redirectPath = '/admin';
-    } else if (userRole === 'TEACHER') {
-      redirectPath = '/teacher';
-    }
-    
-    // Force page reload to new location
-    window.location.replace(redirectPath);
+    // Use centralized login redirect (hard navigation to refresh app state)
+    handleLoginRedirect(user.role);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,7 +47,7 @@ export default function RegisterPage() {
     try {
       await api.post('/auth/register', { name, email, password });
       showSuccess(TOAST_MESSAGES.REGISTER_SUCCESS);
-      router.push('/login?registered=true');
+      navigateTo('/login?registered=true', router);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'فشل التسجيل';
       setError(errorMessage);

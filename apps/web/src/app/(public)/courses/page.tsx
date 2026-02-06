@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import { BookIcon, UserIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/Icons';
 import { CourseCardSkeleton, SearchBarSkeleton, CategoryFilterSkeleton } from '@/components/Skeleton';
 import { CourseCoverImage } from '@/components/OptimizedImage';
+import { shouldShowSkeleton } from '@/lib/swr-config';
 
 interface Category {
   id: string;
@@ -67,11 +68,13 @@ export default function CoursesPage() {
   }, [search, selectedCategory, currentPage]);
 
   // Fetch courses with SWR (cached) - using server-side pagination
+  // keepPreviousData prevents flash by showing old data while fetching new
   const { data: coursesResponse, isLoading: coursesLoading, isValidating } = useSWR<PaginatedResponse<Course>>(
     coursesUrl,
     paginatedFetcher,
     { 
       revalidateOnFocus: false,
+      keepPreviousData: true,
       dedupingInterval: 5000,
     }
   );
@@ -83,11 +86,13 @@ export default function CoursesPage() {
   const totalCourses = pagination?.total ?? courses.length;
 
   // Fetch categories with SWR (cached longer)
+  // keepPreviousData prevents flash
   const { data: categories = [], isLoading: categoriesLoading } = useSWR<Category[]>(
     '/categories',
     fetcher,
     { 
       revalidateOnFocus: false,
+      keepPreviousData: true,
       dedupingInterval: 60000, // Cache for 1 minute
     }
   );
@@ -103,11 +108,12 @@ export default function CoursesPage() {
     setCurrentPage(1);
   };
 
-  const initialLoading = coursesLoading && courses.length === 0;
-  const filtering = isValidating && !initialLoading;
+  // Only show skeleton on truly fresh loads, not navigation between pages
+  const showSkeleton = shouldShowSkeleton(coursesLoading, coursesResponse);
+  const filtering = isValidating && !showSkeleton;
 
-  // Skeleton loading on initial load
-  if (initialLoading) {
+  // Skeleton loading on initial load only
+  if (showSkeleton) {
     return (
       <div className="min-h-screen bg-stone-50">
         {/* Header Skeleton */}

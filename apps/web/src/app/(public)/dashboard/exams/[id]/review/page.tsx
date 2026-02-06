@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { AlertIcon, CheckCircleIcon, ClockIcon, ExamIcon } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
 
 interface Question {
   id: string;
@@ -133,9 +134,10 @@ export default function ExamReviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="جاري تحميل المراجعة..." 
+        icon={<ExamIcon className="text-white" size={20} />}
+      />
     );
   }
 

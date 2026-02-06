@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { BookIcon, PlusIcon, GraduateIcon, ExamIcon, HomeworkIcon } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
 
 interface Course {
   id: string;
@@ -91,11 +92,12 @@ export default function TeacherDashboard() {
     }
   };
 
-  if (loading) {
+  if (loading && courses.length === 0) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="لوحة المعلم" 
+        icon={<BookIcon className="text-white" size={20} />}
+      />
     );
   }
 

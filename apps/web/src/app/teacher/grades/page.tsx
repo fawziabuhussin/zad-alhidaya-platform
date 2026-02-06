@@ -1,8 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { StarIcon, ChevronDownIcon } from '@/components/Icons';
+import { navigateTo } from '@/lib/navigation';
+import PageLoading from '@/components/PageLoading';
+import { Pagination, PaginationInfo } from '@/components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 interface Grade {
   id: string;
@@ -15,15 +21,18 @@ interface Grade {
 }
 
 export default function TeacherGradesPage() {
+  const router = useRouter();
   const [grades, setGrades] = useState<Grade[]>([]);
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [groupPages, setGroupPages] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     checkAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAuth = async () => {
@@ -45,7 +54,7 @@ export default function TeacherGradesPage() {
 
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
         return;
       }
 
@@ -53,7 +62,7 @@ export default function TeacherGradesPage() {
       const userData = userRes.data;
       
       if (userData.role !== 'TEACHER' && userData.role !== 'ADMIN') {
-        window.location.href = '/dashboard';
+        navigateTo('/dashboard', router);
         return;
       }
 
@@ -75,7 +84,7 @@ export default function TeacherGradesPage() {
           // Invalid cached user
         }
       }
-      window.location.href = '/login';
+      navigateTo('/login', router);
     }
   };
 
@@ -111,14 +120,27 @@ export default function TeacherGradesPage() {
     ? grades.filter(g => g.course?.id === selectedCourseId)
     : grades;
 
-  const groupedGrades = filteredGrades.reduce((acc, grade) => {
-    const key = grade.itemId;
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    acc[key].push(grade);
-    return acc;
-  }, {} as Record<string, Grade[]>);
+  const groupedGrades = useMemo(() => {
+    return filteredGrades.reduce((acc, grade) => {
+      const key = grade.itemId;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(grade);
+      return acc;
+    }, {} as Record<string, Grade[]>);
+  }, [filteredGrades]);
+
+  // Helper function to get paginated grades for a group
+  const getGroupPage = (key: string) => groupPages[key] || 1;
+  const setGroupPage = (key: string, page: number) => {
+    setGroupPages(prev => ({ ...prev, [key]: page }));
+  };
+
+  // Reset pagination when course filter changes
+  useEffect(() => {
+    setGroupPages({});
+  }, [selectedCourseId]);
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -128,12 +150,8 @@ export default function TeacherGradesPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  if (loading && grades.length === 0) {
+    return <PageLoading title="الدرجات" icon={<StarIcon className="text-white" size={20} />} />;
   }
 
   return (
@@ -228,6 +246,13 @@ export default function TeacherGradesPage() {
           <div className="space-y-4">
             {Object.entries(groupedGrades).map(([itemId, itemGrades]) => {
               const firstGrade = itemGrades[0];
+              
+              // Pagination for this group
+              const groupCurrentPage = getGroupPage(itemId);
+              const groupTotalPages = Math.ceil(itemGrades.length / ITEMS_PER_PAGE);
+              const startIndex = (groupCurrentPage - 1) * ITEMS_PER_PAGE;
+              const paginatedGroupGrades = itemGrades.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+              
               return (
                 <div key={itemId} className="bg-white rounded-xl shadow-sm border border-stone-100 p-5">
                   <div className="flex justify-between items-center mb-4">
@@ -244,7 +269,7 @@ export default function TeacherGradesPage() {
                     </span>
                   </div>
                   <div className="space-y-2">
-                    {itemGrades.map((grade) => (
+                    {paginatedGroupGrades.map((grade) => (
                       <div key={grade.id} className="flex justify-between items-center p-3 bg-stone-50 rounded-lg">
                         <div>
                           <p className="font-medium text-stone-800">
@@ -255,6 +280,23 @@ export default function TeacherGradesPage() {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Pagination for this group */}
+                  {itemGrades.length > ITEMS_PER_PAGE && (
+                    <div className="mt-4 pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <PaginationInfo
+                        currentPage={groupCurrentPage}
+                        limit={ITEMS_PER_PAGE}
+                        total={itemGrades.length}
+                        itemName="تقييم"
+                      />
+                      <Pagination
+                        currentPage={groupCurrentPage}
+                        totalPages={groupTotalPages}
+                        onPageChange={(page) => setGroupPage(itemId, page)}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

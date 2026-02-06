@@ -13,6 +13,8 @@ import {
   TrashIcon
 } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import PageLoading from '@/components/PageLoading';
 
 interface Report {
   id: string;
@@ -61,6 +63,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 const POLLING_INTERVAL = 15000; // 15 seconds
+const ITEMS_PER_PAGE = 15;
 
 export default function TeacherReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -69,25 +72,33 @@ export default function TeacherReportsPage() {
   const [newCount, setNewCount] = useState(0);
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalReports, setTotalReports] = useState(0);
 
   const loadReports = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
+      params.append('page', currentPage.toString());
+      params.append('limit', ITEMS_PER_PAGE.toString());
       
       const [reportsRes, countRes] = await Promise.all([
         api.get(`/reports?${params.toString()}`),
         api.get('/reports/count/new'),
       ]);
       
-      setReports(reportsRes.data || []);
+      const data = reportsRes.data as PaginatedResponse<Report>;
+      setReports(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalReports(data.pagination?.total || 0);
       setNewCount(countRes.data?.count || 0);
     } catch (error) {
       console.error('Failed to load reports:', error);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, currentPage]);
 
   // Initial load
   useEffect(() => {
@@ -99,6 +110,10 @@ export default function TeacherReportsPage() {
     const interval = setInterval(loadReports, POLLING_INTERVAL);
     return () => clearInterval(interval);
   }, [loadReports]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const updateStatus = async (reportId: string, status: string, reviewNote?: string) => {
     setUpdating(reportId);
@@ -128,11 +143,12 @@ export default function TeacherReportsPage() {
     }
   };
 
-  if (loading) {
+  if (loading && reports.length === 0) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="التبليغات" 
+        icon={<AlertIcon className="text-white" size={20} />}
+      />
     );
   }
 
@@ -148,7 +164,7 @@ export default function TeacherReportsPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">تبليغات الطلاب</h1>
-                <p className="text-white/70 text-sm">{reports.length} تبليغ على دوراتي</p>
+                <p className="text-white/70 text-sm">{totalReports} تبليغ على دوراتي</p>
               </div>
             </div>
             
@@ -172,7 +188,7 @@ export default function TeacherReportsPage() {
                 <AlertIcon className="text-stone-600" size={20} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-stone-800">{reports.length}</p>
+                <p className="text-2xl font-bold text-stone-800">{totalReports}</p>
                 <p className="text-xs text-stone-500">إجمالي التبليغات</p>
               </div>
             </div>
@@ -218,7 +234,10 @@ export default function TeacherReportsPage() {
             <FilterIcon className="text-stone-400" size={18} />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="flex-1 px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white"
             >
               {STATUS_OPTIONS.map((opt) => (
@@ -227,6 +246,18 @@ export default function TeacherReportsPage() {
             </select>
           </div>
         </div>
+
+        {/* Pagination Info */}
+        {totalReports > 0 && (
+          <div className="mb-4">
+            <PaginationInfo
+              currentPage={currentPage}
+              limit={ITEMS_PER_PAGE}
+              total={totalReports}
+              itemName="تبليغ"
+            />
+          </div>
+        )}
 
         {/* Reports List */}
         {reports.length === 0 ? (
@@ -347,6 +378,17 @@ export default function TeacherReportsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
         )}
 

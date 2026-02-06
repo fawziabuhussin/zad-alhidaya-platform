@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import useSWR from 'swr';
 import api from '@/lib/api';
 import { StarIcon, ChartIcon, FilterIcon } from '@/components/Icons';
 import { GradeItemSkeleton, StatCardSkeleton, FilterSkeleton } from '@/components/Skeleton';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import { navigateTo } from '@/lib/navigation';
 
 interface Grade {
   id: string;
@@ -34,6 +36,7 @@ const fetcher = async (url: string) => {
 const ITEMS_PER_PAGE = 10;
 
 export default function StudentGradesPage() {
+  const router = useRouter();
   const [filter, setFilter] = useState({ courseId: '', type: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [userId, setUserId] = useState<string | null>(null);
@@ -43,11 +46,11 @@ export default function StudentGradesPage() {
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
     if (!user) {
-      window.location.href = '/login';
+      navigateTo('/login', router);
       return;
     }
     setUserId(user.id);
-  }, []);
+  }, [router]);
 
   // Fetch grades with SWR (cached) - now with pagination
   const gradesUrl = useMemo(() => {

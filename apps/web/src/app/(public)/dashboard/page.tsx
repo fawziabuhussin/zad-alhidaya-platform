@@ -14,6 +14,7 @@ import {
 } from '@/components/Skeleton';
 import { LiveRegion } from '@/components/Accessibility';
 import { CourseCoverImage } from '@/components/OptimizedImage';
+import { shouldShowSkeleton } from '@/lib/swr-config';
 
 // SWR fetcher
 const fetcher = async (url: string) => {
@@ -66,23 +67,25 @@ export default function DashboardPage() {
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<Deadline[]>([]);
   const [examsLoaded, setExamsLoaded] = useState(false);
 
-  // Use SWR for user data (cached)
+  // Use SWR for user data (cached) - keepPreviousData prevents flash on navigation
   const { data: user, isLoading: userLoading, error: userError } = useSWR(
     '/auth/me',
     fetcher,
     {
       revalidateOnFocus: false,
+      keepPreviousData: true,
       errorRetryCount: 0,
       onError: () => router.push('/login'),
     }
   );
 
-  // Use SWR for enrollments (cached)
+  // Use SWR for enrollments (cached) - keepPreviousData prevents flash
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useSWR<Enrollment[]>(
     user ? '/enrollments/my-enrollments' : null,
     fetcher,
     {
       revalidateOnFocus: false,
+      keepPreviousData: true,
       dedupingInterval: 10000,
     }
   );
@@ -179,8 +182,9 @@ export default function DashboardPage() {
     loadExamsAndHomework();
   }, [courses, examsLoaded]);
 
-  // Combined loading state
-  const loading = userLoading || enrollmentsLoading;
+  // Only show skeleton on truly fresh loads, not navigation between cached pages
+  // This prevents the "flash" effect when navigating
+  const showSkeleton = shouldShowSkeleton(userLoading, user) || shouldShowSkeleton(enrollmentsLoading, enrollments.length > 0 ? enrollments : undefined);
 
   // Find next lesson to continue
   const getNextLesson = () => {
@@ -204,7 +208,7 @@ export default function DashboardPage() {
     return null;
   };
 
-  if (loading) {
+  if (showSkeleton) {
     return (
       <div className="min-h-screen bg-stone-50">
         {/* Header Skeleton */}

@@ -5,7 +5,7 @@
 import { reportRepository } from '../repositories/report.repository';
 import { enrollmentRepository } from '../repositories/enrollment.repository';
 import { lessonRepository } from '../repositories/lesson.repository';
-import { AuthContext } from '../types/common.types';
+import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
 import { CreateReportDTO, UpdateReportDTO, ReportFilters, ReportWithRelations } from '../types/report.types';
 
 /**
@@ -26,6 +26,12 @@ export interface ReportsListResult {
 export interface ReportCountResult {
   success: boolean;
   data?: { count: number };
+  error?: { status: number; message: string };
+}
+
+export interface ReportsPaginatedResult {
+  success: boolean;
+  data?: PaginatedResponse<ReportWithRelations>;
   error?: { status: number; message: string };
 }
 
@@ -58,9 +64,9 @@ export class ReportManager {
 
     // Check if user is enrolled in the course (unless admin)
     if (auth.role !== 'ADMIN') {
-      const enrollments = await enrollmentRepository.findByUserId(auth.userId);
+      const enrollments = await enrollmentRepository.findByUserIdUnpaginated(auth.userId);
       const isEnrolled = enrollments.some(
-        (e) => e.courseId === data.courseId && e.status === 'ACTIVE'
+        (e: any) => e.courseId === data.courseId && e.status === 'ACTIVE'
       );
 
       if (!isEnrolled) {
@@ -93,6 +99,21 @@ export class ReportManager {
   }
 
   /**
+   * Get reports submitted by the current user with pagination
+   */
+  async getMyReportsPaginated(
+    auth: AuthContext,
+    pagination?: PaginationParams
+  ): Promise<ReportsPaginatedResult> {
+    const result = await reportRepository.findByReporterIdPaginated(auth.userId, pagination);
+
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  /**
    * Get all reports (Admin) or reports for teacher's courses (Teacher)
    */
   async getReports(
@@ -117,6 +138,35 @@ export class ReportManager {
     return {
       success: true,
       data: reports as ReportWithRelations[],
+    };
+  }
+
+  /**
+   * Get all reports with pagination (Admin) or reports for teacher's courses with pagination (Teacher)
+   */
+  async getReportsPaginated(
+    auth: AuthContext,
+    filters: ReportFilters = {},
+    pagination?: PaginationParams
+  ): Promise<ReportsPaginatedResult> {
+    let result;
+
+    if (auth.role === 'ADMIN') {
+      // Admin sees all reports
+      result = await reportRepository.findAllPaginated(filters, pagination);
+    } else if (auth.role === 'TEACHER') {
+      // Teacher sees reports for their courses only
+      result = await reportRepository.findByTeacherIdPaginated(auth.userId, filters, pagination);
+    } else {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مسموح بالوصول' },
+      };
+    }
+
+    return {
+      success: true,
+      data: result,
     };
   }
 

@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { AlertIcon } from '@/components/Icons';
 import { showSuccess, TOAST_MESSAGES } from '@/lib/toast';
+import { navigateTo, handleLogout as performLogout } from '@/lib/navigation';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -54,7 +55,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
         return;
       }
 
@@ -62,13 +63,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       const userData = response.data;
       
       if (userData.role !== 'ADMIN') {
-        window.location.href = '/dashboard';
+        navigateTo('/dashboard', router);
         return;
       }
 
       setUser(userData);
     } catch (error) {
-      window.location.href = '/login';
+      navigateTo('/login', router);
     } finally {
       setLoading(false);
     }
@@ -80,10 +81,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
       showSuccess(TOAST_MESSAGES.LOGOUT_SUCCESS);
-      window.location.href = '/login';
+      performLogout();
     }
   };
 

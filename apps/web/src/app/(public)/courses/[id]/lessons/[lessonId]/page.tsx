@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
-import { CheckCircleIcon } from '@/components/Icons';
+import { CheckCircleIcon, BookIcon } from '@/components/Icons';
 import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
 import ReportErrorButton from '@/components/ReportErrorButton';
 import AskQuestionButton from '@/components/AskQuestionButton';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import PageLoading from '@/components/PageLoading';
 
 // Helper to get user from localStorage
 const getCurrentUser = () => {
@@ -102,9 +103,10 @@ export default function LessonPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <PageLoading 
+        title="جاري تحميل الدرس..." 
+        icon={<BookIcon className="text-white" size={20} />}
+      />
     );
   }
 

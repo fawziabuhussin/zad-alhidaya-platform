@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { HomeworkIcon, PlusIcon, TrashIcon, ChartIcon, CalendarIcon, UsersIcon } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
+import { Pagination, PaginationInfo } from '@/components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 interface Homework {
   id: string;
@@ -21,6 +25,7 @@ export default function AdminHomeworkPage() {
   const [showForm, setShowForm] = useState(false);
   const [courses, setCourses] = useState<any[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({
     courseId: '',
     title: '',
@@ -98,12 +103,22 @@ export default function AdminHomeworkPage() {
   const totalSubmissions = homeworks.reduce((sum, h) => sum + (h._count?.submissions || 0), 0);
   const overdueCount = homeworks.filter(h => new Date() > new Date(h.dueDate)).length;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  // Client-side pagination
+  const totalPages = Math.ceil(homeworks.length / ITEMS_PER_PAGE);
+  const paginatedHomeworks = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return homeworks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [homeworks, currentPage]);
+
+  // Reset to page 1 if current page exceeds total pages after data changes
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [homeworks.length, totalPages, currentPage]);
+
+  if (loading && homeworks.length === 0) {
+    return <PageLoading title="الواجبات" icon={<HomeworkIcon size={24} />} />;
   }
 
   return (
@@ -331,7 +346,7 @@ export default function AdminHomeworkPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {homeworks.map((homework) => {
+                  {paginatedHomeworks.map((homework) => {
                     const dueDate = new Date(homework.dueDate);
                     const now = new Date();
                     const isOverdue = now > dueDate;
@@ -386,6 +401,23 @@ export default function AdminHomeworkPage() {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {homeworks.length > ITEMS_PER_PAGE && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <PaginationInfo
+              currentPage={currentPage}
+              limit={ITEMS_PER_PAGE}
+              total={homeworks.length}
+              itemName="واجب"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -7,6 +7,8 @@ import api from '@/lib/api';
 import { CreateResourceDTO } from '@/types/resource';
 import { ResourceList, ResourceForm } from '@/components/resources';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import PageLoading from '@/components/PageLoading';
+import { BookIcon } from '@/components/Icons';
 
 // Custom Lesson Type Dropdown
 function LessonTypeDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -698,12 +700,8 @@ export default function EditCoursePage() {
     return null;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
-      </div>
-    );
+  if (loading && !course) {
+    return <PageLoading title="تعديل الدورة" icon={<BookIcon className="text-white" size={20} />} />;
   }
 
   return (

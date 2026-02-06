@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -71,6 +71,7 @@ export default function CourseDetailsPage() {
     completedLessonIds?: string[];
   } | null>(null);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
+  const hasLoadedOnce = useRef(false);
 
   useEffect(() => {
     loadCourse();
@@ -104,6 +105,7 @@ export default function CourseDetailsPage() {
       }
     } finally {
       setLoading(false);
+      hasLoadedOnce.current = true;
     }
   };
 
@@ -126,7 +128,8 @@ export default function CourseDetailsPage() {
     }
   };
 
-  if (loading) {
+  // Only show loading spinner on truly fresh loads
+  if (loading && !hasLoadedOnce.current && !course) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>

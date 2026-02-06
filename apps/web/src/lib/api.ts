@@ -86,8 +86,13 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          // Use soft navigation to avoid flash
+          // Import dynamically to avoid circular dependency
+          import('@/lib/navigation').then(({ redirectToLogin }) => {
+            redirectToLogin();
+          });
         }
         return Promise.reject(refreshError);
       }

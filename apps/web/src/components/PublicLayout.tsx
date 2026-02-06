@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import { showSuccess, TOAST_MESSAGES } from '@/lib/toast';
 import { SkipLink } from '@/components/Accessibility';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import { handleLogout as performLogout } from '@/lib/navigation';
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -57,11 +58,10 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
       setUser(null);
       showSuccess(TOAST_MESSAGES.LOGOUT_SUCCESS);
-      window.location.href = '/';
+      // Use centralized logout handler - clears storage and does hard navigation
+      performLogout();
     }
   };
 
@@ -324,7 +324,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
       <main 
         id="main-content" 
-        className={`flex-1 animate-fade-in ${user ? 'has-bottom-nav' : ''}`} 
+        className={`flex-1 ${user ? 'has-bottom-nav' : ''}`} 
         role="main"
       >
         {children}

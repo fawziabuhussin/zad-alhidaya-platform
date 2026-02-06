@@ -5,6 +5,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { FolderIcon, PlusIcon, EditIcon, TrashIcon, BookIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import PageLoading from '@/components/PageLoading';
 
 interface Category {
   id: string;
@@ -79,12 +80,8 @@ export default function AdminCategoriesPage() {
 
   const totalCourses = categories.reduce((sum, c) => sum + (c._count?.courses || 0), 0);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  if (loading && categories.length === 0) {
+    return <PageLoading title="التصنيفات" icon={<FolderIcon size={24} />} />;
   }
 
   return (

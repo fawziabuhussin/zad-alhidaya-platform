@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { BookIcon, PlusIcon, SearchIcon, GraduateIcon } from '@/components/Icons';
+import { navigateTo } from '@/lib/navigation';
+import PageLoading from '@/components/PageLoading';
 
 interface Course {
   id: string;
@@ -18,6 +21,7 @@ interface Course {
 }
 
 export default function TeacherCoursesPage() {
+  const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -25,6 +29,7 @@ export default function TeacherCoursesPage() {
 
   useEffect(() => {
     checkAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAuth = async () => {
@@ -46,7 +51,7 @@ export default function TeacherCoursesPage() {
 
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
         return;
       }
 
@@ -54,7 +59,7 @@ export default function TeacherCoursesPage() {
       const userData = userRes.data;
       
       if (userData.role !== 'TEACHER' && userData.role !== 'ADMIN') {
-        window.location.href = '/dashboard';
+        navigateTo('/dashboard', router);
         return;
       }
 
@@ -76,7 +81,7 @@ export default function TeacherCoursesPage() {
           // Invalid cached user
         }
       }
-      window.location.href = '/login';
+      navigateTo('/login', router);
     }
   };
 
@@ -97,12 +102,8 @@ export default function TeacherCoursesPage() {
     return matchesSearch;
   });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  if (loading && courses.length === 0) {
+    return <PageLoading title="الدورات" icon={<BookIcon className="text-white" size={20} />} />;
   }
 
   const publishedCount = courses.filter(c => c.status === 'PUBLISHED').length;

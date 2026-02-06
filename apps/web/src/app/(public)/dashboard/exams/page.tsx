@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import useSWR from 'swr';
 import api from '@/lib/api';
 import { CheckCircleIcon, ExamIcon, ClockIcon, BookIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/Icons';
 import { ExamCardSkeleton, SearchBarSkeleton } from '@/components/Skeleton';
+import { shouldShowSkeleton } from '@/lib/swr-config';
 
 interface Exam {
   id: string;
@@ -37,13 +38,16 @@ export default function StudentExamsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const hasLoadedOnce = useRef(false);
 
   // Use SWR to fetch enrollments with caching
+  // keepPreviousData prevents flash on navigation
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useSWR(
     '/enrollments/my-enrollments',
     fetcher,
     {
       revalidateOnFocus: false,
+      keepPreviousData: true,
       dedupingInterval: 10000,
       onError: () => [],
     }
@@ -61,6 +65,7 @@ export default function StudentExamsPage() {
     if (courses.length === 0) {
       setExams([]);
       setLoading(false);
+      hasLoadedOnce.current = true;
       return;
     }
 
@@ -101,6 +106,7 @@ export default function StudentExamsPage() {
         setExams([]);
       } finally {
         setLoading(false);
+        hasLoadedOnce.current = true;
       }
     };
 
@@ -153,7 +159,10 @@ export default function StudentExamsPage() {
     setCurrentPage(1);
   };
 
-  if (loading) {
+  // Only show skeleton on truly fresh loads - not navigation between pages
+  const showSkeleton = loading && !hasLoadedOnce.current && exams.length === 0;
+
+  if (showSkeleton) {
     return (
       <div className="min-h-screen bg-stone-50">
         {/* Header Skeleton */}

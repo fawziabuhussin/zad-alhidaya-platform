@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -11,6 +11,7 @@ import {
   BookIcon,
   EyeIcon
 } from '@/components/Icons';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 
 interface Report {
   id: string;
@@ -48,16 +49,19 @@ const STATUS_STYLES: Record<string, string> = {
   DISMISSED: 'bg-stone-100 text-stone-600 border-stone-200',
 };
 
+const ITEMS_PER_PAGE = 10;
+
 export default function StudentReportsPage() {
   const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalReports, setTotalReports] = useState(0);
+  const [stats, setStats] = useState({ total: 0, pending: 0, resolved: 0, dismissed: 0 });
+  const hasLoadedOnce = useRef(false);
 
-  useEffect(() => {
-    loadReports();
-  }, []);
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
@@ -65,8 +69,13 @@ export default function StudentReportsPage() {
         return;
       }
 
-      const res = await api.get('/reports/my-reports');
-      setReports(res.data || []);
+      setLoading(true);
+      const res = await api.get(`/reports/my-reports?page=${currentPage}&limit=${ITEMS_PER_PAGE}`);
+      const data = res.data as PaginatedResponse<Report>;
+      
+      setReports(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalReports(data.pagination?.total || 0);
     } catch (error: any) {
       console.error('Failed to load reports:', error);
       if (error.response?.status === 401) {
@@ -74,20 +83,44 @@ export default function StudentReportsPage() {
       }
     } finally {
       setLoading(false);
+      hasLoadedOnce.current = true;
     }
-  };
+  }, [currentPage, router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
-  }
+  // Load stats separately to get accurate counts
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+
+        // Load all reports without pagination to get total stats
+        const res = await api.get('/reports/my-reports');
+        const allReports = res.data || [];
+        setStats({
+          total: allReports.length,
+          pending: allReports.filter((r: Report) => r.status === 'NEW' || r.status === 'IN_REVIEW').length,
+          resolved: allReports.filter((r: Report) => r.status === 'RESOLVED').length,
+          dismissed: allReports.filter((r: Report) => r.status === 'DISMISSED').length,
+        });
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      }
+    };
+    loadStats();
+  }, []);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Header */}
+      {/* Header - always visible to prevent flash */}
       <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-3">
@@ -96,12 +129,18 @@ export default function StudentReportsPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold">تبليغاتي</h1>
-              <p className="text-white/70 text-sm">{reports.length} تبليغ</p>
+              <p className="text-white/70 text-sm">{loading && !hasLoadedOnce.current ? '...' : `${stats.total} تبليغ`}</p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Show loading inside content area, not as full page replacement */}
+      {loading && !hasLoadedOnce.current ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a3a2f]"></div>
+        </div>
+      ) : (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -111,7 +150,7 @@ export default function StudentReportsPage() {
                 <AlertIcon className="text-stone-600" size={20} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-stone-800">{reports.length}</p>
+                <p className="text-2xl font-bold text-stone-800">{stats.total}</p>
                 <p className="text-xs text-stone-500">إجمالي</p>
               </div>
             </div>
@@ -122,7 +161,7 @@ export default function StudentReportsPage() {
                 <ClockIcon className="text-amber-600" size={20} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-stone-800">{reports.filter(r => r.status === 'NEW' || r.status === 'IN_REVIEW').length}</p>
+                <p className="text-2xl font-bold text-stone-800">{stats.pending}</p>
                 <p className="text-xs text-stone-500">قيد المعالجة</p>
               </div>
             </div>
@@ -133,7 +172,7 @@ export default function StudentReportsPage() {
                 <CheckCircleIcon className="text-emerald-600" size={20} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-stone-800">{reports.filter(r => r.status === 'RESOLVED').length}</p>
+                <p className="text-2xl font-bold text-stone-800">{stats.resolved}</p>
                 <p className="text-xs text-stone-500">تم الحل</p>
               </div>
             </div>
@@ -144,12 +183,24 @@ export default function StudentReportsPage() {
                 <AlertIcon className="text-stone-500" size={20} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-stone-800">{reports.filter(r => r.status === 'DISMISSED').length}</p>
+                <p className="text-2xl font-bold text-stone-800">{stats.dismissed}</p>
                 <p className="text-xs text-stone-500">مرفوض</p>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Pagination Info */}
+        {totalReports > 0 && (
+          <div className="mb-4">
+            <PaginationInfo 
+              currentPage={currentPage} 
+              limit={ITEMS_PER_PAGE} 
+              total={totalReports} 
+              itemName="تبليغ"
+            />
+          </div>
+        )}
 
         {/* Reports List */}
         {reports.length === 0 ? (
@@ -235,7 +286,19 @@ export default function StudentReportsPage() {
             ))}
           </div>
         )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
       </div>
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   UserIcon,
   ArrowRightIcon 
 } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
 
 interface Stats {
   courses: number;
@@ -84,11 +85,12 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) {
+  if (loading && recentCourses.length === 0) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="لوحة التحكم" 
+        icon={<BookIcon className="text-white" size={20} />}
+      />
     );
   }
 

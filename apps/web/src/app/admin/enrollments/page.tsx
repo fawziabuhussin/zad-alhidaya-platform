@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { UsersIcon, BookIcon, CalendarIcon, FilterIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import PageLoading from '@/components/PageLoading';
 
 // Custom Status Filter Dropdown
 function StatusFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -190,12 +191,8 @@ export default function AdminEnrollmentsPage() {
     canceled: enrollments.filter(e => e.status === 'CANCELED').length,
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  if (loading && enrollments.length === 0) {
+    return <PageLoading title="التسجيلات" icon={<UsersIcon size={24} />} />;
   }
 
   return (

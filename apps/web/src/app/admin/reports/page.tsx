@@ -12,6 +12,8 @@ import {
   BookIcon,
   TrashIcon
 } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 
 interface Report {
   id: string;
@@ -60,6 +62,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 const POLLING_INTERVAL = 15000; // 15 seconds
+const ITEMS_PER_PAGE = 15;
 
 export default function AdminReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -67,25 +70,33 @@ export default function AdminReportsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [newCount, setNewCount] = useState(0);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalReports, setTotalReports] = useState(0);
 
   const loadReports = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
+      params.append('page', currentPage.toString());
+      params.append('limit', ITEMS_PER_PAGE.toString());
       
       const [reportsRes, countRes] = await Promise.all([
         api.get(`/reports?${params.toString()}`),
         api.get('/reports/count/new'),
       ]);
       
-      setReports(reportsRes.data || []);
+      const data = reportsRes.data as PaginatedResponse<Report>;
+      setReports(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalReports(data.pagination?.total || 0);
       setNewCount(countRes.data?.count || 0);
     } catch (error) {
       console.error('Failed to load reports:', error);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, currentPage]);
 
   // Initial load
   useEffect(() => {
@@ -110,6 +121,10 @@ export default function AdminReportsPage() {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   const deleteReport = async (reportId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا التبليغ؟')) return;
     
@@ -121,11 +136,12 @@ export default function AdminReportsPage() {
     }
   };
 
-  if (loading) {
+  if (loading && reports.length === 0) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="التبليغات" 
+        icon={<AlertIcon className="text-white" size={20} />}
+      />
     );
   }
 
@@ -211,7 +227,10 @@ export default function AdminReportsPage() {
             <FilterIcon className="text-stone-400" size={18} />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="flex-1 px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white"
             >
               {STATUS_OPTIONS.map((opt) => (
@@ -220,6 +239,18 @@ export default function AdminReportsPage() {
             </select>
           </div>
         </div>
+
+        {/* Pagination Info */}
+        {reports.length > 0 && (
+          <div className="mb-4">
+            <PaginationInfo
+              currentPage={currentPage}
+              limit={ITEMS_PER_PAGE}
+              total={totalReports}
+              itemName="تبليغ"
+            />
+          </div>
+        )}
 
         {/* Reports List */}
         {reports.length === 0 ? (
@@ -342,6 +373,17 @@ export default function AdminReportsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
         )}
 

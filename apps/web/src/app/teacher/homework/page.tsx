@@ -1,9 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { HomeworkIcon, CalendarIcon, EditIcon, UsersIcon } from '@/components/Icons';
+import { navigateTo } from '@/lib/navigation';
+import PageLoading from '@/components/PageLoading';
+import { Pagination, PaginationInfo } from '@/components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 interface Homework {
   id: string;
@@ -16,13 +22,16 @@ interface Homework {
 }
 
 export default function TeacherHomeworkPage() {
+  const router = useRouter();
   const [homeworks, setHomeworks] = useState<Homework[]>([]);
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     checkAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAuth = async () => {
@@ -44,7 +53,7 @@ export default function TeacherHomeworkPage() {
 
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
         return;
       }
 
@@ -52,7 +61,7 @@ export default function TeacherHomeworkPage() {
       const userData = userRes.data;
       
       if (userData.role !== 'TEACHER' && userData.role !== 'ADMIN') {
-        window.location.href = '/dashboard';
+        navigateTo('/dashboard', router);
         return;
       }
 
@@ -74,7 +83,7 @@ export default function TeacherHomeworkPage() {
           // Invalid cached user
         }
       }
-      window.location.href = '/login';
+      navigateTo('/login', router);
     }
   };
 
@@ -116,12 +125,22 @@ export default function TeacherHomeworkPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  // Client-side pagination
+  const totalPages = Math.ceil(homeworks.length / ITEMS_PER_PAGE);
+  const paginatedHomeworks = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return homeworks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [homeworks, currentPage]);
+
+  // Reset to page 1 if current page exceeds total pages after data changes
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [homeworks.length, totalPages, currentPage]);
+
+  if (loading && homeworks.length === 0) {
+    return <PageLoading title="الواجبات" icon={<HomeworkIcon className="text-white" size={20} />} />;
   }
 
   const totalSubmissions = homeworks.reduce((sum, h) => sum + (h._count?.submissions || 0), 0);
@@ -193,7 +212,7 @@ export default function TeacherHomeworkPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {homeworks.map((homework) => (
+                  {paginatedHomeworks.map((homework) => (
                     <tr key={homework.id} className="hover:bg-stone-50 transition-colors">
                       <td className="px-6 py-4">
                         <div>
@@ -230,6 +249,23 @@ export default function TeacherHomeworkPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {homeworks.length > ITEMS_PER_PAGE && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <PaginationInfo
+              currentPage={currentPage}
+              limit={ITEMS_PER_PAGE}
+              total={homeworks.length}
+              itemName="واجب"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>

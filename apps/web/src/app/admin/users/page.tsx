@@ -8,6 +8,7 @@ import Modal from '@/components/Modal';
 import { UsersIcon, PlusIcon, EditIcon, TrashIcon, EyeIcon, SearchIcon, FilterIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import PageLoading from '@/components/PageLoading';
 
 // Custom Role Filter Dropdown
 function RoleFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -263,12 +264,8 @@ export default function AdminUsersPage() {
     students: users.filter(u => u.role === 'STUDENT').length,
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  if (loading && users.length === 0) {
+    return <PageLoading title="المستخدمين" icon={<UsersIcon size={24} />} />;
   }
 
   return (

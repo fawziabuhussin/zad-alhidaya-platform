@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { CheckCircleIcon, AlertIcon, TrashIcon, PlusIcon, CloseIcon, BookIcon } from '@/components/Icons';
+import { navigateTo } from '@/lib/navigation';
+import PageLoading from '@/components/PageLoading';
 
 interface Question {
   id: string;
@@ -68,7 +70,7 @@ export default function TeacherExamDetailsPage() {
 
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
         return;
       }
 
@@ -76,7 +78,7 @@ export default function TeacherExamDetailsPage() {
       const userData = userRes.data;
       
       if (userData.role !== 'TEACHER' && userData.role !== 'ADMIN') {
-        window.location.href = '/dashboard';
+        navigateTo('/dashboard', router);
         return;
       }
 
@@ -95,7 +97,7 @@ export default function TeacherExamDetailsPage() {
           }
         } catch (e) {}
       }
-      window.location.href = '/login';
+      navigateTo('/login', router);
     }
   };
 
@@ -230,12 +232,8 @@ export default function TeacherExamDetailsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  if (loading && !exam) {
+    return <PageLoading title="تفاصيل الامتحان" icon={<BookIcon className="text-white" size={20} />} />;
   }
 
   if (!exam) {

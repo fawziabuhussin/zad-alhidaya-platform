@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { CheckCircleIcon, AlertIcon, TrashIcon, PlusIcon, CloseIcon, BookIcon } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
 
 interface Question {
   id: string;
@@ -163,12 +164,8 @@ export default function ExamDetailsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  if (loading && !exam) {
+    return <PageLoading title="تفاصيل الامتحان" icon={<BookIcon className="text-white" size={20} />} />;
   }
 
   if (!exam) {

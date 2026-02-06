@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import PageLoading from '@/components/PageLoading';
 
 interface Question {
   id: string;
@@ -114,11 +115,13 @@ export default function TeacherQuestionsPage() {
     filter === 'all' ? true : q.status === filter
   );
 
-  if (loading) {
+  if (loading && questions.length === 0) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="الأسئلة" 
+        subtitle="جاري التحميل..."
+        icon={<HelpIcon className="text-white" size={20} />}
+      />
     );
   }
 
