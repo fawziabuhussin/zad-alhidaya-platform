@@ -9,6 +9,7 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import {
   RegisterDTO,
+  CompleteProfileDTO,
   LoginDTO,
   GoogleAuthDTO,
   AppleAuthDTO,
@@ -53,12 +54,32 @@ export interface CurrentUserResult {
   error?: { status: number; message: string };
 }
 
+export interface CompleteProfileResult {
+  success: boolean;
+  data?: { message: string; user: AuthUserInfo };
+  error?: { status: number; message: string };
+}
+
 export class AuthManager {
   /**
    * Register a new user
    */
   async register(data: RegisterDTO): Promise<RegisterResult> {
-    const { name, email, password } = data;
+    const {
+      firstName,
+      fatherName,
+      familyName,
+      email,
+      password,
+      dateOfBirth,
+      phone,
+      profession,
+      gender,
+      idNumber,
+    } = data;
+
+    // Concatenate name from parts
+    const name = `${firstName} ${fatherName} ${familyName}`;
 
     // Check if user exists
     const existing = await authRepository.findByEmail(email);
@@ -69,14 +90,23 @@ export class AuthManager {
       };
     }
 
-    // Create user
+    // Create user with all profile fields
     const passwordHash = await hashPassword(password);
     const user = await authRepository.createUser({
       name,
+      firstName,
+      fatherName,
+      familyName,
       email,
       passwordHash,
       provider: 'EMAIL',
       role: 'STUDENT',
+      dateOfBirth,
+      phone,
+      profession,
+      gender,
+      idNumber,
+      profileComplete: true,
     });
 
     return {
@@ -143,6 +173,9 @@ export class AuthManager {
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
     );
 
+    // Get full user info including profileComplete
+    const fullUser = await authRepository.findById(user.id);
+
     return {
       success: true,
       data: {
@@ -151,8 +184,12 @@ export class AuthManager {
         user: {
           id: user.id,
           name: user.name,
+          firstName: fullUser?.firstName,
+          fatherName: fullUser?.fatherName,
+          familyName: fullUser?.familyName,
           email: user.email,
           role: user.role,
+          profileComplete: fullUser?.profileComplete ?? false,
         },
       },
     };
@@ -186,8 +223,9 @@ export class AuthManager {
       // Find or create user
       let user = await authRepository.findByEmailOrProvider(email, 'GOOGLE', providerId);
 
+      let isNewUser = false;
       if (!user) {
-        // Create new user
+        // Create new user with profileComplete: false (OAuth users need to complete profile)
         const newUser = await authRepository.createUser({
           name: name || email.split('@')[0],
           email,
@@ -195,8 +233,10 @@ export class AuthManager {
           providerId,
           passwordHash: null,
           role: 'STUDENT',
+          profileComplete: false,
         });
         user = { ...newUser, passwordHash: null, blocked: false, provider: 'GOOGLE', providerId };
+        isNewUser = true;
       } else if (user.provider !== 'GOOGLE' || user.providerId !== providerId) {
         // Update existing user to link Google account
         user = await authRepository.updateProvider(user.id, 'GOOGLE', providerId);
@@ -226,6 +266,9 @@ export class AuthManager {
         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       );
 
+      // Get full user info including profileComplete
+      const fullUser = await authRepository.findById(user.id);
+
       return {
         success: true,
         data: {
@@ -234,8 +277,12 @@ export class AuthManager {
           user: {
             id: user.id,
             name: user.name,
+            firstName: fullUser?.firstName,
+            fatherName: fullUser?.fatherName,
+            familyName: fullUser?.familyName,
             email: user.email,
             role: user.role,
+            profileComplete: fullUser?.profileComplete ?? false,
           },
         },
       };
@@ -272,7 +319,7 @@ export class AuthManager {
       let user = await authRepository.findByEmailOrProvider(email, 'APPLE', providerId);
 
       if (!user) {
-        // Create new user
+        // Create new user with profileComplete: false (OAuth users need to complete profile)
         const newUser = await authRepository.createUser({
           name,
           email,
@@ -280,6 +327,7 @@ export class AuthManager {
           providerId,
           passwordHash: null,
           role: 'STUDENT',
+          profileComplete: false,
         });
         user = { ...newUser, passwordHash: null, blocked: false, provider: 'APPLE', providerId };
       } else if (user.provider !== 'APPLE' || user.providerId !== providerId) {
@@ -311,6 +359,9 @@ export class AuthManager {
         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       );
 
+      // Get full user info including profileComplete
+      const fullUser = await authRepository.findById(user.id);
+
       return {
         success: true,
         data: {
@@ -319,8 +370,12 @@ export class AuthManager {
           user: {
             id: user.id,
             name: user.name,
+            firstName: fullUser?.firstName,
+            fatherName: fullUser?.fatherName,
+            familyName: fullUser?.familyName,
             email: user.email,
             role: user.role,
+            profileComplete: fullUser?.profileComplete ?? false,
           },
         },
       };
@@ -360,6 +415,9 @@ export class AuthManager {
 
       const accessToken = generateAccessToken(tokenPayload);
 
+      // Get full user info including profileComplete
+      const fullUser = await authRepository.findById(tokenRecord.user.id);
+
       return {
         success: true,
         data: {
@@ -367,8 +425,12 @@ export class AuthManager {
           user: {
             id: tokenRecord.user.id,
             name: tokenRecord.user.name,
+            firstName: fullUser?.firstName,
+            fatherName: fullUser?.fatherName,
+            familyName: fullUser?.familyName,
             email: tokenRecord.user.email,
             role: tokenRecord.user.role,
+            profileComplete: fullUser?.profileComplete ?? false,
           },
         },
       };
@@ -378,6 +440,47 @@ export class AuthManager {
         error: { status: 401, message: 'رمز التحديث غير صالح' },
       };
     }
+  }
+
+  /**
+   * Complete user profile (for OAuth users)
+   */
+  async completeProfile(auth: AuthContext, data: CompleteProfileDTO): Promise<CompleteProfileResult> {
+    const {
+      firstName,
+      fatherName,
+      familyName,
+      dateOfBirth,
+      phone,
+      profession,
+      gender,
+      idNumber,
+    } = data;
+
+    // Concatenate name from parts
+    const name = `${firstName} ${fatherName} ${familyName}`;
+
+    // Update user profile
+    const user = await authRepository.updateProfile(auth.userId, {
+      name,
+      firstName,
+      fatherName,
+      familyName,
+      dateOfBirth,
+      phone,
+      profession,
+      gender,
+      idNumber,
+      profileComplete: true,
+    });
+
+    return {
+      success: true,
+      data: {
+        message: 'تم إكمال الملف الشخصي بنجاح',
+        user,
+      },
+    };
   }
 
   /**

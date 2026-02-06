@@ -11,6 +11,7 @@ import {
   loginSchema,
   googleAuthSchema,
   appleAuthSchema,
+  completeProfileSchema,
 } from '../schemas/auth.schema';
 
 const router = express.Router();
@@ -185,6 +186,35 @@ router.post('/logout', authenticate, async (req: AuthRequest, res) => {
   } catch (error: any) {
     console.error('Logout error:', error);
     res.status(500).json({ message: error.message || 'فشل تسجيل الخروج' });
+  }
+});
+
+/**
+ * POST /complete-profile - Complete user profile (for OAuth users)
+ */
+router.post('/complete-profile', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const data = completeProfileSchema.parse(req.body);
+
+    const result = await authManager.completeProfile(
+      { userId: req.user!.userId, role: req.user!.role },
+      data
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
+    }
+
+    res.json(result.data);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'خطأ في التحقق',
+        errors: error.errors,
+      });
+    }
+    console.error('Complete profile error:', error);
+    res.status(500).json({ message: error.message || 'فشل إكمال الملف الشخصي' });
   }
 });
 

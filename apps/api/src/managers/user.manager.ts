@@ -4,7 +4,7 @@
  */
 import { userRepository } from '../repositories/user.repository';
 import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
-import { CreateTeacherDTO, UpdateUserDTO, UserListItem, UserWithRelations, UserProfile } from '../types/user.types';
+import { CreateUserDTO, CreateTeacherDTO, UpdateUserDTO, UserListItem, UserWithRelations, UserProfile } from '../types/user.types';
 import { hashPassword } from '../utils/password';
 
 /**
@@ -73,6 +73,51 @@ export class UserManager {
   }
 
   /**
+   * Create a new user with any role (Admin only)
+   */
+  async createUser(auth: AuthContext, data: CreateUserDTO): Promise<UserResult> {
+    // Check authorization - only admins can create users
+    if (auth.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مسموح بالإضافة' },
+      };
+    }
+
+    // Check if email already exists
+    const existing = await userRepository.findByEmail(data.email);
+    if (existing) {
+      return {
+        success: false,
+        error: { status: 400, message: 'البريد الإلكتروني مسجل مسبقاً' },
+      };
+    }
+
+    // Concatenate name from parts
+    const name = `${data.firstName} ${data.fatherName} ${data.familyName}`;
+
+    // Hash password and create user
+    const passwordHash = await hashPassword(data.password);
+    const user = await userRepository.createUser({
+      name,
+      firstName: data.firstName,
+      fatherName: data.fatherName,
+      familyName: data.familyName,
+      email: data.email,
+      role: data.role,
+      passwordHash,
+      dateOfBirth: data.dateOfBirth,
+      phone: data.phone,
+      profession: data.profession,
+      gender: data.gender,
+      idNumber: data.idNumber,
+      profileComplete: true,
+    });
+
+    return { success: true, data: user };
+  }
+
+  /**
    * Create a new teacher (Admin only)
    */
   async createTeacher(auth: AuthContext, data: CreateTeacherDTO): Promise<UserResult> {
@@ -93,10 +138,27 @@ export class UserManager {
       };
     }
 
+    // Concatenate name from parts
+    const name = `${data.firstName} ${data.fatherName} ${data.familyName}`;
+
     // Hash password and create teacher
     const passwordHash = await hashPassword(data.password);
-    const user = await userRepository.createTeacher(data, passwordHash);
-    
+    const user = await userRepository.createUser({
+      name,
+      firstName: data.firstName,
+      fatherName: data.fatherName,
+      familyName: data.familyName,
+      email: data.email,
+      role: 'TEACHER',
+      passwordHash,
+      dateOfBirth: data.dateOfBirth,
+      phone: data.phone,
+      profession: data.profession,
+      gender: data.gender,
+      idNumber: data.idNumber,
+      profileComplete: true,
+    });
+
     return { success: true, data: user };
   }
 
@@ -120,7 +182,7 @@ export class UserManager {
       };
     }
 
-    // Non-admins can only update name and email
+    // Non-admins can only update name parts, email, and profile fields
     if (!isAdmin && (data.role !== undefined || data.blocked !== undefined || data.password !== undefined)) {
       return {
         success: false,
@@ -129,8 +191,8 @@ export class UserManager {
     }
 
     // Verify user exists
-    const exists = await userRepository.existsById(userId);
-    if (!exists) {
+    const existingUser = await userRepository.findById(userId);
+    if (!existingUser) {
       return {
         success: false,
         error: { status: 404, message: 'المستخدم غير موجود' },
@@ -143,7 +205,16 @@ export class UserManager {
       passwordHash = await hashPassword(data.password);
     }
 
-    const user = await userRepository.update(userId, data, passwordHash);
+    // If any name part is updated, recalculate the full name
+    let name: string | undefined;
+    if (data.firstName !== undefined || data.fatherName !== undefined || data.familyName !== undefined) {
+      const firstName = data.firstName ?? existingUser.firstName ?? '';
+      const fatherName = data.fatherName ?? existingUser.fatherName ?? '';
+      const familyName = data.familyName ?? existingUser.familyName ?? '';
+      name = `${firstName} ${fatherName} ${familyName}`.trim();
+    }
+
+    const user = await userRepository.update(userId, { ...data, name }, passwordHash);
     return { success: true, data: user };
   }
 

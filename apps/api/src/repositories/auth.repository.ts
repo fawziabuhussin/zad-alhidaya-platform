@@ -11,8 +11,12 @@ import { UserWithPassword, AuthUserInfo } from '../types/auth.types';
 const authUserSelect = {
   id: true,
   name: true,
+  firstName: true,
+  fatherName: true,
+  familyName: true,
   email: true,
   role: true,
+  profileComplete: true,
   createdAt: true,
 };
 
@@ -61,13 +65,47 @@ export class AuthRepository {
    */
   async createUser(data: {
     name: string;
+    firstName?: string;
+    fatherName?: string;
+    familyName?: string;
     email: string;
     passwordHash: string | null;
     provider: string;
     providerId?: string | null;
     role: string;
+    dateOfBirth?: Date;
+    phone?: string;
+    profession?: string;
+    gender?: string;
+    idNumber?: string;
+    profileComplete?: boolean;
   }): Promise<AuthUserInfo & { createdAt: Date }> {
     return prisma.user.create({
+      data,
+      select: authUserSelect,
+    });
+  }
+
+  /**
+   * Update user profile (for completing profile)
+   */
+  async updateProfile(
+    userId: string,
+    data: {
+      name?: string;
+      firstName?: string;
+      fatherName?: string;
+      familyName?: string;
+      dateOfBirth?: Date;
+      phone?: string;
+      profession?: string;
+      gender?: string;
+      idNumber?: string;
+      profileComplete?: boolean;
+    }
+  ): Promise<AuthUserInfo & { createdAt: Date }> {
+    return prisma.user.update({
+      where: { id: userId },
       data,
       select: authUserSelect,
     });
@@ -99,8 +137,12 @@ export class AuthRepository {
       select: {
         id: true,
         name: true,
+        firstName: true,
+        fatherName: true,
+        familyName: true,
         email: true,
         role: true,
+        profileComplete: true,
         blocked: true,
         createdAt: true,
       },
