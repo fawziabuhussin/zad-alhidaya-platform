@@ -287,7 +287,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                       <div>
                         <p className="text-sm text-white font-medium">{user.name}</p>
                         <p className="text-xs text-stone-400">
-                          {user.role === 'ADMIN' ? 'مدير' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
+                          {user.role === 'ADMIN' ? 'مشرف' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
                         </p>
                       </div>
                     </div>

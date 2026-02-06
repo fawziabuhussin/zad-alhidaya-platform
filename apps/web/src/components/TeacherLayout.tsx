@@ -422,7 +422,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
-                        {profileData.role === 'ADMIN' ? 'أدمن' : profileData.role === 'TEACHER' ? 'مدرس' : 'طالب'}
+                        {profileData.role === 'ADMIN' ? 'مشرف' : profileData.role === 'TEACHER' ? 'مدرس' : 'طالب'}
                       </span>
                       {profileData.provider && (
                         <span className="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800">

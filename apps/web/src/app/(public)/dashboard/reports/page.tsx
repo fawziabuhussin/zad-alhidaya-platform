@@ -345,15 +345,14 @@ export default function StudentReportsPage() {
                       href={`/courses/${report.course.id}/lessons/${report.lesson.id}`}
                       className="inline-flex items-center gap-2 px-3 py-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
                     >
-                      <EyeIcon size={18} /> عرض الدرس
+                      عرض الدرس
                     </Link>
                     <button
                       onClick={() => handleDeleteReport(report.id)}
                       disabled={deleting === report.id}
-                      className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm disabled:opacity-50"
-                      title="حذف التبليغ"
+                      className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium disabled:opacity-50"
                     >
-                      <TrashIcon size={18} />
+                      حذف
                     </button>
                   </div>
                 </div>

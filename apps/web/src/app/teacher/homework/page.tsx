@@ -239,10 +239,9 @@ export default function TeacherHomeworkPage() {
                       <td className="px-6 py-4">
                         <Link
                           href={`/teacher/homework/${homework.id}/submissions`}
-                          className="p-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition inline-flex"
-                          title="تصحيح"
+                          className="px-3 py-1.5 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition text-sm font-medium"
                         >
-                          <EditIcon size={16} />
+                          تصحيح
                         </Link>
                       </td>
                     </tr>

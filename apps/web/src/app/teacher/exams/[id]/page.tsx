@@ -532,8 +532,11 @@ export default function TeacherExamDetailsPage() {
                       step="0.5"
                       className="w-16 px-2 py-1 border border-stone-200 rounded text-center text-sm"
                     />
-                    <button onClick={() => handleDeleteQuestion(question.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                      <TrashIcon size={16} />
+                    <button 
+                      onClick={() => handleDeleteQuestion(question.id)} 
+                      className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition text-sm font-medium"
+                    >
+                      حذف
                     </button>
                   </div>
                 </div>
