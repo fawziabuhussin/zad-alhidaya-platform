@@ -725,7 +725,7 @@ export default function EditCoursePage() {
             <h2 className="text-2xl font-bold mb-4 text-gray-800">المعلومات الأساسية</h2>
 
             <div>
-              <label className="block text-lg font-semibold mb-2 text-gray-800">عنوان الدورة *</label>
+              <label className="block text-lg font-semibold mb-2 text-gray-800">عنوان الدورة <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 value={formData.title}
@@ -737,7 +737,7 @@ export default function EditCoursePage() {
             </div>
 
             <div>
-              <label className="block text-lg font-semibold mb-2 text-gray-800">وصف الدورة *</label>
+              <label className="block text-lg font-semibold mb-2 text-gray-800">وصف الدورة <span className="text-red-500">*</span></label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -750,7 +750,7 @@ export default function EditCoursePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="relative w-full">
-                <label className="block text-lg font-semibold mb-2 text-gray-800">الفئة *</label>
+                <label className="block text-lg font-semibold mb-2 text-gray-800">الفئة <span className="text-red-500">*</span></label>
                 <div className="relative w-full">
                   <button
                     type="button"
@@ -1373,54 +1373,90 @@ export default function EditCoursePage() {
               <form onSubmit={handleAddExam} className="mb-6 p-4 bg-purple-50 rounded-lg border-2 border-purple-300">
                 <h3 className="text-xl font-bold mb-4 text-gray-800">امتحان جديد</h3>
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={examFormData.title}
-                    onChange={(e) => setExamFormData({ ...examFormData, title: e.target.value })}
-                    required
-                    placeholder="عنوان الامتحان"
-                    className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
-                  />
-                  <textarea
-                    value={examFormData.description}
-                    onChange={(e) => setExamFormData({ ...examFormData, description: e.target.value })}
-                    placeholder="وصف الامتحان (اختياري)"
-                    rows={3}
-                    className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
-                  />
-                  <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="exam-title" className="block text-sm font-semibold text-gray-700 mb-1">
+                      عنوان الامتحان <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      type="number"
-                      value={examFormData.durationMinutes}
-                      onChange={(e) => setExamFormData({ ...examFormData, durationMinutes: parseInt(e.target.value) || 60 })}
-                      min="1"
-                      placeholder="المدة بالدقائق"
-                      className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                      type="text"
+                      id="exam-title"
+                      value={examFormData.title}
+                      onChange={(e) => setExamFormData({ ...examFormData, title: e.target.value })}
+                      required
+                      placeholder="عنوان الامتحان"
+                      className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
                     />
-                    <input
-                      type="number"
-                      value={examFormData.maxScore}
-                      onChange={(e) => setExamFormData({ ...examFormData, maxScore: parseInt(e.target.value) || 100 })}
-                      min="1"
-                      placeholder="الدرجة الكاملة"
-                      className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                  </div>
+                  <div>
+                    <label htmlFor="exam-description" className="block text-sm font-semibold text-gray-700 mb-1">
+                      وصف الامتحان (اختياري)
+                    </label>
+                    <textarea
+                      id="exam-description"
+                      value={examFormData.description}
+                      onChange={(e) => setExamFormData({ ...examFormData, description: e.target.value })}
+                      placeholder="وصف الامتحان (اختياري)"
+                      rows={3}
+                      className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <input
-                      type="datetime-local"
-                      value={examFormData.startDate}
-                      onChange={(e) => setExamFormData({ ...examFormData, startDate: e.target.value })}
-                      required
-                      className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
-                    />
-                    <input
-                      type="datetime-local"
-                      value={examFormData.endDate}
-                      onChange={(e) => setExamFormData({ ...examFormData, endDate: e.target.value })}
-                      required
-                      className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary"
-                    />
+                    <div>
+                      <label htmlFor="exam-duration" className="block text-sm font-semibold text-gray-700 mb-1">
+                        المدة بالدقائق <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        id="exam-duration"
+                        value={examFormData.durationMinutes}
+                        onChange={(e) => setExamFormData({ ...examFormData, durationMinutes: parseInt(e.target.value) || 60 })}
+                        min="1"
+                        placeholder="المدة بالدقائق"
+                        className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="exam-maxScore" className="block text-sm font-semibold text-gray-700 mb-1">
+                        الدرجة الكاملة <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        id="exam-maxScore"
+                        value={examFormData.maxScore}
+                        onChange={(e) => setExamFormData({ ...examFormData, maxScore: parseInt(e.target.value) || 100 })}
+                        min="1"
+                        placeholder="الدرجة الكاملة"
+                        className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="exam-startDate" className="block text-sm font-semibold text-gray-700 mb-1">
+                        تاريخ البداية <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        id="exam-startDate"
+                        value={examFormData.startDate}
+                        onChange={(e) => setExamFormData({ ...examFormData, startDate: e.target.value })}
+                        required
+                        className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="exam-endDate" className="block text-sm font-semibold text-gray-700 mb-1">
+                        تاريخ النهاية <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        id="exam-endDate"
+                        value={examFormData.endDate}
+                        onChange={(e) => setExamFormData({ ...examFormData, endDate: e.target.value })}
+                        required
+                        className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary"
+                      />
+                    </div>
                   </div>
                   <div className="flex gap-3">
                     <button
@@ -1500,38 +1536,62 @@ export default function EditCoursePage() {
               <form onSubmit={handleAddHomework} className="mb-6 p-4 bg-orange-50 rounded-lg border-2 border-orange-300">
                 <h3 className="text-xl font-bold mb-4 text-gray-800">واجب جديد</h3>
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={homeworkFormData.title}
-                    onChange={(e) => setHomeworkFormData({ ...homeworkFormData, title: e.target.value })}
-                    required
-                    placeholder="عنوان الواجب"
-                    className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
-                  />
-                  <textarea
-                    value={homeworkFormData.description}
-                    onChange={(e) => setHomeworkFormData({ ...homeworkFormData, description: e.target.value })}
-                    required
-                    placeholder="وصف الواجب"
-                    rows={4}
-                    className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
-                  />
-                  <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="homework-title" className="block text-sm font-semibold text-gray-700 mb-1">
+                      عنوان الواجب <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      type="datetime-local"
-                      value={homeworkFormData.dueDate}
-                      onChange={(e) => setHomeworkFormData({ ...homeworkFormData, dueDate: e.target.value })}
+                      type="text"
+                      id="homework-title"
+                      value={homeworkFormData.title}
+                      onChange={(e) => setHomeworkFormData({ ...homeworkFormData, title: e.target.value })}
                       required
-                      className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                      placeholder="عنوان الواجب"
+                      className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
                     />
-                    <input
-                      type="number"
-                      value={homeworkFormData.maxScore}
-                      onChange={(e) => setHomeworkFormData({ ...homeworkFormData, maxScore: parseInt(e.target.value) || 100 })}
-                      min="1"
-                      placeholder="الدرجة الكاملة"
-                      className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                  </div>
+                  <div>
+                    <label htmlFor="homework-description" className="block text-sm font-semibold text-gray-700 mb-1">
+                      وصف الواجب <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      id="homework-description"
+                      value={homeworkFormData.description}
+                      onChange={(e) => setHomeworkFormData({ ...homeworkFormData, description: e.target.value })}
+                      required
+                      placeholder="وصف الواجب"
+                      rows={4}
+                      className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="homework-dueDate" className="block text-sm font-semibold text-gray-700 mb-1">
+                        تاريخ الإنتهاء <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        id="homework-dueDate"
+                        value={homeworkFormData.dueDate}
+                        onChange={(e) => setHomeworkFormData({ ...homeworkFormData, dueDate: e.target.value })}
+                        required
+                        className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="homework-maxScore" className="block text-sm font-semibold text-gray-700 mb-1">
+                        الدرجة الكاملة <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        id="homework-maxScore"
+                        value={homeworkFormData.maxScore}
+                        onChange={(e) => setHomeworkFormData({ ...homeworkFormData, maxScore: parseInt(e.target.value) || 100 })}
+                        min="1"
+                        placeholder="الدرجة الكاملة"
+                        className="px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary text-gray-800 bg-white"
+                      />
+                    </div>
                   </div>
                   <div className="flex gap-3">
                     <button

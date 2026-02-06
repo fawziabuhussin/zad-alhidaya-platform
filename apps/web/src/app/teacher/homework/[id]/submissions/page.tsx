@@ -22,6 +22,7 @@ interface Homework {
   title: string;
   description: string;
   maxScore: number;
+  courseId: string;
 }
 
 export default function HomeworkSubmissionsPage() {
@@ -39,11 +40,15 @@ export default function HomeworkSubmissionsPage() {
 
   const loadData = async () => {
     try {
-      const [homeworkRes, submissionsRes] = await Promise.all([
-        api.get(`/homework/${params.id}`),
-        api.get(`/homework/${params.id}/submissions`).catch(() => ({ data: [] })),
-      ]);
+      // First fetch homework to get courseId
+      const homeworkRes = await api.get(`/homework/${params.id}`);
       setHomework(homeworkRes.data);
+      
+      // Then fetch submissions with courseId
+      const submissionsRes = await api.get(
+        `/homework/${params.id}/submissions?courseId=${homeworkRes.data.courseId}`
+      ).catch(() => ({ data: [] }));
+      
       setSubmissions(submissionsRes.data || []);
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -65,6 +70,7 @@ export default function HomeworkSubmissionsPage() {
       await api.post(`/homework/${params.id}/grade/${submissionId}`, {
         score,
         feedback,
+        courseId: homework!.courseId,
       });
 
       const newEditingScore = { ...editingScore };

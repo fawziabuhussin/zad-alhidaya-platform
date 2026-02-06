@@ -102,7 +102,7 @@ export default function ResourceForm({
         {/* Title Field */}
         <div>
           <label htmlFor="title" className="block text-sm font-semibold text-gray-700 mb-1">
-            عنوان المادة *
+            عنوان المادة <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -148,7 +148,7 @@ export default function ResourceForm({
         {/* URL Field */}
         <div>
           <label htmlFor="url" className="block text-sm font-semibold text-gray-700 mb-1">
-            رابط المادة *
+            رابط المادة <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
