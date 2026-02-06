@@ -10,6 +10,8 @@ import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 import { formatDate } from '@/lib/utils';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 import PageLoading from '@/components/PageLoading';
+import DatePicker from '@/components/DatePicker';
+import GenderSelect from '@/components/GenderSelect';
 
 // Custom Role Filter Dropdown
 function RoleFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -74,9 +76,17 @@ function RoleFilterDropdown({ value, onChange }: { value: string, onChange: (val
 interface User {
   id: string;
   name: string;
+  firstName?: string;
+  fatherName?: string;
+  familyName?: string;
   email: string;
   role: string;
   blocked: boolean;
+  dateOfBirth?: string;
+  phone?: string;
+  profession?: string;
+  gender?: string;
+  idNumber?: string;
   createdAt: string;
   _count: {
     coursesTaught?: number;
@@ -98,15 +108,33 @@ export default function AdminUsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [editFormData, setEditFormData] = useState({ name: '', password: '' });
+  const [editFormData, setEditFormData] = useState({
+    firstName: '',
+    fatherName: '',
+    familyName: '',
+    dateOfBirth: null as Date | null,
+    phone: '',
+    profession: '',
+    gender: '' as 'MALE' | 'FEMALE' | '',
+    idNumber: '',
+    password: '',
+  });
   const [showCreateForm, setShowCreateForm] = useState(action === 'create');
   const [createFormData, setCreateFormData] = useState({
-    name: '',
+    firstName: '',
+    fatherName: '',
+    familyName: '',
     email: '',
     password: '',
     role: 'STUDENT' as 'ADMIN' | 'TEACHER' | 'STUDENT',
+    dateOfBirth: null as Date | null,
+    phone: '',
+    profession: '',
+    gender: '' as 'MALE' | 'FEMALE' | '',
+    idNumber: '',
   });
   const [createErrors, setCreateErrors] = useState<{ [key: string]: string }>({});
+  const [editErrors, setEditErrors] = useState<{ [key: string]: string }>({});
   const [viewingProfile, setViewingProfile] = useState<User | null>(null);
   const [profileData, setProfileData] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -158,26 +186,97 @@ export default function AdminUsersPage() {
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
-    setEditFormData({ name: user.name, password: '' });
+    setEditFormData({
+      firstName: user.firstName || '',
+      fatherName: user.fatherName || '',
+      familyName: user.familyName || '',
+      dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth) : null,
+      phone: user.phone || '',
+      profession: user.profession || '',
+      gender: (user.gender as 'MALE' | 'FEMALE' | '') || '',
+      idNumber: user.idNumber || '',
+      password: '',
+    });
+    setEditErrors({});
   };
 
   const handleSaveEdit = async () => {
     if (!editingUser) return;
+
+    // Validation
+    const errors: { [key: string]: string } = {};
+    if (!editFormData.firstName || editFormData.firstName.length < 2) {
+      errors.firstName = 'الاسم الشخصي يجب أن يكون حرفين على الأقل';
+    }
+    if (!editFormData.fatherName || editFormData.fatherName.length < 2) {
+      errors.fatherName = 'اسم الوالد يجب أن يكون حرفين على الأقل';
+    }
+    if (!editFormData.familyName || editFormData.familyName.length < 2) {
+      errors.familyName = 'اسم العائلة يجب أن يكون حرفين على الأقل';
+    }
+    if (!editFormData.dateOfBirth) {
+      errors.dateOfBirth = 'تاريخ الولادة مطلوب';
+    }
+    if (!editFormData.phone || editFormData.phone.length < 7 || editFormData.phone.length > 10) {
+      errors.phone = 'رقم الهاتف يجب أن يكون بين 7 و 10 أرقام';
+    } else if (!/^[0-9]+$/.test(editFormData.phone)) {
+      errors.phone = 'رقم الهاتف يجب أن يحتوي على أرقام فقط';
+    }
+    if (!editFormData.profession || editFormData.profession.length < 2) {
+      errors.profession = 'المهنة مطلوبة';
+    }
+    if (!editFormData.gender) {
+      errors.gender = 'يرجى اختيار الجنس';
+    }
+    if (!editFormData.idNumber || editFormData.idNumber.length !== 9) {
+      errors.idNumber = 'رقم الهوية يجب أن يكون 9 أرقام بالضبط';
+    } else if (!/^[0-9]+$/.test(editFormData.idNumber)) {
+      errors.idNumber = 'رقم الهوية يجب أن يحتوي على أرقام فقط';
+    }
+    if (editFormData.password && editFormData.password.length < 6) {
+      errors.password = 'كلمة المرور يجب أن تكون على الأقل 6 أحرف';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setEditErrors(errors);
+      return;
+    }
 
     // Double confirmation
     if (!confirm('هل أنت متأكد من تحديث بيانات هذا المستخدم؟')) return;
     if (editFormData.password && !confirm('هل أنت متأكد من تغيير كلمة المرور؟')) return;
 
     try {
-      const updateData: any = { name: editFormData.name };
+      const updateData: any = {
+        firstName: editFormData.firstName,
+        fatherName: editFormData.fatherName,
+        familyName: editFormData.familyName,
+        dateOfBirth: editFormData.dateOfBirth?.toISOString(),
+        phone: editFormData.phone,
+        profession: editFormData.profession,
+        gender: editFormData.gender,
+        idNumber: editFormData.idNumber,
+      };
       if (editFormData.password) {
         updateData.password = editFormData.password;
       }
-      
+
       await api.put(`/users/${editingUser.id}`, updateData);
-      setUsers(users.map(u => u.id === editingUser.id ? { ...u, name: editFormData.name } : u));
+      const newName = `${editFormData.firstName} ${editFormData.fatherName} ${editFormData.familyName}`;
+      setUsers(users.map(u => u.id === editingUser.id ? { ...u, name: newName } : u));
       setEditingUser(null);
-      setEditFormData({ name: '', password: '' });
+      setEditFormData({
+        firstName: '',
+        fatherName: '',
+        familyName: '',
+        dateOfBirth: null,
+        phone: '',
+        profession: '',
+        gender: '',
+        idNumber: '',
+        password: '',
+      });
+      setEditErrors({});
       showSuccess(TOAST_MESSAGES.UPDATE_SUCCESS);
     } catch (error: any) {
       showError(error.response?.data?.message || 'فشل تحديث بيانات المستخدم');
@@ -188,46 +287,80 @@ export default function AdminUsersPage() {
     setCreateErrors({});
 
     // Validation
-    if (!createFormData.name || createFormData.name.length < 2) {
-      setCreateErrors({ name: 'الاسم يجب أن يكون على الأقل حرفين' });
-      return;
+    const errors: { [key: string]: string } = {};
+
+    if (!createFormData.firstName || createFormData.firstName.length < 2) {
+      errors.firstName = 'الاسم الشخصي يجب أن يكون حرفين على الأقل';
+    }
+    if (!createFormData.fatherName || createFormData.fatherName.length < 2) {
+      errors.fatherName = 'اسم الوالد يجب أن يكون حرفين على الأقل';
+    }
+    if (!createFormData.familyName || createFormData.familyName.length < 2) {
+      errors.familyName = 'اسم العائلة يجب أن يكون حرفين على الأقل';
     }
     if (!createFormData.email || !createFormData.email.includes('@')) {
-      setCreateErrors({ email: 'البريد الإلكتروني غير صحيح' });
-      return;
+      errors.email = 'البريد الإلكتروني غير صحيح';
     }
     if (!createFormData.password || createFormData.password.length < 6) {
-      setCreateErrors({ password: 'كلمة المرور يجب أن تكون على الأقل 6 أحرف' });
+      errors.password = 'كلمة المرور يجب أن تكون على الأقل 6 أحرف';
+    }
+    if (!createFormData.dateOfBirth) {
+      errors.dateOfBirth = 'تاريخ الولادة مطلوب';
+    }
+    if (!createFormData.phone || createFormData.phone.length < 7 || createFormData.phone.length > 10) {
+      errors.phone = 'رقم الهاتف يجب أن يكون بين 7 و 10 أرقام';
+    } else if (!/^[0-9]+$/.test(createFormData.phone)) {
+      errors.phone = 'رقم الهاتف يجب أن يحتوي على أرقام فقط';
+    }
+    if (!createFormData.profession || createFormData.profession.length < 2) {
+      errors.profession = 'المهنة مطلوبة';
+    }
+    if (!createFormData.gender) {
+      errors.gender = 'يرجى اختيار الجنس';
+    }
+    if (!createFormData.idNumber || createFormData.idNumber.length !== 9) {
+      errors.idNumber = 'رقم الهوية يجب أن يكون 9 أرقام بالضبط';
+    } else if (!/^[0-9]+$/.test(createFormData.idNumber)) {
+      errors.idNumber = 'رقم الهوية يجب أن يحتوي على أرقام فقط';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setCreateErrors(errors);
       return;
     }
 
     if (!confirm('هل أنت متأكد من إنشاء هذا المستخدم؟')) return;
 
     try {
-      if (createFormData.role === 'TEACHER') {
-        await api.post('/users/teachers', {
-          name: createFormData.name,
-          email: createFormData.email,
-          password: createFormData.password,
-        });
-      } else {
-        await api.post('/auth/register', {
-          name: createFormData.name,
-          email: createFormData.email,
-          password: createFormData.password,
-        });
-        // Then update role if needed
-        const usersRes = await api.get('/users');
-        const allUsers = usersRes.data || [];
-        const newUser = allUsers.find((u: User) => u.email === createFormData.email);
-        if (newUser && createFormData.role !== 'STUDENT') {
-          await api.put(`/users/${newUser.id}`, { role: createFormData.role });
-        }
-      }
-      
+      await api.post('/users', {
+        firstName: createFormData.firstName,
+        fatherName: createFormData.fatherName,
+        familyName: createFormData.familyName,
+        email: createFormData.email,
+        password: createFormData.password,
+        role: createFormData.role,
+        dateOfBirth: createFormData.dateOfBirth?.toISOString(),
+        phone: createFormData.phone,
+        profession: createFormData.profession,
+        gender: createFormData.gender,
+        idNumber: createFormData.idNumber,
+      });
+
       showSuccess(TOAST_MESSAGES.CREATE_SUCCESS);
       setShowCreateForm(false);
-      setCreateFormData({ name: '', email: '', password: '', role: 'STUDENT' });
+      setCreateFormData({
+        firstName: '',
+        fatherName: '',
+        familyName: '',
+        email: '',
+        password: '',
+        role: 'STUDENT',
+        dateOfBirth: null,
+        phone: '',
+        profession: '',
+        gender: '',
+        idNumber: '',
+      });
       router.push('/admin/users');
       loadUsers();
     } catch (error: any) {
@@ -470,33 +603,194 @@ export default function AdminUsersPage() {
         isOpen={!!editingUser}
         onClose={() => {
           setEditingUser(null);
-          setEditFormData({ name: '', password: '' });
+          setEditFormData({
+            firstName: '',
+            fatherName: '',
+            familyName: '',
+            dateOfBirth: null,
+            phone: '',
+            profession: '',
+            gender: '',
+            idNumber: '',
+            password: '',
+          });
+          setEditErrors({});
         }}
         title="تعديل بيانات المستخدم"
-        size="md"
+        size="lg"
       >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-lg font-semibold mb-2 text-gray-800">الاسم</label>
-            <input
-              type="text"
-              value={editFormData.name}
-              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-            />
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+          {/* Name fields in 3-column grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">
+                الاسم الشخصي <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={editFormData.firstName}
+                onChange={(e) => {
+                  setEditFormData({ ...editFormData, firstName: e.target.value });
+                  if (editErrors.firstName) setEditErrors({ ...editErrors, firstName: '' });
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                  editErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="الاسم"
+              />
+              {editErrors.firstName && <p className="text-red-500 text-xs mt-1">{editErrors.firstName}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">
+                اسم الوالد <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={editFormData.fatherName}
+                onChange={(e) => {
+                  setEditFormData({ ...editFormData, fatherName: e.target.value });
+                  if (editErrors.fatherName) setEditErrors({ ...editErrors, fatherName: '' });
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                  editErrors.fatherName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="الوالد"
+              />
+              {editErrors.fatherName && <p className="text-red-500 text-xs mt-1">{editErrors.fatherName}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">
+                اسم العائلة <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={editFormData.familyName}
+                onChange={(e) => {
+                  setEditFormData({ ...editFormData, familyName: e.target.value });
+                  if (editErrors.familyName) setEditErrors({ ...editErrors, familyName: '' });
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                  editErrors.familyName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="العائلة"
+              />
+              {editErrors.familyName && <p className="text-red-500 text-xs mt-1">{editErrors.familyName}</p>}
+            </div>
           </div>
-          
-          <div>
-            <label className="block text-lg font-semibold mb-2 text-gray-800">كلمة المرور الجديدة (اختياري)</label>
-            <input
-              type="password"
-              value={editFormData.password}
-              onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
-              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-              placeholder="اتركه فارغاً للاحتفاظ بكلمة المرور الحالية"
+
+          {/* Profile section */}
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">البيانات الشخصية</h3>
+
+            <DatePicker
+              label="تاريخ الولادة"
+              value={editFormData.dateOfBirth}
+              onChange={(date) => {
+                setEditFormData({ ...editFormData, dateOfBirth: date });
+                if (editErrors.dateOfBirth) setEditErrors({ ...editErrors, dateOfBirth: '' });
+              }}
+              maxDate={new Date()}
+              minDate={new Date('1900-01-01')}
+              placeholder="اختر تاريخ الولادة"
+              error={editErrors.dateOfBirth}
+              required
             />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-800">
+                  الهاتف <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={editFormData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    setEditFormData({ ...editFormData, phone: value });
+                    if (editErrors.phone) setEditErrors({ ...editErrors, phone: '' });
+                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                    editErrors.phone ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="05xxxxxxxx"
+                  maxLength={10}
+                />
+                {editErrors.phone && <p className="text-red-500 text-xs mt-1">{editErrors.phone}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-800">
+                  المهنة <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.profession}
+                  onChange={(e) => {
+                    setEditFormData({ ...editFormData, profession: e.target.value });
+                    if (editErrors.profession) setEditErrors({ ...editErrors, profession: '' });
+                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                    editErrors.profession ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="المهنة"
+                />
+                {editErrors.profession && <p className="text-red-500 text-xs mt-1">{editErrors.profession}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <GenderSelect
+                label="الجنس"
+                value={editFormData.gender}
+                onChange={(value) => {
+                  setEditFormData({ ...editFormData, gender: value });
+                  if (editErrors.gender) setEditErrors({ ...editErrors, gender: '' });
+                }}
+                error={editErrors.gender}
+                required
+              />
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-800">
+                  رقم الهوية <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.idNumber}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    setEditFormData({ ...editFormData, idNumber: value });
+                    if (editErrors.idNumber) setEditErrors({ ...editErrors, idNumber: '' });
+                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                    editErrors.idNumber ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="رقم الهوية (9 أرقام)"
+                  maxLength={9}
+                />
+                {editErrors.idNumber && <p className="text-red-500 text-xs mt-1">{editErrors.idNumber}</p>}
+              </div>
+            </div>
           </div>
-          
+
+          {/* Password section */}
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">كلمة المرور الجديدة (اختياري)</label>
+              <input
+                type="password"
+                value={editFormData.password}
+                onChange={(e) => {
+                  setEditFormData({ ...editFormData, password: e.target.value });
+                  if (editErrors.password) setEditErrors({ ...editErrors, password: '' });
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                  editErrors.password ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="اتركه فارغاً للاحتفاظ بكلمة المرور الحالية"
+              />
+              {editErrors.password && <p className="text-red-500 text-xs mt-1">{editErrors.password}</p>}
+            </div>
+          </div>
+
           <div className="flex gap-4 pt-4">
             <button
               onClick={handleSaveEdit}
@@ -507,7 +801,18 @@ export default function AdminUsersPage() {
             <button
               onClick={() => {
                 setEditingUser(null);
-                setEditFormData({ name: '', password: '' });
+                setEditFormData({
+                  firstName: '',
+                  fatherName: '',
+                  familyName: '',
+                  dateOfBirth: null,
+                  phone: '',
+                  profession: '',
+                  gender: '',
+                  idNumber: '',
+                  password: '',
+                });
+                setEditErrors({});
               }}
               className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold text-lg hover:bg-gray-300 transition"
             >
@@ -523,101 +828,262 @@ export default function AdminUsersPage() {
         onClose={() => {
           setShowCreateForm(false);
           router.push('/admin/users');
-          setCreateFormData({ name: '', email: '', password: '', role: 'STUDENT' });
+          setCreateFormData({
+            firstName: '',
+            fatherName: '',
+            familyName: '',
+            email: '',
+            password: '',
+            role: 'STUDENT',
+            dateOfBirth: null,
+            phone: '',
+            profession: '',
+            gender: '',
+            idNumber: '',
+          });
           setCreateErrors({});
         }}
         title="إنشاء مستخدم جديد"
-        size="md"
+        size="lg"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+          {/* Name fields in 3-column grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">
+                الاسم الشخصي <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={createFormData.firstName}
+                onChange={(e) => {
+                  setCreateFormData({ ...createFormData, firstName: e.target.value });
+                  if (createErrors.firstName) setCreateErrors({ ...createErrors, firstName: '' });
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                  createErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="الاسم"
+              />
+              {createErrors.firstName && <p className="text-red-500 text-xs mt-1">{createErrors.firstName}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">
+                اسم الوالد <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={createFormData.fatherName}
+                onChange={(e) => {
+                  setCreateFormData({ ...createFormData, fatherName: e.target.value });
+                  if (createErrors.fatherName) setCreateErrors({ ...createErrors, fatherName: '' });
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                  createErrors.fatherName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="الوالد"
+              />
+              {createErrors.fatherName && <p className="text-red-500 text-xs mt-1">{createErrors.fatherName}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">
+                اسم العائلة <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={createFormData.familyName}
+                onChange={(e) => {
+                  setCreateFormData({ ...createFormData, familyName: e.target.value });
+                  if (createErrors.familyName) setCreateErrors({ ...createErrors, familyName: '' });
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                  createErrors.familyName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="العائلة"
+              />
+              {createErrors.familyName && <p className="text-red-500 text-xs mt-1">{createErrors.familyName}</p>}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-2 text-gray-800">
+              البريد الإلكتروني <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={createFormData.email}
+              onChange={(e) => {
+                setCreateFormData({ ...createFormData, email: e.target.value });
+                if (createErrors.email) setCreateErrors({ ...createErrors, email: '' });
+              }}
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                createErrors.email ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="example@email.com"
+            />
+            {createErrors.email && <p className="text-red-500 text-xs mt-1">{createErrors.email}</p>}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">
+                كلمة المرور <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={createFormData.password}
+                onChange={(e) => {
+                  setCreateFormData({ ...createFormData, password: e.target.value });
+                  if (createErrors.password) setCreateErrors({ ...createErrors, password: '' });
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                  createErrors.password ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="6 أحرف على الأقل"
+              />
+              {createErrors.password && <p className="text-red-500 text-xs mt-1">{createErrors.password}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">
+                الدور <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={createFormData.role}
+                onChange={(e) => setCreateFormData({ ...createFormData, role: e.target.value as 'ADMIN' | 'TEACHER' | 'STUDENT' })}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
+              >
+                <option value="STUDENT">طالب</option>
+                <option value="TEACHER">مدرس</option>
+                <option value="ADMIN">أدمن</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Profile section */}
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">البيانات الشخصية</h3>
+
+            <DatePicker
+              label="تاريخ الولادة"
+              value={createFormData.dateOfBirth}
+              onChange={(date) => {
+                setCreateFormData({ ...createFormData, dateOfBirth: date });
+                if (createErrors.dateOfBirth) setCreateErrors({ ...createErrors, dateOfBirth: '' });
+              }}
+              maxDate={new Date()}
+              minDate={new Date('1900-01-01')}
+              placeholder="اختر تاريخ الولادة"
+              error={createErrors.dateOfBirth}
+              required
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
               <div>
-                <label className="block text-lg font-semibold mb-2 text-gray-800">الاسم *</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-800">
+                  الهاتف <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={createFormData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    setCreateFormData({ ...createFormData, phone: value });
+                    if (createErrors.phone) setCreateErrors({ ...createErrors, phone: '' });
+                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                    createErrors.phone ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="05xxxxxxxx"
+                  maxLength={10}
+                />
+                {createErrors.phone && <p className="text-red-500 text-xs mt-1">{createErrors.phone}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-800">
+                  المهنة <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  value={createFormData.name}
+                  value={createFormData.profession}
                   onChange={(e) => {
-                    setCreateFormData({ ...createFormData, name: e.target.value });
-                    if (createErrors.name) setCreateErrors({ ...createErrors, name: '' });
+                    setCreateFormData({ ...createFormData, profession: e.target.value });
+                    if (createErrors.profession) setCreateErrors({ ...createErrors, profession: '' });
                   }}
-                  required
-                  className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
-                    createErrors.name ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                    createErrors.profession ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="اسم المستخدم"
+                  placeholder="المهنة"
                 />
-                {createErrors.name && <p className="text-red-500 text-sm mt-1">{createErrors.name}</p>}
-              </div>
-
-              <div>
-                <label className="block text-lg font-semibold mb-2 text-gray-800">البريد الإلكتروني *</label>
-                <input
-                  type="email"
-                  value={createFormData.email}
-                  onChange={(e) => {
-                    setCreateFormData({ ...createFormData, email: e.target.value });
-                    if (createErrors.email) setCreateErrors({ ...createErrors, email: '' });
-                  }}
-                  required
-                  className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
-                    createErrors.email ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="example@email.com"
-                />
-                {createErrors.email && <p className="text-red-500 text-sm mt-1">{createErrors.email}</p>}
-              </div>
-
-              <div>
-                <label className="block text-lg font-semibold mb-2 text-gray-800">كلمة المرور *</label>
-                <input
-                  type="password"
-                  value={createFormData.password}
-                  onChange={(e) => {
-                    setCreateFormData({ ...createFormData, password: e.target.value });
-                    if (createErrors.password) setCreateErrors({ ...createErrors, password: '' });
-                  }}
-                  required
-                  minLength={6}
-                  className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
-                    createErrors.password ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="كلمة المرور (6 أحرف على الأقل)"
-                />
-                {createErrors.password && <p className="text-red-500 text-sm mt-1">{createErrors.password}</p>}
-              </div>
-
-              <div>
-                <label className="block text-lg font-semibold mb-2 text-gray-800">الدور *</label>
-                <select
-                  value={createFormData.role}
-                  onChange={(e) => setCreateFormData({ ...createFormData, role: e.target.value as 'ADMIN' | 'TEACHER' | 'STUDENT' })}
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white"
-                >
-                  <option value="STUDENT">طالب</option>
-                  <option value="TEACHER">مدرس</option>
-                  <option value="ADMIN">أدمن</option>
-                </select>
-              </div>
-              
-              <div className="flex gap-4 pt-4">
-                <button
-                  onClick={handleCreateUser}
-                  className="flex-1 px-6 py-3 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition"
-                >
-                  إنشاء
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCreateForm(false);
-                    router.push('/admin/users');
-                    setCreateFormData({ name: '', email: '', password: '', role: 'STUDENT' });
-                    setCreateErrors({});
-                  }}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold text-lg hover:bg-gray-300 transition"
-                >
-                  إلغاء
-                </button>
+                {createErrors.profession && <p className="text-red-500 text-xs mt-1">{createErrors.profession}</p>}
               </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <GenderSelect
+                label="الجنس"
+                value={createFormData.gender}
+                onChange={(value) => {
+                  setCreateFormData({ ...createFormData, gender: value });
+                  if (createErrors.gender) setCreateErrors({ ...createErrors, gender: '' });
+                }}
+                error={createErrors.gender}
+                required
+              />
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-800">
+                  رقم الهوية <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={createFormData.idNumber}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    setCreateFormData({ ...createFormData, idNumber: value });
+                    if (createErrors.idNumber) setCreateErrors({ ...createErrors, idNumber: '' });
+                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-4 focus:ring-primary focus:border-primary text-gray-800 bg-white ${
+                    createErrors.idNumber ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="رقم الهوية (9 أرقام)"
+                  maxLength={9}
+                />
+                {createErrors.idNumber && <p className="text-red-500 text-xs mt-1">{createErrors.idNumber}</p>}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <button
+              onClick={handleCreateUser}
+              className="flex-1 px-6 py-3 bg-primary text-white rounded-lg font-bold text-lg hover:bg-primary-dark transition"
+            >
+              إنشاء
+            </button>
+            <button
+              onClick={() => {
+                setShowCreateForm(false);
+                router.push('/admin/users');
+                setCreateFormData({
+                  firstName: '',
+                  fatherName: '',
+                  familyName: '',
+                  email: '',
+                  password: '',
+                  role: 'STUDENT',
+                  dateOfBirth: null,
+                  phone: '',
+                  profession: '',
+                  gender: '',
+                  idNumber: '',
+                });
+                setCreateErrors({});
+              }}
+              className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold text-lg hover:bg-gray-300 transition"
+            >
+              إلغاء
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* View Profile Modal */}

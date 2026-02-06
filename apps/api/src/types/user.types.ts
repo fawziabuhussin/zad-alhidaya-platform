@@ -3,23 +3,54 @@
  */
 
 /**
+ * DTO for creating a new user by admin
+ */
+export interface CreateUserDTO {
+  firstName: string;
+  fatherName: string;
+  familyName: string;
+  email: string;
+  password: string;
+  role: 'ADMIN' | 'TEACHER' | 'STUDENT';
+  dateOfBirth: Date;
+  phone: string;
+  profession: string;
+  gender: 'MALE' | 'FEMALE';
+  idNumber: string;
+}
+
+/**
  * DTO for creating a new teacher
  */
 export interface CreateTeacherDTO {
-  name: string;
+  firstName: string;
+  fatherName: string;
+  familyName: string;
   email: string;
   password: string;
+  dateOfBirth: Date;
+  phone: string;
+  profession: string;
+  gender: 'MALE' | 'FEMALE';
+  idNumber: string;
 }
 
 /**
  * DTO for updating an existing user
  */
 export interface UpdateUserDTO {
-  name?: string;
+  firstName?: string;
+  fatherName?: string;
+  familyName?: string;
   email?: string;
   role?: 'ADMIN' | 'TEACHER' | 'STUDENT';
   blocked?: boolean;
   password?: string;
+  dateOfBirth?: Date;
+  phone?: string;
+  profession?: string;
+  gender?: 'MALE' | 'FEMALE';
+  idNumber?: string;
 }
 
 /**
@@ -28,9 +59,18 @@ export interface UpdateUserDTO {
 export interface UserWithRelations {
   id: string;
   name: string;
+  firstName?: string | null;
+  fatherName?: string | null;
+  familyName?: string | null;
   email: string;
   role: string;
   blocked: boolean;
+  profileComplete: boolean;
+  dateOfBirth?: Date | null;
+  phone?: string | null;
+  profession?: string | null;
+  gender?: string | null;
+  idNumber?: string | null;
   provider: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -42,9 +82,18 @@ export interface UserWithRelations {
 export interface UserListItem {
   id: string;
   name: string;
+  firstName?: string | null;
+  fatherName?: string | null;
+  familyName?: string | null;
   email: string;
   role: string;
   blocked: boolean;
+  profileComplete: boolean;
+  dateOfBirth?: Date | null;
+  phone?: string | null;
+  profession?: string | null;
+  gender?: string | null;
+  idNumber?: string | null;
   createdAt: Date;
   _count: {
     coursesTaught: number;
@@ -58,9 +107,18 @@ export interface UserListItem {
 export interface UserProfile {
   id: string;
   name: string;
+  firstName?: string | null;
+  fatherName?: string | null;
+  familyName?: string | null;
   email: string;
   role: string;
   blocked: boolean;
+  profileComplete: boolean;
+  dateOfBirth?: Date | null;
+  phone?: string | null;
+  profession?: string | null;
+  gender?: string | null;
+  idNumber?: string | null;
   provider: string | null;
   createdAt: Date;
   _count: {

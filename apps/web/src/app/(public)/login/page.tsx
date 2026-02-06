@@ -33,9 +33,16 @@ export default function LoginPage() {
     // Store token and user data
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('user', JSON.stringify(user));
-    
+
     showSuccess(TOAST_MESSAGES.LOGIN_SUCCESS);
-    
+
+    // Check if profile is complete
+    if (!user.profileComplete) {
+      // Redirect to complete profile page
+      window.location.href = '/complete-profile';
+      return;
+    }
+
     // Use centralized login redirect (hard navigation to refresh app state)
     handleLoginRedirect(user.role);
   };

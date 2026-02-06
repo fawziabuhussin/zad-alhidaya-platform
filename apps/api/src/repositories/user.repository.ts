@@ -12,9 +12,18 @@ import { PaginationParams, PaginatedResponse } from '../types/common.types';
 const userListSelect = {
   id: true,
   name: true,
+  firstName: true,
+  fatherName: true,
+  familyName: true,
   email: true,
   role: true,
   blocked: true,
+  profileComplete: true,
+  dateOfBirth: true,
+  phone: true,
+  profession: true,
+  gender: true,
+  idNumber: true,
   createdAt: true,
   _count: {
     select: {
@@ -30,9 +39,18 @@ const userListSelect = {
 const userProfileSelect = {
   id: true,
   name: true,
+  firstName: true,
+  fatherName: true,
+  familyName: true,
   email: true,
   role: true,
   blocked: true,
+  profileComplete: true,
+  dateOfBirth: true,
+  phone: true,
+  profession: true,
+  gender: true,
+  idNumber: true,
   provider: true,
   createdAt: true,
   _count: {
@@ -90,9 +108,18 @@ const userProfileSelect = {
 const userSimpleSelect = {
   id: true,
   name: true,
+  firstName: true,
+  fatherName: true,
+  familyName: true,
   email: true,
   role: true,
   blocked: true,
+  profileComplete: true,
+  dateOfBirth: true,
+  phone: true,
+  profession: true,
+  gender: true,
+  idNumber: true,
   provider: true,
   createdAt: true,
   updatedAt: true,
@@ -169,15 +196,65 @@ export class UserRepository {
   }
 
   /**
-   * Create a new teacher
+   * Create a new user with all profile fields
    */
-  async createTeacher(data: CreateTeacherDTO, passwordHash: string): Promise<UserWithRelations> {
+  async createUser(data: {
+    name: string;
+    firstName: string;
+    fatherName: string;
+    familyName: string;
+    email: string;
+    role: string;
+    passwordHash: string;
+    dateOfBirth?: Date;
+    phone?: string;
+    profession?: string;
+    gender?: string;
+    idNumber?: string;
+    profileComplete?: boolean;
+  }): Promise<UserWithRelations> {
     return prisma.user.create({
       data: {
         name: data.name,
+        firstName: data.firstName,
+        fatherName: data.fatherName,
+        familyName: data.familyName,
+        email: data.email,
+        passwordHash: data.passwordHash,
+        role: data.role,
+        provider: 'EMAIL',
+        dateOfBirth: data.dateOfBirth,
+        phone: data.phone,
+        profession: data.profession,
+        gender: data.gender,
+        idNumber: data.idNumber,
+        profileComplete: data.profileComplete ?? true,
+      },
+      select: userSimpleSelect,
+    }) as Promise<UserWithRelations>;
+  }
+
+  /**
+   * Create a new teacher (legacy method - now uses createUser internally)
+   */
+  async createTeacher(data: CreateTeacherDTO, passwordHash: string): Promise<UserWithRelations> {
+    const name = `${data.firstName} ${data.fatherName} ${data.familyName}`;
+    return prisma.user.create({
+      data: {
+        name,
+        firstName: data.firstName,
+        fatherName: data.fatherName,
+        familyName: data.familyName,
         email: data.email,
         passwordHash,
         role: 'TEACHER',
+        provider: 'EMAIL',
+        dateOfBirth: data.dateOfBirth,
+        phone: data.phone,
+        profession: data.profession,
+        gender: data.gender,
+        idNumber: data.idNumber,
+        profileComplete: true,
       },
       select: userSimpleSelect,
     }) as Promise<UserWithRelations>;
@@ -186,13 +263,21 @@ export class UserRepository {
   /**
    * Update an existing user
    */
-  async update(id: string, data: UpdateUserDTO, passwordHash?: string): Promise<UserWithRelations> {
+  async update(id: string, data: UpdateUserDTO & { name?: string }, passwordHash?: string): Promise<UserWithRelations> {
     const updateData: any = {};
-    
+
     if (data.name !== undefined) updateData.name = data.name;
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.fatherName !== undefined) updateData.fatherName = data.fatherName;
+    if (data.familyName !== undefined) updateData.familyName = data.familyName;
     if (data.email !== undefined) updateData.email = data.email;
     if (data.role !== undefined) updateData.role = data.role;
     if (data.blocked !== undefined) updateData.blocked = data.blocked;
+    if (data.dateOfBirth !== undefined) updateData.dateOfBirth = data.dateOfBirth;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.profession !== undefined) updateData.profession = data.profession;
+    if (data.gender !== undefined) updateData.gender = data.gender;
+    if (data.idNumber !== undefined) updateData.idNumber = data.idNumber;
     if (passwordHash !== undefined) updateData.passwordHash = passwordHash;
 
     return prisma.user.update({

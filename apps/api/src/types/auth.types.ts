@@ -6,9 +6,33 @@
  * DTO for user registration
  */
 export interface RegisterDTO {
-  name: string;
+  // Step 1 - Name fields
+  firstName: string;
+  fatherName: string;
+  familyName: string;
   email: string;
   password: string;
+
+  // Step 2 - Profile fields
+  dateOfBirth: Date;
+  phone: string;
+  profession: string;
+  gender: 'MALE' | 'FEMALE';
+  idNumber: string;
+}
+
+/**
+ * DTO for completing profile (OAuth users)
+ */
+export interface CompleteProfileDTO {
+  firstName: string;
+  fatherName: string;
+  familyName: string;
+  dateOfBirth: Date;
+  phone: string;
+  profession: string;
+  gender: 'MALE' | 'FEMALE';
+  idNumber: string;
 }
 
 /**
@@ -43,8 +67,12 @@ export interface AppleAuthDTO {
 export interface AuthUserInfo {
   id: string;
   name: string;
+  firstName?: string | null;
+  fatherName?: string | null;
+  familyName?: string | null;
   email: string;
   role: string;
+  profileComplete: boolean;
 }
 
 /**

@@ -6,7 +6,7 @@ import express from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
 import { userManager } from '../managers/user.manager';
-import { createTeacherSchema, updateUserSchema } from '../schemas/user.schema';
+import { createUserSchema, createTeacherSchema, updateUserSchema } from '../schemas/user.schema';
 
 const router = express.Router();
 
@@ -53,6 +53,38 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
   } catch (error: any) {
     console.error('Failed to fetch users:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch users' });
+  }
+});
+
+/**
+ * POST /users - Create user (Admin only)
+ */
+router.post('/', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const data = createUserSchema.parse(req.body);
+
+    const result = await userManager.createUser(
+      { userId: req.user!.userId, role: req.user!.role },
+      data
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
+    }
+
+    res.status(201).json({ message: 'تم إنشاء المستخدم بنجاح', user: result.data });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'خطأ في التحقق',
+        errors: error.errors.map((e) => ({
+          path: e.path.join('.'),
+          message: e.message,
+        })),
+      });
+    }
+    console.error('Failed to create user:', error);
+    res.status(500).json({ message: error.message || 'فشل إنشاء المستخدم' });
   }
 });
 

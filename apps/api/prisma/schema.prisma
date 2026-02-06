@@ -13,12 +13,24 @@ datasource db {
 model User {
   id            String    @id @default(uuid())
   name          String
+  firstName     String?   // الاسم الشخصي
+  fatherName    String?   // اسم الوالد
+  familyName    String?   // اسم العائلة
   email         String    @unique
   passwordHash  String?
   provider      String?   // GOOGLE, APPLE, EMAIL
   providerId    String?   // OAuth provider user ID
   role          String    @default("STUDENT") // ADMIN, TEACHER, STUDENT
   blocked       Boolean   @default(false)
+
+  // Profile fields
+  dateOfBirth   DateTime? // تاريخ الولادة
+  phone         String?   // الهاتف
+  profession    String?   // المهنة
+  gender        String?   // الجنس (MALE/FEMALE)
+  idNumber      String?   // رقم الهوية
+  profileComplete Boolean @default(false) // Track if user completed profile
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -458,3 +470,7 @@ model LessonQuestion {
   @@index([status])
   @@index([createdAt])
 }
+
+
+
+
