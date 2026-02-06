@@ -252,6 +252,13 @@ export class ExamRepository {
   }
 
   /**
+   * Delete grade records associated with an exam
+   */
+  async deleteGradesByExamId(examId: string): Promise<void> {
+    await prisma.grade.deleteMany({ where: { type: 'EXAM', itemId: examId } });
+  }
+
+  /**
    * Delete an exam
    */
   async delete(id: string): Promise<void> {

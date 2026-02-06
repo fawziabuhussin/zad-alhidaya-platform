@@ -123,6 +123,29 @@ router.post('/', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRe
 });
 
 /**
+ * DELETE /:id - Delete exam
+ */
+router.delete('/:id', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await examManager.deleteExam(
+      { userId: req.user!.userId, role: req.user!.role },
+      id
+    );
+
+    if (!result.success) {
+      return res.status(result.error!.status).json({ message: result.error!.message });
+    }
+
+    res.json({ message: 'Exam deleted successfully' });
+  } catch (error: any) {
+    console.error('Failed to delete exam:', error);
+    res.status(500).json({ message: error.message || 'Failed to delete exam' });
+  }
+});
+
+/**
  * POST /:id/questions - Add question to exam
  */
 router.post('/:id/questions', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRequest, res) => {

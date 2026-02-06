@@ -15,6 +15,16 @@ export const createExamSchema = z.object({
   endDate: z.string().transform(str => new Date(str)),
   maxScore: z.number().default(100),
   passingScore: z.number().default(60),
+}).refine((data) => {
+  return data.startDate.getTime() >= Date.now() - 60000; // Allow 1 minute tolerance
+}, {
+  message: 'تاريخ ووقت البدء لا يمكن أن يكون في الماضي',
+  path: ['startDate'],
+}).refine((data) => {
+  return data.endDate.getTime() > data.startDate.getTime();
+}, {
+  message: 'تاريخ ووقت الانتهاء يجب أن يكون بعد تاريخ ووقت البدء',
+  path: ['endDate'],
 });
 
 /**

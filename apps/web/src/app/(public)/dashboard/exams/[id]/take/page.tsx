@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { AlertIcon, BookIcon, ClockIcon, CheckCircleIcon, ExamIcon } from '@/components/Icons';
@@ -47,7 +47,20 @@ export default function TakeExamPage() {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [warningPlayed, setWarningPlayed] = useState(false);
+  const [pledgeAccepted, setPledgeAccepted] = useState(false);
+  const [pledgeChecked, setPledgeChecked] = useState(false);
+  const [showExitWarning, setShowExitWarning] = useState(false);
   const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const examSubmittedRef = useRef(false);
+  const answersRef = useRef<Record<string, any>>({});
+  const examRef = useRef<Exam | null>(null);
+  const pendingNavigationRef = useRef<string | null>(null);
+  const pendingClickTargetRef = useRef<HTMLElement | null>(null);
+  const examContainerRef = useRef<HTMLDivElement>(null);
+
+  // Keep refs in sync with state for event handlers
+  useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => { examRef.current = exam; }, [exam]);
 
   useEffect(() => {
     loadExam();
@@ -59,10 +72,10 @@ export default function TakeExamPage() {
         const elapsedSeconds = Math.floor((new Date().getTime() - startTime.getTime()) / 1000);
         const totalSeconds = exam.durationMinutes * 60;
         const remainingSeconds = totalSeconds - elapsedSeconds;
-        
+
         const mins = Math.floor(remainingSeconds / 60);
         const secs = remainingSeconds % 60;
-        
+
         setTimeRemaining(Math.max(0, mins));
         setSecondsRemaining(Math.max(0, secs));
 
@@ -83,6 +96,132 @@ export default function TakeExamPage() {
     }
   }, [exam, startTime, warningPlayed]);
 
+  // Navigation guard: beforeunload + popstate + pagehide + link click interception
+  useEffect(() => {
+    if (!pledgeAccepted || examSubmittedRef.current) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (examSubmittedRef.current) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    const handlePopState = () => {
+      if (examSubmittedRef.current) return;
+      // Re-push state to prevent actual navigation
+      window.history.pushState({ examGuard: true }, '');
+      setShowExitWarning(true);
+    };
+
+    // Intercept clicks on links and buttons outside the exam container
+    const handleClickIntercept = (e: MouseEvent) => {
+      if (examSubmittedRef.current) return;
+      const target = e.target as HTMLElement;
+
+      // Allow clicks inside the exam container (questions, submit, modals, etc.)
+      if (examContainerRef.current?.contains(target)) return;
+
+      // Check for <a> tags (navbar links)
+      const anchor = target.closest('a');
+      if (anchor) {
+        const href = anchor.getAttribute('href');
+        if (!href || href.startsWith('#')) return;
+        const currentPath = window.location.pathname;
+        if (href === currentPath) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        pendingNavigationRef.current = href;
+        pendingClickTargetRef.current = null;
+        setShowExitWarning(true);
+        return;
+      }
+
+      // Check for <button> tags outside exam (logout, etc.)
+      const button = target.closest('button');
+      if (button) {
+        e.preventDefault();
+        e.stopPropagation();
+        pendingNavigationRef.current = null;
+        pendingClickTargetRef.current = button;
+        setShowExitWarning(true);
+      }
+    };
+
+    const handlePageHide = () => {
+      if (examSubmittedRef.current) return;
+      // Best-effort submit on page hide (tab close, navigation away)
+      const currentExam = examRef.current;
+      const currentAnswers = answersRef.current;
+      if (!currentExam) return;
+
+      const answersObj: Record<string, any> = {};
+      currentExam.questions.forEach(q => {
+        if (q.type === 'MULTIPLE_CHOICE') {
+          if (currentAnswers[q.id] !== null && currentAnswers[q.id] !== undefined) {
+            answersObj[q.id] = currentAnswers[q.id];
+          }
+        } else {
+          if (currentAnswers[q.id] && currentAnswers[q.id].trim() !== '') {
+            answersObj[q.id] = currentAnswers[q.id];
+          }
+        }
+      });
+
+      const token = localStorage.getItem('accessToken');
+      const baseUrl = api.defaults.baseURL;
+      try {
+        fetch(`${baseUrl}/exams/${params.id}/attempt`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ answers: answersObj }),
+          keepalive: true,
+        });
+      } catch (e) {
+        // Best effort - can't do much if it fails during page hide
+      }
+    };
+
+    // Push initial history state for back-button interception
+    window.history.pushState({ examGuard: true }, '');
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('click', handleClickIntercept, true);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('click', handleClickIntercept, true);
+    };
+  }, [pledgeAccepted, params.id]);
+
+  // Build answers object for submission
+  const buildAnswersObj = useCallback(() => {
+    const currentExam = examRef.current;
+    const currentAnswers = answersRef.current;
+    if (!currentExam) return {};
+
+    const answersObj: Record<string, any> = {};
+    currentExam.questions.forEach(q => {
+      if (q.type === 'MULTIPLE_CHOICE') {
+        if (currentAnswers[q.id] !== null && currentAnswers[q.id] !== undefined) {
+          answersObj[q.id] = currentAnswers[q.id];
+        }
+      } else {
+        if (currentAnswers[q.id] && currentAnswers[q.id].trim() !== '') {
+          answersObj[q.id] = currentAnswers[q.id];
+        }
+      }
+    });
+    return answersObj;
+  }, []);
+
   // Play warning sound
   const playWarningSound = () => {
     try {
@@ -90,16 +229,16 @@ export default function TakeExamPage() {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       oscillator.frequency.value = 800;
       oscillator.type = 'sine';
       gainNode.gain.value = 0.3;
-      
+
       oscillator.start();
-      
+
       // Beep pattern: 3 short beeps
       setTimeout(() => { gainNode.gain.value = 0; }, 200);
       setTimeout(() => { gainNode.gain.value = 0.3; }, 400);
@@ -113,31 +252,50 @@ export default function TakeExamPage() {
 
   // Auto-submit when time runs out
   const handleAutoSubmit = async () => {
-    if (submitting) return;
+    if (submitting || examSubmittedRef.current) return;
+    examSubmittedRef.current = true;
     setSubmitting(true);
     showWarning('انتهى الوقت! جاري تسليم الامتحان تلقائياً...');
     try {
-      const answersObj: Record<string, any> = {};
-      exam!.questions.forEach(q => {
-        if (q.type === 'MULTIPLE_CHOICE') {
-          // Only include answered questions (skip null/undefined)
-          if (answers[q.id] !== null && answers[q.id] !== undefined) {
-            answersObj[q.id] = answers[q.id];
-          }
-        } else {
-          // For text/essay, include if not empty
-          if (answers[q.id] && answers[q.id].trim() !== '') {
-            answersObj[q.id] = answers[q.id];
-          }
-        }
-      });
-
-      await api.post(`/exams/${params.id}/attempt`, { answers: answersObj });
+      await api.post(`/exams/${params.id}/attempt`, { answers: buildAnswersObj() });
       showSuccess(TOAST_MESSAGES.EXAM_SUBMIT_SUCCESS);
       router.push('/dashboard/exams');
     } catch (error: any) {
       console.error('Auto-submit failed:', error);
       showError(TOAST_MESSAGES.EXAM_SUBMIT_ERROR);
+      examSubmittedRef.current = false;
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle exit confirmation (user chose to leave)
+  const handleExitConfirm = async () => {
+    if (submitting || examSubmittedRef.current) return;
+    examSubmittedRef.current = true;
+    setShowExitWarning(false);
+    setSubmitting(true);
+    showWarning('جاري تسليم الامتحان...');
+    const destination = pendingNavigationRef.current;
+    const clickTarget = pendingClickTargetRef.current;
+    pendingNavigationRef.current = null;
+    pendingClickTargetRef.current = null;
+    try {
+      await api.post(`/exams/${params.id}/attempt`, { answers: buildAnswersObj() });
+      showSuccess(TOAST_MESSAGES.EXAM_SUBMIT_SUCCESS);
+      // Replay the original action: link navigation or button click (e.g. logout)
+      if (destination) {
+        router.push(destination);
+      } else if (clickTarget) {
+        // examSubmittedRef is true so our intercept handler will skip this click
+        clickTarget.click();
+      } else {
+        router.push('/dashboard/exams');
+      }
+    } catch (error: any) {
+      console.error('Exit submit failed:', error);
+      showError('فشل تسليم الامتحان. لا تزال إجاباتك محفوظة، حاول مرة أخرى.');
+      examSubmittedRef.current = false;
     } finally {
       setSubmitting(false);
     }
@@ -151,7 +309,7 @@ export default function TakeExamPage() {
   const loadExam = async () => {
     try {
       const response = await api.get(`/exams/${params.id}`);
-      
+
       const examData = {
         ...response.data,
         questions: (response.data.questions || []).map((q: any) => {
@@ -170,11 +328,10 @@ export default function TakeExamPage() {
           };
         }),
       };
-      
+
       setExam(examData);
-      setStartTime(new Date());
       setTimeRemaining(examData.durationMinutes);
-      
+
       const initialAnswers: Record<string, any> = {};
       examData.questions.forEach((q: Question) => {
         if (q.type === 'MULTIPLE_CHOICE') {
@@ -192,6 +349,12 @@ export default function TakeExamPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle pledge acceptance - starts the timer
+  const handlePledgeAccept = () => {
+    setPledgeAccepted(true);
+    setStartTime(new Date());
   };
 
   const handleAnswerChange = (questionId: string, value: any) => {
@@ -217,34 +380,21 @@ export default function TakeExamPage() {
 
   // Confirm and submit
   const handleConfirmSubmit = async () => {
-    if (submitting) return;
+    if (submitting || examSubmittedRef.current) return;
+    examSubmittedRef.current = true;
     setShowConfirmModal(false);
     setSubmitting(true);
-    
-    try {
-      const answersObj: Record<string, any> = {};
-      exam!.questions.forEach(q => {
-        if (q.type === 'MULTIPLE_CHOICE') {
-          // Only include answered questions (skip null/undefined)
-          if (answers[q.id] !== null && answers[q.id] !== undefined) {
-            answersObj[q.id] = answers[q.id];
-          }
-        } else {
-          // For text/essay, include if not empty
-          if (answers[q.id] && answers[q.id].trim() !== '') {
-            answersObj[q.id] = answers[q.id];
-          }
-        }
-      });
 
+    try {
       await api.post(`/exams/${params.id}/attempt`, {
-        answers: answersObj,
+        answers: buildAnswersObj(),
       });
 
       showSuccess(TOAST_MESSAGES.EXAM_SUBMIT_SUCCESS);
       router.push('/dashboard/exams');
     } catch (error: any) {
       console.error('Failed to submit exam:', error);
+      examSubmittedRef.current = false;
       const errorMessage = error.response?.data?.message || TOAST_MESSAGES.EXAM_SUBMIT_ERROR;
       if (error.response?.data?.completedLessons !== undefined) {
         showError(`${errorMessage} - الدروس المكتملة: ${error.response.data.completedLessons} من ${error.response.data.totalLessons}`);
@@ -258,8 +408,8 @@ export default function TakeExamPage() {
 
   if (loading) {
     return (
-      <PageLoading 
-        title="جاري تحميل الامتحان..." 
+      <PageLoading
+        title="جاري تحميل الامتحان..."
         icon={<ExamIcon className="text-white" size={20} />}
       />
     );
@@ -358,6 +508,93 @@ export default function TakeExamPage() {
     );
   }
 
+  // Pledge screen - shown before exam starts
+  if (!pledgeAccepted) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border-2 border-stone-200 shadow-lg max-w-lg w-full overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white px-6 py-5 text-center">
+            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+              <ExamIcon className="text-white" size={24} />
+            </div>
+            <h1 className="text-xl font-bold">{exam.title}</h1>
+            <p className="text-white/70 text-sm mt-1">{exam.course?.title}</p>
+          </div>
+
+          {/* Pledge Content */}
+          <div className="p-6">
+            <h2 className="text-lg font-bold text-[#1a3a2f] text-center mb-5">
+              تعهّد قبل فتح الاختبار والموافقة عليه
+            </h2>
+
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-5 mb-6">
+              <p className="text-stone-800 font-bold text-lg leading-relaxed mb-4">
+                {'\u2713'} أقرّ وأتعهد أمام الله<span className="text-4xl inline-block ml-0.5">{'\uFDFB'}</span>
+              </p>
+              <div className="space-y-3 text-stone-700 leading-relaxed">
+                <p>1- بألّا أتقدّم للاختبار إلا بعد إتمام دراسة المادة دراسةً كاملة واستيعاب محتواها</p>
+                <p>2- ألا أستعين بشيء خارج عن محفوظي، وعدم الاحتفاظ بالأسئلة أو نشرها.</p>
+              </div>
+            </div>
+
+            {/* Exam Info */}
+            <div className="bg-stone-50 rounded-lg p-4 mb-6">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-stone-500">المدة:</span>
+                  <span className="font-medium text-stone-800">{exam.durationMinutes} دقيقة</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">الأسئلة:</span>
+                  <span className="font-medium text-stone-800">{exam.questions.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">الدرجة الكاملة:</span>
+                  <span className="font-medium text-stone-800">{exam.maxScore}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">درجة النجاح:</span>
+                  <span className="font-medium text-stone-800">{exam.passingScore}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Checkbox */}
+            <label className="flex items-start gap-3 cursor-pointer mb-6 p-3 rounded-lg border-2 border-stone-200 hover:border-[#1a3a2f] transition">
+              <input
+                type="checkbox"
+                checked={pledgeChecked}
+                onChange={(e) => setPledgeChecked(e.target.checked)}
+                className="w-5 h-5 mt-0.5 text-[#1a3a2f] rounded flex-shrink-0"
+              />
+              <span className="text-stone-700 font-medium">
+                أوافق على التعهّد أعلاه وأؤكد التزامي بما جاء فيه
+              </span>
+            </label>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push('/dashboard/exams')}
+                className="flex-1 px-4 py-3 border border-stone-300 text-stone-700 rounded-xl font-medium hover:bg-stone-50 transition"
+              >
+                العودة
+              </button>
+              <button
+                onClick={handlePledgeAccept}
+                disabled={!pledgeChecked}
+                className="flex-1 px-4 py-3 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#2d5a4a] transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                بدء الاختبار
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const formatTime = (minutes: number, seconds: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -384,7 +621,42 @@ export default function TakeExamPage() {
   const isWarningTime = timeRemaining < 10 && timeRemaining >= 5;
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div ref={examContainerRef} className="min-h-screen bg-stone-50">
+      {/* Exit Warning Modal */}
+      {showExitWarning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 bg-red-100">
+                <AlertIcon size={32} className="text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-stone-800 mb-2">
+                تحذير: الخروج من الامتحان
+              </h3>
+              <p className="text-stone-600">
+                الخروج من صفحة الامتحان سيؤدي إلى تسليم إجاباتك الحالية تلقائياً. هل تريد المتابعة؟
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowExitWarning(false)}
+                className="flex-1 px-4 py-3 bg-[#1a3a2f] text-white rounded-xl font-medium hover:bg-[#2d5a4a] transition"
+              >
+                البقاء في الامتحان
+              </button>
+              <button
+                onClick={handleExitConfirm}
+                disabled={submitting}
+                className="flex-1 px-4 py-3 border-2 border-red-300 text-red-700 rounded-xl font-medium hover:bg-red-50 transition disabled:opacity-50"
+              >
+                {submitting ? 'جاري التسليم...' : 'الخروج وتسليم الامتحان'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -403,12 +675,12 @@ export default function TakeExamPage() {
                 {unansweredCount > 0 ? 'تأكيد التسليم' : 'هل أنت متأكد؟'}
               </h3>
               <p className="text-stone-600">
-                {unansweredCount > 0 
+                {unansweredCount > 0
                   ? `لديك ${unansweredCount} سؤال غير مجاب. هل تريد التسليم على أي حال؟`
                   : 'أجبت على جميع الأسئلة. هل تريد تسليم الامتحان؟'}
               </p>
             </div>
-            
+
             <div className="bg-stone-50 rounded-lg p-4 mb-6">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-stone-600">الأسئلة المجاب عليها</span>
@@ -427,7 +699,7 @@ export default function TakeExamPage() {
                 </span>
               </div>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirmModal(false)}
@@ -465,13 +737,13 @@ export default function TakeExamPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Timer */}
             <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono ${
-              isLowTime 
-                ? 'bg-red-100 text-red-700 animate-pulse' 
-                : isWarningTime 
-                  ? 'bg-amber-100 text-amber-700' 
+              isLowTime
+                ? 'bg-red-100 text-red-700 animate-pulse'
+                : isWarningTime
+                  ? 'bg-amber-100 text-amber-700'
                   : 'bg-emerald-100 text-emerald-700'
             }`}>
               <ClockIcon size={18} />
@@ -481,7 +753,7 @@ export default function TakeExamPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Row 2: Question Navigation */}
         <div className="bg-stone-50 border-t border-stone-200 mt-1">
           <div className="max-w-5xl mx-auto px-4 py-2">
@@ -513,11 +785,11 @@ export default function TakeExamPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Low time warning bar */}
         {isLowTime && (
           <div className="bg-red-600 text-white text-center py-1 text-sm font-medium animate-pulse">
-            ⚠️ الوقت ينفد! تبقى أقل من 5 دقائق
+            الوقت ينفد! تبقى أقل من 5 دقائق
           </div>
         )}
       </div>
@@ -527,6 +799,12 @@ export default function TakeExamPage() {
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 py-6">
+          {/* Exit warning notice */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex items-center gap-2 text-sm text-amber-800">
+            <AlertIcon size={16} className="text-amber-600 flex-shrink-0" />
+            <span>مغادرة صفحة الامتحان ستؤدي إلى تسليم إجاباتك الحالية تلقائياً.</span>
+          </div>
+
           {/* Exam Info */}
           <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
             <div className="flex flex-wrap gap-4 text-sm text-stone-600">
@@ -546,13 +824,13 @@ export default function TakeExamPage() {
           <div className="space-y-4 mb-6">
             {exam.questions && exam.questions.length > 0 ? (
               exam.questions.map((question, index) => (
-                <div 
-                  key={question.id} 
+                <div
+                  key={question.id}
                   ref={(el) => { questionRefs.current[question.id] = el; }}
                   data-question-id={question.id}
                   className={`bg-white rounded-xl border-2 p-5 transition-all ${
-                    isQuestionAnswered(question.id) 
-                      ? 'border-emerald-200' 
+                    isQuestionAnswered(question.id)
+                      ? 'border-emerald-200'
                       : 'border-stone-200'
                   }`}
                 >
@@ -581,8 +859,8 @@ export default function TakeExamPage() {
                         <label
                           key={choiceIndex}
                           className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition ${
-                            answers[question.id] === choiceIndex 
-                              ? 'border-[#1a3a2f] bg-[#1a3a2f]/5' 
+                            answers[question.id] === choiceIndex
+                              ? 'border-[#1a3a2f] bg-[#1a3a2f]/5'
                               : 'border-stone-200 hover:border-stone-300'
                           }`}
                         >

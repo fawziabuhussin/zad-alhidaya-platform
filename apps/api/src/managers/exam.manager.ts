@@ -290,6 +290,8 @@ export class ExamManager {
       };
     }
 
+    // Clean up Grade records (not cascade-deleted since Grade has no FK to Exam)
+    await examRepository.deleteGradesByExamId(examId);
     await examRepository.delete(examId);
     return { success: true };
   }
