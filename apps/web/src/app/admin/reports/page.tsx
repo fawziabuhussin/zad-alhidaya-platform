@@ -13,6 +13,7 @@ import {
   TrashIcon
 } from '@/components/Icons';
 import PageLoading from '@/components/PageLoading';
+import { formatDate } from '@/lib/utils';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 
 interface Report {
@@ -316,7 +317,7 @@ export default function AdminReportsPage() {
                     {/* Meta */}
                     <div className="flex items-center gap-4 text-sm text-stone-500 flex-wrap">
                       <span>من: <span className="font-medium text-stone-700">{report.reporter.name}</span></span>
-                      <span>{new Date(report.createdAt).toLocaleDateString('ar-SA')}</span>
+                      <span>{formatDate(report.createdAt)}</span>
                       {report.reviewer && (
                         <span>مراجعة: {report.reviewer.name}</span>
                       )}

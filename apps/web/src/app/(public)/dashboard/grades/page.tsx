@@ -9,6 +9,7 @@ import { StarIcon, ChartIcon, FilterIcon } from '@/components/Icons';
 import { GradeItemSkeleton, StatCardSkeleton, FilterSkeleton } from '@/components/Skeleton';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 import { navigateTo } from '@/lib/navigation';
+import { formatDate } from '@/lib/utils';
 
 interface Grade {
   id: string;
@@ -303,7 +304,7 @@ export default function StudentGradesPage() {
                           {grade.score} / {grade.maxScore}
                         </p>
                         <p className="text-sm text-stone-500">
-                          {new Date(grade.createdAt).toLocaleDateString('ar-SA')}
+                          {formatDate(grade.createdAt)}
                         </p>
                       </div>
                     </div>

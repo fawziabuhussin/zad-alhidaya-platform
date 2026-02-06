@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { ExamIcon, PlusIcon, EditIcon, TrashIcon, ClockIcon, ChartIcon, UsersIcon } from '@/components/Icons';
 import PageLoading from '@/components/PageLoading';
 import { Pagination, PaginationInfo } from '@/components/Pagination';
@@ -404,7 +405,7 @@ export default function AdminExamsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-stone-600 hidden sm:table-cell">
-                        {new Date(exam.startDate).toLocaleDateString('ar-SA')}
+                        {formatDate(exam.startDate)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1 text-stone-600">

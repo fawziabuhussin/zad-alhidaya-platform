@@ -12,6 +12,7 @@ import {
   EyeIcon
 } from '@/components/Icons';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import { formatDate } from '@/lib/utils';
 
 interface Report {
   id: string;
@@ -263,10 +264,10 @@ export default function StudentReportsPage() {
                     
                     {/* Meta */}
                     <div className="text-sm text-stone-500">
-                      <span>تاريخ الإرسال: {new Date(report.createdAt).toLocaleDateString('ar-SA')}</span>
+                      <span>تاريخ الإرسال: {formatDate(report.createdAt)}</span>
                       {report.resolvedAt && (
                         <span className="mr-4">
-                          تاريخ الحل: {new Date(report.resolvedAt).toLocaleDateString('ar-SA')}
+                          تاريخ الحل: {formatDate(report.resolvedAt)}
                         </span>
                       )}
                     </div>

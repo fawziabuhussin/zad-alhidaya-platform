@@ -9,6 +9,7 @@ import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
 import ExpandableLessonCard from '@/components/ExpandableLessonCard';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDate } from '@/lib/utils';
 
 interface PrerequisiteStatus {
   prerequisite: { id: string; title: string };
@@ -386,7 +387,7 @@ export default function CourseDetailsPage() {
                         <div className="flex flex-wrap gap-3 text-xs text-stone-500">
                           <span>الدرجة الكاملة: {exam.maxScore}</span>
                           <span>
-                            من {new Date(exam.startDate).toLocaleDateString('ar-SA')} إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')}
+                            من {formatDate(exam.startDate)} إلى {formatDate(exam.endDate)}
                           </span>
                         </div>
                       </div>
@@ -439,7 +440,7 @@ export default function CourseDetailsPage() {
                           <span>الدرجة الكاملة: {homework.maxScore}</span>
                           <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
                             <ClockIcon size={12} className="inline ml-1" />
-                            موعد التسليم: {new Date(homework.dueDate).toLocaleDateString('ar-SA')}
+                            موعد التسليم: {formatDate(homework.dueDate)}
                           </span>
                         </div>
                       </div>

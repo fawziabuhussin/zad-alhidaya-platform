@@ -6,6 +6,7 @@ import { UsersIcon, BookIcon, CalendarIcon, FilterIcon } from '@/components/Icon
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 import PageLoading from '@/components/PageLoading';
+import { formatDate } from '@/lib/utils';
 
 // Custom Status Filter Dropdown
 function StatusFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -291,7 +292,7 @@ export default function AdminEnrollmentsPage() {
                         <td className="px-6 py-4 hidden sm:table-cell">
                           <div className="flex items-center gap-1 text-stone-500 text-sm">
                             <CalendarIcon size={14} />
-                            {new Date(enrollment.enrolledAt).toLocaleDateString('ar-SA')}
+                            {formatDate(enrollment.enrolledAt)}
                           </div>
                         </td>
                         <td className="px-6 py-4">

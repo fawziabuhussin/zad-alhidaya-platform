@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { UsersIcon, PlusIcon, EditIcon, TrashIcon, EyeIcon, SearchIcon, FilterIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDate } from '@/lib/utils';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 import PageLoading from '@/components/PageLoading';
 
@@ -703,7 +704,7 @@ export default function AdminUsersPage() {
                         <div key={enrollment.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
                           <h5 className="font-semibold text-gray-800">{enrollment.course.title}</h5>
                           <p className="text-sm text-gray-600 mt-1">
-                            تاريخ التسجيل: {new Date(enrollment.enrolledAt).toLocaleDateString('ar-SA')}
+                            تاريخ التسجيل: {formatDate(enrollment.enrolledAt)}
                           </p>
                         </div>
                       ))}
@@ -757,7 +758,7 @@ export default function AdminUsersPage() {
                 <div className="pt-6 border-t border-gray-200">
                   <h4 className="text-lg font-bold text-gray-800 mb-3">معلومات الحساب</h4>
                   <div className="space-y-2 text-gray-700">
-                    <p><span className="font-semibold">تاريخ الإنشاء:</span> {new Date(profileData.createdAt).toLocaleDateString('ar-SA')}</p>
+                    <p><span className="font-semibold">تاريخ الإنشاء:</span> {formatDate(profileData.createdAt)}</p>
                     <p><span className="font-semibold">الحالة:</span> {profileData.blocked ? 'محظور' : 'نشط'}</p>
                   </div>
                 </div>

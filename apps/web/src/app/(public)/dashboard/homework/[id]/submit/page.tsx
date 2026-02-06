@@ -6,6 +6,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { BookIcon, ClockIcon, HomeworkIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDate } from '@/lib/utils';
 import PageLoading from '@/components/PageLoading';
 
 interface Homework {
@@ -120,7 +121,7 @@ export default function SubmitHomeworkPage() {
           <div className="flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2 text-stone-600">
               <ClockIcon size={16} />
-              <span>تاريخ الاستحقاق: {new Date(homework.dueDate).toLocaleDateString('ar-SA')}</span>
+              <span>تاريخ الاستحقاق: {formatDate(homework.dueDate)}</span>
             </div>
             <div className="px-3 py-1 bg-stone-100 rounded-lg text-stone-700">
               الدرجة الكاملة: {homework.maxScore}

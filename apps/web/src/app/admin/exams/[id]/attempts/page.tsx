@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { BookIcon, ClockIcon, CheckCircleIcon, CloseIcon } from '@/components/Icons';
 import PageLoading from '@/components/PageLoading';
 import { Pagination, PaginationInfo } from '@/components/Pagination';
@@ -261,7 +262,7 @@ export default function ExamAttemptsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-stone-600">
-                          {new Date(attempt.submittedAt).toLocaleDateString('ar-SA')}
+                          {formatDate(attempt.submittedAt)}
                         </td>
                         <td className="px-4 py-3">
                           {isPending && (

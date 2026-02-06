@@ -5,6 +5,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDate } from '@/lib/utils';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 import PageLoading from '@/components/PageLoading';
 
@@ -207,7 +208,7 @@ export default function TeacherQuestionsPage() {
                         {question.status === 'ANSWERED' ? 'تم الإجابة' : 'في الانتظار'}
                       </span>
                       <span className="text-xs text-stone-400">
-                        {new Date(question.createdAt).toLocaleDateString('ar-SA')}
+                        {formatDate(question.createdAt)}
                       </span>
                     </div>
                     <p className="font-medium text-stone-800">{question.student.name}</p>

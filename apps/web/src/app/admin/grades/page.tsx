@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import { StarIcon, ChartIcon, ExamIcon, HomeworkIcon, ChevronDownIcon } from '@/components/Icons';
 import PageLoading from '@/components/PageLoading';
 import { Pagination, PaginationInfo } from '@/components/Pagination';
+import { formatDate } from '@/lib/utils';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -449,7 +450,7 @@ export default function AdminGradesPage() {
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-800">
-                                {new Date(grade.createdAt).toLocaleDateString('ar-SA')}
+                                {formatDate(grade.createdAt)}
                               </td>
                             </tr>
                           ))}
@@ -521,7 +522,7 @@ export default function AdminGradesPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-800">
-                          {new Date(grade.createdAt).toLocaleDateString('ar-SA')}
+                          {formatDate(grade.createdAt)}
                         </td>
                       </tr>
                     ))}

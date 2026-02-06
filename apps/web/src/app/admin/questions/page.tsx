@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon, FilterIcon, UserIcon } from '@/components/Icons';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 import PageLoading from '@/components/PageLoading';
@@ -207,7 +208,7 @@ export default function AdminQuestionsPage() {
                         {question.status === 'ANSWERED' ? 'تم الإجابة' : 'في الانتظار'}
                       </span>
                       <span className="text-xs text-stone-400">
-                        {new Date(question.createdAt).toLocaleDateString('ar-SA')}
+                        {formatDate(question.createdAt)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-1">
@@ -255,7 +256,7 @@ export default function AdminQuestionsPage() {
                     <p className="text-stone-800 whitespace-pre-wrap">{question.answer}</p>
                     {question.answeredAt && (
                       <p className="text-xs text-emerald-600 mt-2">
-                        {new Date(question.answeredAt).toLocaleDateString('ar-SA')}
+                        {formatDate(question.answeredAt)}
                       </p>
                     )}
                   </div>

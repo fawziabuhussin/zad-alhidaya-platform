@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { LinkIcon, BookIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDateTime } from '@/lib/utils';
 import PageLoading from '@/components/PageLoading';
 import { Pagination, PaginationInfo } from '@/components/Pagination';
 
@@ -169,11 +170,11 @@ export default function HomeworkSubmissionsPage() {
                       <h3 className="font-bold text-stone-800">{submission.user.name}</h3>
                       <p className="text-sm text-stone-500">{submission.user.email}</p>
                       <p className="text-xs text-stone-400 mt-2">
-                        تم الإرسال: {new Date(submission.submittedAt).toLocaleString('ar-SA')}
+                        تم الإرسال: <span dir="ltr">{formatDateTime(submission.submittedAt)}</span>
                       </p>
                       {isGraded && submission.gradedAt && (
                         <p className="text-xs text-emerald-600 mt-1">
-                          تم التصحيح: {new Date(submission.gradedAt).toLocaleString('ar-SA')}
+                          تم التصحيح: <span dir="ltr">{formatDateTime(submission.gradedAt)}</span>
                         </p>
                       )}
                     </div>

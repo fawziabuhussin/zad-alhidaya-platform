@@ -8,6 +8,7 @@ import Modal from '@/components/Modal';
 import { AlertIcon } from '@/components/Icons';
 import { showSuccess, TOAST_MESSAGES } from '@/lib/toast';
 import { navigateTo, handleLogout as performLogout } from '@/lib/navigation';
+import { formatDate } from '@/lib/utils';
 
 interface TeacherLayoutProps {
   children: React.ReactNode;
@@ -465,7 +466,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
                 <div className="pt-6 border-t border-gray-200">
                   <h4 className="text-lg font-bold text-gray-800 mb-3">معلومات الحساب</h4>
                   <div className="space-y-2 text-gray-700">
-                    <p><span className="font-semibold">تاريخ الإنشاء:</span> {new Date(profileData.createdAt).toLocaleDateString('ar-SA')}</p>
+                    <p><span className="font-semibold">تاريخ الإنشاء:</span> {formatDate(profileData.createdAt)}</p>
                     <p><span className="font-semibold">الحالة:</span> {profileData.blocked ? 'محظور' : 'نشط'}</p>
                   </div>
                 </div>

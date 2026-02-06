@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon } from '@/components/Icons';
 import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 import { showSuccess, showError } from '@/lib/toast';
+import { formatDate } from '@/lib/utils';
 
 interface Question {
   id: string;
@@ -223,7 +224,7 @@ export default function StudentQuestionsPage() {
                             {question.status === 'ANSWERED' ? 'تم الإجابة' : 'في الانتظار'}
                           </span>
                           <span className="text-xs text-stone-400">
-                            {new Date(question.createdAt).toLocaleDateString('ar-SA')}
+                            {formatDate(question.createdAt)}
                           </span>
                         </div>
                         <p className="text-sm text-stone-500 mb-1">
@@ -269,7 +270,7 @@ export default function StudentQuestionsPage() {
                         <p className="text-stone-800 whitespace-pre-wrap">{question.answer}</p>
                         {question.answeredAt && (
                           <p className="text-xs text-emerald-600 mt-2">
-                            {new Date(question.answeredAt).toLocaleDateString('ar-SA')}
+                            {formatDate(question.answeredAt)}
                           </p>
                         )}
                       </div>

@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { HomeworkIcon, CalendarIcon, EditIcon, UsersIcon } from '@/components/Icons';
 import { navigateTo } from '@/lib/navigation';
 import PageLoading from '@/components/PageLoading';
@@ -226,7 +227,7 @@ export default function TeacherHomeworkPage() {
                       <td className="px-6 py-4 text-stone-600 hidden sm:table-cell">
                         <span className="flex items-center gap-1">
                           <CalendarIcon size={14} />
-                          {new Date(homework.dueDate).toLocaleDateString('ar-SA')}
+                          {formatDate(homework.dueDate)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-stone-600 hidden lg:table-cell">

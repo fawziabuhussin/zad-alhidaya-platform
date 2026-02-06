@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatDate, formatTime } from '@/lib/utils';
 import { CheckCircleIcon, HomeworkIcon, CalendarIcon, BookIcon } from '@/components/Icons';
 import { HomeworkCardSkeleton } from '@/components/Skeleton';
 
@@ -158,12 +159,12 @@ export default function StudentHomeworkPage() {
                       <span className="text-stone-500 flex items-center gap-2">
                         <CalendarIcon size={14} /> تاريخ الاستحقاق
                       </span>
-                      <span className="font-medium text-stone-800">{new Date(homework.dueDate).toLocaleDateString('ar-SA')}</span>
+                      <span className="font-medium text-stone-800">{formatDate(homework.dueDate)}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-stone-100">
                       <span className="text-stone-500">الوقت</span>
                       <span className="font-medium text-stone-800">
-                        {new Date(homework.dueDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                        {formatTime(homework.dueDate)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-stone-100">

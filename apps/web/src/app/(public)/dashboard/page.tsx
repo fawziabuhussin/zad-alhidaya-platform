@@ -15,6 +15,7 @@ import {
 import { LiveRegion } from '@/components/Accessibility';
 import { CourseCoverImage } from '@/components/OptimizedImage';
 import { shouldShowSkeleton } from '@/lib/swr-config';
+import { formatDate } from '@/lib/utils';
 
 // SWR fetcher
 const fetcher = async (url: string) => {
@@ -428,7 +429,7 @@ export default function DashboardPage() {
                               : `باقي ${diffDays} أيام`}
                       </p>
                       <p className="text-xs text-stone-400">
-                        {dueDate.toLocaleDateString('ar-SA')}
+                        {formatDate(dueDate)}
                       </p>
                     </div>
                   </Link>

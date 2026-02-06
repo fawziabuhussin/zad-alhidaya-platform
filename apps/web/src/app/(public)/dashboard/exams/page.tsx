@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import { CheckCircleIcon, ExamIcon, ClockIcon, BookIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/Icons';
 import { ExamCardSkeleton, SearchBarSkeleton } from '@/components/Skeleton';
 import { shouldShowSkeleton } from '@/lib/swr-config';
+import { formatDate, formatTime, formatDateTime } from '@/lib/utils';
 
 interface Exam {
   id: string;
@@ -334,14 +335,14 @@ export default function StudentExamsPage() {
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-stone-100">
                       <span className="text-stone-500">البدء</span>
-                      <span className="font-medium text-stone-800">
-                        {new Date(exam.startDate).toLocaleDateString('ar-SA')} {new Date(exam.startDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                      <span className="font-medium text-stone-800" dir="ltr">
+                        {formatDateTime(exam.startDate)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-stone-100">
                       <span className="text-stone-500">الانتهاء</span>
-                      <span className="font-medium text-stone-800">
-                        {new Date(exam.endDate).toLocaleDateString('ar-SA')} {new Date(exam.endDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                      <span className="font-medium text-stone-800" dir="ltr">
+                        {formatDateTime(exam.endDate)}
                       </span>
                     </div>
                     {hasAttempt && score !== null && (
@@ -374,11 +375,8 @@ export default function StudentExamsPage() {
                       {/* Review button - ONLY for passed students */}
                       {score !== null && score >= exam.passingScore && (() => {
                         const isAfterEndDate = new Date() > new Date(exam.endDate);
-                        const endDateFormatted = new Date(exam.endDate).toLocaleDateString('ar-SA');
-                        const endTimeFormatted = new Date(exam.endDate).toLocaleTimeString('ar-SA', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        });
+                        const endDateFormatted = formatDate(exam.endDate);
+                        const endTimeFormatted = formatTime(exam.endDate);
 
                         if (isAfterEndDate) {
                           // ENABLED - can review now

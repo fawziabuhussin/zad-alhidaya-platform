@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { HomeworkIcon, PlusIcon, TrashIcon, ChartIcon, CalendarIcon, UsersIcon } from '@/components/Icons';
 import PageLoading from '@/components/PageLoading';
 import { Pagination, PaginationInfo } from '@/components/Pagination';
@@ -361,7 +362,7 @@ export default function AdminHomeworkPage() {
                         <td className="px-6 py-4 hidden sm:table-cell">
                           <div className="flex items-center gap-1 text-stone-600">
                             <CalendarIcon size={14} />
-                            <span className="text-sm">{dueDate.toLocaleDateString('ar-SA')}</span>
+                            <span className="text-sm">{formatDate(dueDate)}</span>
                           </div>
                           {isOverdue && (
                             <span className="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">
