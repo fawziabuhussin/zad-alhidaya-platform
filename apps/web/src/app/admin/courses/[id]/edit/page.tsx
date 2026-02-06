@@ -7,6 +7,9 @@ import api from '@/lib/api';
 import { CreateResourceDTO } from '@/types/resource';
 import { ResourceList, ResourceForm } from '@/components/resources';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDate, formatDateTime } from '@/lib/utils';
+import PageLoading from '@/components/PageLoading';
+import { BookIcon } from '@/components/Icons';
 
 // Custom Lesson Type Dropdown
 function LessonTypeDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -698,12 +701,8 @@ export default function EditCoursePage() {
     return null;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
-      </div>
-    );
+  if (loading && !course) {
+    return <PageLoading title="تعديل الدورة" icon={<BookIcon className="text-white" size={20} />} />;
   }
 
   return (
@@ -1456,10 +1455,10 @@ export default function EditCoursePage() {
                         <div className="mt-2 text-sm text-gray-700">
                           <span>الدرجة الكاملة: {exam.maxScore}</span>
                           <span className="mr-4">
-                            • من {new Date(exam.startDate).toLocaleDateString('ar-SA')} {new Date(exam.startDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                            • من <span dir="ltr">{formatDateTime(exam.startDate)}</span>
                           </span>
                           <span>
-                            إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')} {new Date(exam.endDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                            إلى <span dir="ltr">{formatDateTime(exam.endDate)}</span>
                           </span>
                         </div>
                       </div>
@@ -1564,7 +1563,7 @@ export default function EditCoursePage() {
                         <p className="text-sm text-gray-600 mt-1">{homework.description}</p>
                         <div className="mt-2 text-sm text-gray-600">
                           <span>الدرجة الكاملة: {homework.maxScore}</span>
-                          <span className="mr-4">• تاريخ الاستحقاق: {new Date(homework.dueDate).toLocaleDateString('ar-SA')}</span>
+                          <span className="mr-4">• تاريخ الاستحقاق: {formatDate(homework.dueDate)}</span>
                         </div>
                       </div>
                       <div className="flex gap-2">

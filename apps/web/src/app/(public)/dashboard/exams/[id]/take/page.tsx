@@ -3,8 +3,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { AlertIcon, BookIcon, ClockIcon, CheckCircleIcon } from '@/components/Icons';
+import { AlertIcon, BookIcon, ClockIcon, CheckCircleIcon, ExamIcon } from '@/components/Icons';
 import { showSuccess, showError, showWarning, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDateTime } from '@/lib/utils';
+import PageLoading from '@/components/PageLoading';
 
 interface Question {
   id: string;
@@ -256,9 +258,10 @@ export default function TakeExamPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="جاري تحميل الامتحان..." 
+        icon={<ExamIcon className="text-white" size={20} />}
+      />
     );
   }
 
@@ -289,7 +292,7 @@ export default function TakeExamPage() {
           <ClockIcon className="mx-auto mb-4 text-amber-500" size={48} />
           <p className="text-lg text-stone-800 mb-2">الامتحان لم يبدأ بعد</p>
           <p className="text-stone-600 mb-6">
-            سيبدأ في: {start.toLocaleDateString('ar-SA')} {start.toLocaleTimeString('ar-SA')}
+            سيبدأ في: <span dir="ltr">{formatDateTime(start)}</span>
           </p>
           <button
             onClick={() => router.push('/dashboard/exams')}
@@ -309,7 +312,7 @@ export default function TakeExamPage() {
           <AlertIcon className="mx-auto mb-4 text-red-500" size={48} />
           <p className="text-lg text-stone-800 mb-2">الامتحان انتهى</p>
           <p className="text-stone-600 mb-6">
-            انتهى في: {end.toLocaleDateString('ar-SA')} {end.toLocaleTimeString('ar-SA')}
+            انتهى في: <span dir="ltr">{formatDateTime(end)}</span>
           </p>
           <button
             onClick={() => router.push('/dashboard/exams')}

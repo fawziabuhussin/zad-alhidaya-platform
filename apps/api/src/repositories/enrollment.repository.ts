@@ -4,6 +4,7 @@
  */
 import { prisma } from '../utils/prisma';
 import { EnrollmentWithRelations, CreateEnrollmentDTO, UpdateEnrollmentDTO } from '../types/enrollment.types';
+import { PaginationParams, PaginatedResponse } from '../types/common.types';
 
 /**
  * Include configuration for fetching enrollments with full course details
@@ -61,9 +62,95 @@ const enrollmentWithUserInclude = {
 
 export class EnrollmentRepository {
   /**
-   * Find all enrollments for a user (includes lesson progress for progress calculation)
+   * Find all enrollments with pagination (admin view)
    */
-  async findByUserId(userId: string, status?: string): Promise<EnrollmentWithRelations[]> {
+  async findAll(pagination?: PaginationParams): Promise<PaginatedResponse<EnrollmentWithRelations>> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const [total, data] = await Promise.all([
+      prisma.enrollment.count(),
+      prisma.enrollment.findMany({
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          course: { select: { id: true, title: true } },
+        },
+        orderBy: { enrolledAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data: data as any,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Find all enrollments without pagination (admin view - backward compatible)
+   */
+  async findAllUnpaginated(): Promise<EnrollmentWithRelations[]> {
+    return prisma.enrollment.findMany({
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        course: { select: { id: true, title: true } },
+      },
+      orderBy: { enrolledAt: 'desc' },
+    }) as Promise<EnrollmentWithRelations[]>;
+  }
+
+  /**
+   * Find all enrollments for a user with pagination (includes lesson progress for progress calculation)
+   */
+  async findByUserId(
+    userId: string,
+    status?: string,
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<EnrollmentWithRelations>> {
+    const where: any = { userId };
+    if (status) {
+      where.status = status;
+    }
+
+    // Pagination defaults
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    // Execute count and data queries in parallel
+    const [total, data] = await Promise.all([
+      prisma.enrollment.count({ where }),
+      prisma.enrollment.findMany({
+        where,
+        include: getEnrollmentWithProgressInclude(userId),
+        orderBy: { enrolledAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Find all enrollments for a user without pagination (for backward compatibility)
+   */
+  async findByUserIdUnpaginated(userId: string, status?: string): Promise<EnrollmentWithRelations[]> {
     const where: any = { userId };
     if (status) {
       where.status = status;

@@ -4,7 +4,7 @@
  */
 import { homeworkRepository } from '../repositories/homework.repository';
 import { authorizationService } from '../services/authorization.service';
-import { AuthContext } from '../types/common.types';
+import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
 import {
   HomeworkWithRelations,
   HomeworkSubmissionWithRelations,
@@ -21,6 +21,12 @@ import { prisma } from '../utils/prisma';
 export interface HomeworkListResult {
   success: boolean;
   data?: HomeworkWithRelations[];
+  error?: { status: number; message: string };
+}
+
+export interface HomeworkPaginatedResult {
+  success: boolean;
+  data?: PaginatedResponse<HomeworkWithRelations>;
   error?: { status: number; message: string };
 }
 
@@ -61,9 +67,9 @@ function getLetterGrade(percentage: number): string {
 
 export class HomeworkManager {
   /**
-   * List all homework for a course
+   * List all homework for a course with pagination
    */
-  async listHomework(auth: AuthContext, courseId: string): Promise<HomeworkListResult> {
+  async listHomework(auth: AuthContext, courseId: string, pagination?: PaginationParams): Promise<HomeworkPaginatedResult> {
     // Check authorization
     const access = await authorizationService.checkReadAccess(auth, { type: 'course', id: courseId });
 
@@ -74,7 +80,25 @@ export class HomeworkManager {
       };
     }
 
-    const homework = await homeworkRepository.findByCourseId(courseId, auth.userId);
+    const result = await homeworkRepository.findByCourseId(courseId, auth.userId, pagination);
+    return { success: true, data: result };
+  }
+
+  /**
+   * List all homework for a course without pagination (backward compatible)
+   */
+  async listHomeworkUnpaginated(auth: AuthContext, courseId: string): Promise<HomeworkListResult> {
+    // Check authorization
+    const access = await authorizationService.checkReadAccess(auth, { type: 'course', id: courseId });
+
+    if (!access.allowed) {
+      return {
+        success: false,
+        error: { status: 403, message: 'أنت غير مسجل في هذه الدورة' },
+      };
+    }
+
+    const homework = await homeworkRepository.findByCourseIdUnpaginated(courseId, auth.userId);
     return { success: true, data: homework };
   }
 

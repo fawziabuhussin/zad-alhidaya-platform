@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { ExamIcon, PlusIcon, EditIcon, TrashIcon, ClockIcon, ChartIcon, UsersIcon } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
+import { Pagination, PaginationInfo } from '@/components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 interface Exam {
   id: string;
@@ -24,6 +29,7 @@ export default function AdminExamsPage() {
   const [showForm, setShowForm] = useState(false);
   const [courses, setCourses] = useState<any[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({
     courseId: '',
     title: '',
@@ -105,12 +111,22 @@ export default function AdminExamsPage() {
 
   const totalAttempts = exams.reduce((sum, e) => sum + (e._count?.attempts || 0), 0);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  // Client-side pagination
+  const totalPages = Math.ceil(exams.length / ITEMS_PER_PAGE);
+  const paginatedExams = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return exams.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [exams, currentPage]);
+
+  // Reset to page 1 if current page exceeds total pages after data changes
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [exams.length, totalPages, currentPage]);
+
+  if (loading && exams.length === 0) {
+    return <PageLoading title="الامتحانات" icon={<ExamIcon size={24} />} />;
   }
 
   return (
@@ -371,7 +387,7 @@ export default function AdminExamsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {exams.map((exam) => (
+                  {paginatedExams.map((exam) => (
                     <tr key={exam.id} className="hover:bg-stone-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div>
@@ -389,7 +405,7 @@ export default function AdminExamsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-stone-600 hidden sm:table-cell">
-                        {new Date(exam.startDate).toLocaleDateString('ar-SA')}
+                        {formatDate(exam.startDate)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1 text-stone-600">
@@ -427,6 +443,23 @@ export default function AdminExamsPage() {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {exams.length > ITEMS_PER_PAGE && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <PaginationInfo
+              currentPage={currentPage}
+              limit={ITEMS_PER_PAGE}
+              total={exams.length}
+              itemName="امتحان"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

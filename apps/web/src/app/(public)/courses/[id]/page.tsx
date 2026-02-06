@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -9,6 +9,7 @@ import { Resource } from '@/types/resource';
 import { ResourceList } from '@/components/resources';
 import ExpandableLessonCard from '@/components/ExpandableLessonCard';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDate } from '@/lib/utils';
 
 interface PrerequisiteStatus {
   prerequisite: { id: string; title: string };
@@ -71,6 +72,7 @@ export default function CourseDetailsPage() {
     completedLessonIds?: string[];
   } | null>(null);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
+  const hasLoadedOnce = useRef(false);
 
   useEffect(() => {
     loadCourse();
@@ -104,6 +106,7 @@ export default function CourseDetailsPage() {
       }
     } finally {
       setLoading(false);
+      hasLoadedOnce.current = true;
     }
   };
 
@@ -126,7 +129,8 @@ export default function CourseDetailsPage() {
     }
   };
 
-  if (loading) {
+  // Only show loading spinner on truly fresh loads
+  if (loading && !hasLoadedOnce.current && !course) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
@@ -383,7 +387,7 @@ export default function CourseDetailsPage() {
                         <div className="flex flex-wrap gap-3 text-xs text-stone-500">
                           <span>الدرجة الكاملة: {exam.maxScore}</span>
                           <span>
-                            من {new Date(exam.startDate).toLocaleDateString('ar-SA')} إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')}
+                            من {formatDate(exam.startDate)} إلى {formatDate(exam.endDate)}
                           </span>
                         </div>
                       </div>
@@ -436,7 +440,7 @@ export default function CourseDetailsPage() {
                           <span>الدرجة الكاملة: {homework.maxScore}</span>
                           <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
                             <ClockIcon size={12} className="inline ml-1" />
-                            موعد التسليم: {new Date(homework.dueDate).toLocaleDateString('ar-SA')}
+                            موعد التسليم: {formatDate(homework.dueDate)}
                           </span>
                         </div>
                       </div>

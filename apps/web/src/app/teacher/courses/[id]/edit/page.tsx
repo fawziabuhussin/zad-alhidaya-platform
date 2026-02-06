@@ -4,8 +4,11 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { CreateResourceDTO } from '@/types/resource';
 import { ResourceList, ResourceForm } from '@/components/resources';
+import { BookIcon } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
 
 // Custom Lesson Type Dropdown
 function LessonTypeDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -682,12 +685,8 @@ export default function EditCoursePage() {
     return null;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
-      </div>
-    );
+  if (loading && !course) {
+    return <PageLoading title="تعديل الدورة" icon={<BookIcon className="text-white" size={20} />} />;
   }
 
   return (
@@ -1439,8 +1438,8 @@ export default function EditCoursePage() {
                         )}
                         <div className="mt-2 text-sm text-gray-700">
                           <span>الدرجة الكاملة: {exam.maxScore}</span>
-                          <span className="mr-4">• من {new Date(exam.startDate).toLocaleDateString('ar-SA')}</span>
-                          <span>إلى {new Date(exam.endDate).toLocaleDateString('ar-SA')}</span>
+                          <span className="mr-4">• من {formatDate(exam.startDate)}</span>
+                          <span>إلى {formatDate(exam.endDate)}</span>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -1544,7 +1543,7 @@ export default function EditCoursePage() {
                         <p className="text-sm text-gray-600 mt-1">{homework.description}</p>
                         <div className="mt-2 text-sm text-gray-600">
                           <span>الدرجة الكاملة: {homework.maxScore}</span>
-                          <span className="mr-4">• تاريخ الاستحقاق: {new Date(homework.dueDate).toLocaleDateString('ar-SA')}</span>
+                          <span className="mr-4">• تاريخ الاستحقاق: {formatDate(homework.dueDate)}</span>
                         </div>
                       </div>
                       <div className="flex gap-2">

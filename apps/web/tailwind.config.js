@@ -38,7 +38,7 @@ module.exports = {
         warning: '#c9a227',
       },
       fontFamily: {
-        arabic: ['Cairo', 'Noto Sans Arabic', 'sans-serif'],
+        arabic: ['var(--font-cairo)', 'var(--font-noto)', 'sans-serif'],
       },
     },
   },

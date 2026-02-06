@@ -1,10 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { LinkIcon, BookIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDateTime } from '@/lib/utils';
+import PageLoading from '@/components/PageLoading';
+import { Pagination, PaginationInfo } from '@/components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 interface Submission {
   id: string;
@@ -32,6 +37,7 @@ export default function HomeworkSubmissionsPage() {
   const [loading, setLoading] = useState(true);
   const [editingScore, setEditingScore] = useState<{ [key: string]: number }>({});
   const [editingFeedback, setEditingFeedback] = useState<{ [key: string]: string }>({});
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadData();
@@ -81,12 +87,22 @@ export default function HomeworkSubmissionsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  // Client-side pagination
+  const totalPages = Math.ceil(submissions.length / ITEMS_PER_PAGE);
+  const paginatedSubmissions = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return submissions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [submissions, currentPage]);
+
+  // Reset to page 1 if current page exceeds total pages after data changes
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [submissions.length, totalPages, currentPage]);
+
+  if (loading && submissions.length === 0) {
+    return <PageLoading title="التسليمات" icon={<BookIcon className="text-white" size={20} />} />;
   }
 
   return (
@@ -142,7 +158,7 @@ export default function HomeworkSubmissionsPage() {
               <p className="text-stone-500">لا توجد إجابات بعد</p>
             </div>
           ) : (
-            submissions.map((submission) => {
+            paginatedSubmissions.map((submission) => {
               const isGraded = submission.score !== null && submission.score !== undefined;
               const currentScore = editingScore[submission.id] ?? submission.score ?? 0;
               const currentFeedback = editingFeedback[submission.id] ?? submission.feedback ?? '';
@@ -154,11 +170,11 @@ export default function HomeworkSubmissionsPage() {
                       <h3 className="font-bold text-stone-800">{submission.user.name}</h3>
                       <p className="text-sm text-stone-500">{submission.user.email}</p>
                       <p className="text-xs text-stone-400 mt-2">
-                        تم الإرسال: {new Date(submission.submittedAt).toLocaleString('ar-SA')}
+                        تم الإرسال: <span dir="ltr">{formatDateTime(submission.submittedAt)}</span>
                       </p>
                       {isGraded && submission.gradedAt && (
                         <p className="text-xs text-emerald-600 mt-1">
-                          تم التصحيح: {new Date(submission.gradedAt).toLocaleString('ar-SA')}
+                          تم التصحيح: <span dir="ltr">{formatDateTime(submission.gradedAt)}</span>
                         </p>
                       )}
                     </div>
@@ -247,6 +263,23 @@ export default function HomeworkSubmissionsPage() {
             })
           )}
         </div>
+
+        {/* Pagination */}
+        {submissions.length > ITEMS_PER_PAGE && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <PaginationInfo
+              currentPage={currentPage}
+              limit={ITEMS_PER_PAGE}
+              total={submissions.length}
+              itemName="تسليم"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -12,10 +12,35 @@ const router = express.Router();
 
 /**
  * GET /users - List all users (Admin only)
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await userManager.listUsers({
+    const { page, limit } = req.query;
+
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await userManager.listUsers(
+        {
+          userId: req.user!.userId,
+          role: req.user!.role,
+        },
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
+    const result = await userManager.listUsersUnpaginated({
       userId: req.user!.userId,
       role: req.user!.role,
     });

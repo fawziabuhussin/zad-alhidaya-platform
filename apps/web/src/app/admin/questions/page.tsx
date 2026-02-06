@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon, FilterIcon, UserIcon } from '@/components/Icons';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import PageLoading from '@/components/PageLoading';
 
 interface Question {
   id: string;
@@ -38,27 +41,46 @@ interface Question {
   } | null;
 }
 
+const POLLING_INTERVAL = 60000; // 1 minute
+const ITEMS_PER_PAGE = 15;
+
 export default function AdminQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'PENDING' | 'ANSWERED'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalQuestions, setTotalQuestions] = useState(0);
   const [answeringId, setAnsweringId] = useState<string | null>(null);
   const [answerText, setAnswerText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadQuestions();
-  }, []);
-
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     try {
-      const response = await api.get('/questions');
-      setQuestions(response.data || []);
+      setLoading(true);
+      const response = await api.get(`/questions?page=${currentPage}&limit=${ITEMS_PER_PAGE}`);
+      const data = response.data as PaginatedResponse<Question>;
+      setQuestions(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalQuestions(data.pagination?.total || 0);
     } catch (error) {
       console.error('Failed to load questions:', error);
     } finally {
       setLoading(false);
     }
+  }, [currentPage]);
+
+  useEffect(() => {
+    loadQuestions();
+  }, [loadQuestions]);
+
+  useEffect(() => {
+    const interval = setInterval(loadQuestions, POLLING_INTERVAL);
+    return () => clearInterval(interval);
+  }, [loadQuestions]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const handleAnswer = async (questionId: string) => {
@@ -97,11 +119,12 @@ export default function AdminQuestionsPage() {
     filter === 'all' ? true : q.status === filter
   );
 
-  if (loading) {
+  if (loading && questions.length === 0) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="الأسئلة" 
+        icon={<HelpIcon className="text-white" size={20} />}
+      />
     );
   }
 
@@ -126,7 +149,7 @@ export default function AdminQuestionsPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
-            <p className="text-2xl font-bold text-[#1a3a2f]">{questions.length}</p>
+            <p className="text-2xl font-bold text-[#1a3a2f]">{totalQuestions}</p>
             <p className="text-sm text-stone-500">إجمالي الأسئلة</p>
           </div>
           <div className="bg-white rounded-xl border border-stone-200 p-4 text-center">
@@ -191,7 +214,7 @@ export default function AdminQuestionsPage() {
                         {question.status === 'ANSWERED' ? 'تم الإجابة' : 'في الانتظار'}
                       </span>
                       <span className="text-xs text-stone-400">
-                        {new Date(question.createdAt).toLocaleDateString('ar-SA')}
+                        {formatDate(question.createdAt)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-1">
@@ -206,14 +229,14 @@ export default function AdminQuestionsPage() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/courses/${question.course.id}/lessons/${question.lesson.id}`}
-                      className="p-2 text-stone-400 hover:text-[#1a3a2f] hover:bg-stone-50 rounded-lg"
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
                       title="عرض الدرس"
                     >
-                      <EyeIcon size={18} />
+                      <EyeIcon size={18} /> عرض الدرس
                     </Link>
                     <button
                       onClick={() => handleDelete(question.id)}
-                      className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                      className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm"
                       title="حذف"
                     >
                       <TrashIcon size={18} />
@@ -239,7 +262,7 @@ export default function AdminQuestionsPage() {
                     <p className="text-stone-800 whitespace-pre-wrap">{question.answer}</p>
                     {question.answeredAt && (
                       <p className="text-xs text-emerald-600 mt-2">
-                        {new Date(question.answeredAt).toLocaleDateString('ar-SA')}
+                        {formatDate(question.answeredAt)}
                       </p>
                     )}
                   </div>
@@ -282,6 +305,28 @@ export default function AdminQuestionsPage() {
               </div>
             ))
           )}
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <PaginationInfo
+                currentPage={currentPage}
+                limit={ITEMS_PER_PAGE}
+                total={totalQuestions}
+                itemName="سؤال"
+              />
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Polling indicator */}
+        <div className="mt-6 text-center text-sm text-stone-400">
+          يتم تحديث البيانات تلقائياً كل دقيقة
         </div>
       </div>
     </div>

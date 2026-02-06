@@ -4,6 +4,7 @@
  */
 import { prisma } from '../utils/prisma';
 import { UserWithRelations, UserListItem, UserProfile, CreateTeacherDTO, UpdateUserDTO } from '../types/user.types';
+import { PaginationParams, PaginatedResponse } from '../types/common.types';
 
 /**
  * Include configuration for user list (admin view)
@@ -99,9 +100,38 @@ const userSimpleSelect = {
 
 export class UserRepository {
   /**
-   * Find all users (admin list view)
+   * Find all users with pagination (admin list view)
    */
-  async findAll(): Promise<UserListItem[]> {
+  async findAll(pagination?: PaginationParams): Promise<PaginatedResponse<UserListItem>> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const [total, data] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.findMany({
+        select: userListSelect,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data: data as UserListItem[],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Find all users without pagination (backward compatible)
+   */
+  async findAllUnpaginated(): Promise<UserListItem[]> {
     return prisma.user.findMany({
       select: userListSelect,
       orderBy: { createdAt: 'desc' },

@@ -4,6 +4,7 @@
  */
 import { prisma } from '../utils/prisma';
 import { CreateReportDTO, UpdateReportDTO, ReportFilters, ReportWithRelations } from '../types/report.types';
+import { PaginationParams, PaginatedResponse } from '../types/common.types';
 
 /**
  * Common include for report queries with relations
@@ -85,6 +86,39 @@ export class ReportRepository {
   }
 
   /**
+   * Find reports by reporter ID with pagination
+   */
+  async findByReporterIdPaginated(
+    reporterId: string,
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<ReportWithRelations>> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const [total, data] = await Promise.all([
+      prisma.contentReport.count({ where: { reporterId } }),
+      prisma.contentReport.findMany({
+        where: { reporterId },
+        include: reportInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data: data as ReportWithRelations[],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
    * Find all reports with optional filters (for admin/teacher)
    */
   async findAll(filters: ReportFilters = {}) {
@@ -105,6 +139,51 @@ export class ReportRepository {
       include: reportInclude,
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  /**
+   * Find all reports with pagination
+   */
+  async findAllPaginated(
+    filters: ReportFilters = {},
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<ReportWithRelations>> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+    if (filters.courseId) {
+      where.courseId = filters.courseId;
+    }
+    if (filters.lessonId) {
+      where.lessonId = filters.lessonId;
+    }
+
+    const [total, data] = await Promise.all([
+      prisma.contentReport.count({ where }),
+      prisma.contentReport.findMany({
+        where,
+        include: reportInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data: data as ReportWithRelations[],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   /**
@@ -129,6 +208,53 @@ export class ReportRepository {
       include: reportInclude,
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  /**
+   * Find reports for courses taught by a specific teacher with pagination
+   */
+  async findByTeacherIdPaginated(
+    teacherId: string,
+    filters: ReportFilters = {},
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<ReportWithRelations>> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      course: {
+        teacherId,
+      },
+    };
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+    if (filters.courseId) {
+      where.courseId = filters.courseId;
+    }
+
+    const [total, data] = await Promise.all([
+      prisma.contentReport.count({ where }),
+      prisma.contentReport.findMany({
+        where,
+        include: reportInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data: data as ReportWithRelations[],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   /**

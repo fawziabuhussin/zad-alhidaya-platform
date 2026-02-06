@@ -7,6 +7,9 @@ import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { UsersIcon, PlusIcon, EditIcon, TrashIcon, EyeIcon, SearchIcon, FilterIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDate } from '@/lib/utils';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import PageLoading from '@/components/PageLoading';
 
 // Custom Role Filter Dropdown
 function RoleFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -81,6 +84,8 @@ interface User {
   };
 }
 
+const ITEMS_PER_PAGE = 15;
+
 export default function AdminUsersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,6 +94,9 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editFormData, setEditFormData] = useState({ name: '', password: '' });
   const [showCreateForm, setShowCreateForm] = useState(action === 'create');
@@ -105,17 +113,25 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [currentPage]);
 
   const loadUsers = async () => {
     try {
-      const response = await api.get('/users');
-      setUsers(response.data || []);
+      setLoading(true);
+      const response = await api.get(`/users?page=${currentPage}&limit=${ITEMS_PER_PAGE}`);
+      const data = response.data as PaginatedResponse<User>;
+      setUsers(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalUsers(data.pagination?.total || 0);
     } catch (error) {
       console.error('Failed to load users:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const handleBlock = async (id: string, blocked: boolean) => {
@@ -133,8 +149,8 @@ export default function AdminUsersPage() {
 
     try {
       await api.delete(`/users/${id}`);
-      setUsers(users.filter(u => u.id !== id));
       showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
+      loadUsers(); // Reload current page
     } catch (error: any) {
       showError(error.response?.data?.message || 'فشل حذف المستخدم');
     }
@@ -241,19 +257,16 @@ export default function AdminUsersPage() {
     return matchesSearch && matchesRole;
   });
 
+  // Stats based on current page (for accurate stats, would need separate API endpoint)
   const stats = {
-    total: users.length,
+    total: totalUsers,
     admins: users.filter(u => u.role === 'ADMIN').length,
     teachers: users.filter(u => u.role === 'TEACHER').length,
     students: users.filter(u => u.role === 'STUDENT').length,
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  if (loading && users.length === 0) {
+    return <PageLoading title="المستخدمين" icon={<UsersIcon size={24} />} />;
   }
 
   return (
@@ -336,99 +349,118 @@ export default function AdminUsersPage() {
               <p className="text-stone-500 text-lg">لا يوجد مستخدمين</p>
             </div>
           ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-stone-50 border-b border-stone-200">
-                <tr>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">المستخدم</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الدور</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الحالة</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الإحصائيات</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-stone-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] rounded-full flex items-center justify-center text-white font-bold text-sm">
-                          {user.name.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-stone-800">{user.name}</h3>
-                          <p className="text-sm text-stone-500">{user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                        user.role === 'ADMIN' 
-                          ? 'bg-violet-100 text-violet-700'
-                          : user.role === 'TEACHER'
-                          ? 'bg-sky-100 text-sky-700'
-                          : 'bg-emerald-100 text-emerald-700'
-                      }`}>
-                        {user.role === 'ADMIN' ? 'مشرف' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                        user.blocked 
-                          ? 'bg-red-100 text-red-700' 
-                          : 'bg-emerald-100 text-emerald-700'
-                      }`}>
-                        {user.blocked ? 'محظور' : 'نشط'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">
-                      {user.role === 'TEACHER' && (
-                        <span className="font-medium">{user._count?.coursesTaught || 0} دورة</span>
-                      )}
-                      {user.role === 'STUDENT' && (
-                        <span className="font-medium">{user._count?.enrollments || 0} تسجيل</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2 flex-wrap">
-                        <button
-                          onClick={() => handleViewProfile(user)}
-                          className="p-2 bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition"
-                          title="ملف شخصي"
-                        >
-                          <EyeIcon size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(user)}
-                          className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
-                          title="تعديل"
-                        >
-                          <EditIcon size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleBlock(user.id, user.blocked)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                            user.blocked
-                              ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                              : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                          }`}
-                        >
-                          {user.blocked ? 'تفعيل' : 'حظر'}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user.id)}
-                          className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
-                          title="حذف"
-                        >
-                          <TrashIcon size={16} />
-                        </button>
-                      </div>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-stone-50 border-b border-stone-200">
+                  <tr>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">المستخدم</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الدور</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الحالة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الإحصائيات</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-stone-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] rounded-full flex items-center justify-center text-white font-bold text-sm">
+                            {user.name.charAt(0)}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-stone-800">{user.name}</h3>
+                            <p className="text-sm text-stone-500">{user.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                          user.role === 'ADMIN' 
+                            ? 'bg-violet-100 text-violet-700'
+                            : user.role === 'TEACHER'
+                            ? 'bg-sky-100 text-sky-700'
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {user.role === 'ADMIN' ? 'مشرف' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                          user.blocked 
+                            ? 'bg-red-100 text-red-700' 
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {user.blocked ? 'محظور' : 'نشط'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">
+                        {user.role === 'TEACHER' && (
+                          <span className="font-medium">{user._count?.coursesTaught || 0} دورة</span>
+                        )}
+                        {user.role === 'STUDENT' && (
+                          <span className="font-medium">{user._count?.enrollments || 0} تسجيل</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            onClick={() => handleViewProfile(user)}
+                            className="p-2 bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition"
+                            title="ملف شخصي"
+                          >
+                            <EyeIcon size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(user)}
+                            className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
+                            title="تعديل"
+                          >
+                            <EditIcon size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleBlock(user.id, user.blocked)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                              user.blocked
+                                ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                            }`}
+                          >
+                            {user.blocked ? 'تفعيل' : 'حظر'}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user.id)}
+                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                            title="حذف"
+                          >
+                            <TrashIcon size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <PaginationInfo
+                  currentPage={currentPage}
+                  limit={ITEMS_PER_PAGE}
+                  total={totalUsers}
+                  itemName="مستخدم"
+                />
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -672,7 +704,7 @@ export default function AdminUsersPage() {
                         <div key={enrollment.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
                           <h5 className="font-semibold text-gray-800">{enrollment.course.title}</h5>
                           <p className="text-sm text-gray-600 mt-1">
-                            تاريخ التسجيل: {new Date(enrollment.enrolledAt).toLocaleDateString('ar-SA')}
+                            تاريخ التسجيل: {formatDate(enrollment.enrolledAt)}
                           </p>
                         </div>
                       ))}
@@ -726,7 +758,7 @@ export default function AdminUsersPage() {
                 <div className="pt-6 border-t border-gray-200">
                   <h4 className="text-lg font-bold text-gray-800 mb-3">معلومات الحساب</h4>
                   <div className="space-y-2 text-gray-700">
-                    <p><span className="font-semibold">تاريخ الإنشاء:</span> {new Date(profileData.createdAt).toLocaleDateString('ar-SA')}</p>
+                    <p><span className="font-semibold">تاريخ الإنشاء:</span> {formatDate(profileData.createdAt)}</p>
                     <p><span className="font-semibold">الحالة:</span> {profileData.blocked ? 'محظور' : 'نشط'}</p>
                   </div>
                 </div>

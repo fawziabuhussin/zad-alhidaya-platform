@@ -7,6 +7,8 @@ import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { AlertIcon } from '@/components/Icons';
 import { showSuccess, TOAST_MESSAGES } from '@/lib/toast';
+import { navigateTo, handleLogout as performLogout } from '@/lib/navigation';
+import { formatDate } from '@/lib/utils';
 
 interface TeacherLayoutProps {
   children: React.ReactNode;
@@ -82,7 +84,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
 
       // If no cached user, check token and fetch from API
       if (!token) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
         return;
       }
 
@@ -93,9 +95,9 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
       if (userData.role !== 'TEACHER' && userData.role !== 'ADMIN') {
         // If user is STUDENT, redirect to student dashboard
         if (userData.role === 'STUDENT') {
-          window.location.href = '/dashboard';
+          navigateTo('/dashboard', router);
         } else {
-          window.location.href = '/login';
+          navigateTo('/login', router);
         }
         return;
       }
@@ -120,7 +122,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
       
       // Only redirect to login if we have no valid cached user
       if (error.response?.status === 401 || error.response?.status === 403) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
       } else {
         // Network error or other issue, try to use cached user
         const userStr = localStorage.getItem('user');
@@ -137,7 +139,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           }
         }
         // If no cached user and API failed, redirect to login
-        window.location.href = '/login';
+        navigateTo('/login', router);
       }
     } finally {
       setLoading(false);
@@ -150,10 +152,8 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
       showSuccess(TOAST_MESSAGES.LOGOUT_SUCCESS);
-      window.location.href = '/login';
+      performLogout();
     }
   };
 
@@ -275,10 +275,11 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
 
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="lg:hidden p-1.5 text-stone-300 hover:text-white rounded"
-                aria-label="القائمة"
+                className="lg:hidden touch-icon-btn text-stone-300 hover:text-white hover:bg-white/10 rounded-lg"
+                aria-label={menuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+                aria-expanded={menuOpen}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {menuOpen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
@@ -302,7 +303,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2 rounded text-sm ${
+                    className={`touch-list-item justify-between rounded-lg text-sm ${
                       isActive
                         ? 'bg-white/15 text-white'
                         : 'text-stone-300 hover:bg-white/10'
@@ -319,25 +320,25 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
               })}
               
               <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="flex items-center gap-2 px-3 py-2">
-                  <div className="w-8 h-8 bg-[#c9a227] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-10 h-10 bg-[#c9a227] rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0">
                     {user?.name?.charAt(0) || 'T'}
                   </div>
                   <div>
-                    <p className="text-sm text-white">{user?.name || 'المدرس'}</p>
+                    <p className="text-sm text-white font-medium">{user?.name || 'المدرس'}</p>
                     <p className="text-xs text-stone-400">{user?.email || ''}</p>
                   </div>
                 </div>
                 <Link
                   href="/"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-3 py-2 text-sm text-stone-300 hover:bg-white/10 rounded"
+                  className="touch-list-item text-sm text-stone-300 hover:bg-white/10 rounded-lg"
                 >
                   الموقع الرئيسي
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full text-right px-3 py-2 text-sm text-red-400 hover:bg-white/10 rounded"
+                  className="touch-list-item w-full text-right text-sm text-red-400 hover:bg-white/10 rounded-lg"
                 >
                   تسجيل الخروج
                 </button>
@@ -465,7 +466,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
                 <div className="pt-6 border-t border-gray-200">
                   <h4 className="text-lg font-bold text-gray-800 mb-3">معلومات الحساب</h4>
                   <div className="space-y-2 text-gray-700">
-                    <p><span className="font-semibold">تاريخ الإنشاء:</span> {new Date(profileData.createdAt).toLocaleDateString('ar-SA')}</p>
+                    <p><span className="font-semibold">تاريخ الإنشاء:</span> {formatDate(profileData.createdAt)}</p>
                     <p><span className="font-semibold">الحالة:</span> {profileData.blocked ? 'محظور' : 'نشط'}</p>
                   </div>
                 </div>

@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { BookIcon, ClockIcon, CheckCircleIcon, CloseIcon } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
+import { Pagination, PaginationInfo } from '@/components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 interface Attempt {
   id: string;
@@ -38,6 +43,7 @@ export default function ExamAttemptsPage() {
   const [bonus, setBonus] = useState<{ [key: string]: number }>({});
   const [questionScores, setQuestionScores] = useState<{ [attemptId: string]: { [questionId: string]: number } }>({});
   const [gradingAttempt, setGradingAttempt] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadData();
@@ -105,12 +111,22 @@ export default function ExamAttemptsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  // Client-side pagination
+  const totalPages = Math.ceil(attempts.length / ITEMS_PER_PAGE);
+  const paginatedAttempts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return attempts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [attempts, currentPage]);
+
+  // Reset to page 1 if current page exceeds total pages after data changes
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [attempts.length, totalPages, currentPage]);
+
+  if (loading && attempts.length === 0) {
+    return <PageLoading title="محاولات الامتحان" icon={<BookIcon className="text-white" size={20} />} />;
   }
 
   return (
@@ -180,7 +196,7 @@ export default function ExamAttemptsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {attempts.map((attempt) => {
+                  {paginatedAttempts.map((attempt) => {
                     const currentBonus = bonus[attempt.id] || 0;
                     const currentScore = attempt.score || 0;
                     const newScore = currentScore + currentBonus;
@@ -246,7 +262,7 @@ export default function ExamAttemptsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-stone-600">
-                          {new Date(attempt.submittedAt).toLocaleDateString('ar-SA')}
+                          {formatDate(attempt.submittedAt)}
                         </td>
                         <td className="px-4 py-3">
                           {isPending && (
@@ -266,6 +282,23 @@ export default function ExamAttemptsPage() {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {attempts.length > ITEMS_PER_PAGE && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <PaginationInfo
+              currentPage={currentPage}
+              limit={ITEMS_PER_PAGE}
+              total={attempts.length}
+              itemName="محاولة"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Grading Modal */}

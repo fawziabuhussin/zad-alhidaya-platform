@@ -3,7 +3,7 @@
  * Business logic layer for course management
  */
 import { courseRepository } from '../repositories/course.repository';
-import { AuthContext } from '../types/common.types';
+import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
 import { CreateCourseDTO, UpdateCourseDTO, CourseWithRelations, CourseListFilters } from '../types/course.types';
 import { prisma } from '../utils/prisma';
 
@@ -13,6 +13,12 @@ import { prisma } from '../utils/prisma';
 export interface CourseListResult {
   success: boolean;
   data?: CourseWithRelations[];
+  error?: { status: number; message: string };
+}
+
+export interface CoursePaginatedResult {
+  success: boolean;
+  data?: PaginatedResponse<CourseWithRelations>;
   error?: { status: number; message: string };
 }
 
@@ -29,14 +35,18 @@ export interface DeleteResult {
 
 export class CourseManager {
   /**
-   * List all courses with filters
+   * List all courses with filters and pagination
    * Access rules:
    * - Public/unauthenticated: only PUBLISHED courses
    * - STUDENT: only PUBLISHED courses
    * - TEACHER: their own courses (all statuses)
    * - ADMIN: all courses
    */
-  async listCourses(auth: AuthContext | null, filters: CourseListFilters): Promise<CourseListResult> {
+  async listCourses(
+    auth: AuthContext | null,
+    filters: CourseListFilters,
+    pagination?: PaginationParams
+  ): Promise<CoursePaginatedResult> {
     const appliedFilters = { ...filters };
 
     // Apply status filter based on role
@@ -49,14 +59,17 @@ export class CourseManager {
       appliedFilters.teacherId = auth.userId;
     }
 
-    const courses = await courseRepository.findAll(appliedFilters);
-    return { success: true, data: courses };
+    const result = await courseRepository.findAll(appliedFilters, pagination);
+    return { success: true, data: result };
   }
 
   /**
    * Get admin/teacher course list (includes DRAFT courses)
    */
-  async listAdminCourses(auth: AuthContext): Promise<CourseListResult> {
+  async listAdminCourses(
+    auth: AuthContext,
+    pagination?: PaginationParams
+  ): Promise<CoursePaginatedResult> {
     // Check authorization
     if (auth.role !== 'TEACHER' && auth.role !== 'ADMIN') {
       return {
@@ -72,7 +85,30 @@ export class CourseManager {
       filters.teacherId = auth.userId;
     }
 
-    const courses = await courseRepository.findAll(filters);
+    const result = await courseRepository.findAll(filters, pagination);
+    return { success: true, data: result };
+  }
+
+  /**
+   * Get admin/teacher course list without pagination (for backward compatibility)
+   */
+  async listAdminCoursesUnpaginated(auth: AuthContext): Promise<CourseListResult> {
+    // Check authorization
+    if (auth.role !== 'TEACHER' && auth.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مسموح بالوصول' },
+      };
+    }
+
+    const filters: CourseListFilters = {};
+    
+    // Teachers can only see their own courses
+    if (auth.role === 'TEACHER') {
+      filters.teacherId = auth.userId;
+    }
+
+    const courses = await courseRepository.findAllUnpaginated(filters);
     return { success: true, data: courses };
   }
 
@@ -320,7 +356,30 @@ export class CourseManager {
       };
     }
 
-    const courses = await courseRepository.findAll({ teacherId: auth.userId });
+    const courses = await courseRepository.findAllUnpaginated({ teacherId: auth.userId });
+    return { success: true, data: courses };
+  }
+
+  /**
+   * List all courses without pagination (for backward compatibility)
+   */
+  async listCoursesUnpaginated(
+    auth: AuthContext | null,
+    filters: CourseListFilters
+  ): Promise<CourseListResult> {
+    const appliedFilters = { ...filters };
+
+    // Apply status filter based on role
+    if (!auth || (auth.role !== 'ADMIN' && auth.role !== 'TEACHER')) {
+      appliedFilters.status = 'PUBLISHED';
+    }
+
+    // Teachers see only their own courses unless they're also viewing published ones
+    if (auth && auth.role === 'TEACHER' && !filters.teacherId) {
+      appliedFilters.teacherId = auth.userId;
+    }
+
+    const courses = await courseRepository.findAllUnpaginated(appliedFilters);
     return { success: true, data: courses };
   }
 }

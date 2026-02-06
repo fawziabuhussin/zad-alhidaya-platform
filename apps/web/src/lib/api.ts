@@ -30,8 +30,8 @@ const getApiUrl = (): string => {
 
 const API_URL = getApiUrl();
 
-// Always log API URL for debugging (helps identify issues)
-if (typeof window !== 'undefined') {
+// Log API URL only in development mode
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   console.log('[API] Using API URL:', API_URL);
 }
 
@@ -86,8 +86,13 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          // Use soft navigation to avoid flash
+          // Import dynamically to avoid circular dependency
+          import('@/lib/navigation').then(({ redirectToLogin }) => {
+            redirectToLogin();
+          });
         }
         return Promise.reject(refreshError);
       }

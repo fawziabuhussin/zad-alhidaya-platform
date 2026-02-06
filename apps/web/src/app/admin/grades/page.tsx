@@ -1,10 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { StarIcon, ChartIcon, ExamIcon, HomeworkIcon, ChevronDownIcon } from '@/components/Icons';
+import PageLoading from '@/components/PageLoading';
+import { Pagination, PaginationInfo } from '@/components/Pagination';
+import { formatDate } from '@/lib/utils';
+
+const ITEMS_PER_PAGE = 10;
 
 // Custom Dropdown Component
 function CourseDropdown({ courses, selectedCourseId, onSelect }: { courses: any[], selectedCourseId: string, onSelect: (id: string) => void }) {
@@ -109,6 +114,8 @@ export default function AdminGradesPage() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [groupPages, setGroupPages] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     loadCourses();
@@ -121,6 +128,9 @@ export default function AdminGradesPage() {
       setGrades([]);
       setSelectedCourse(null);
     }
+    // Reset pagination when course changes
+    setCurrentPage(1);
+    setGroupPages({});
   }, [selectedCourseId]);
 
   const loadCourses = async () => {
@@ -210,31 +220,42 @@ export default function AdminGradesPage() {
   };
 
   // Group grades by examId or homeworkId
-  const groupedGrades = grades.reduce((acc, grade) => {
-    // Try to extract examId or homeworkId from the grade
-    // The grade should have examId or homeworkId based on type
-    const examId = (grade as any).examId;
-    const homeworkId = (grade as any).homeworkId;
-    const assessmentId = examId || homeworkId || 'unknown';
-    const key = `${grade.type}-${assessmentId}`;
-    
-    if (!acc[key]) {
-      acc[key] = {
-        type: grade.type,
-        assessmentId,
-        grades: [],
-      };
-    }
-    acc[key].grades.push(grade);
-    return acc;
-  }, {} as { [key: string]: { type: string; assessmentId: string; grades: Grade[] } });
+  const groupedGrades = useMemo(() => {
+    return grades.reduce((acc, grade) => {
+      // Try to extract examId or homeworkId from the grade
+      // The grade should have examId or homeworkId based on type
+      const examId = (grade as any).examId;
+      const homeworkId = (grade as any).homeworkId;
+      const assessmentId = examId || homeworkId || 'unknown';
+      const key = `${grade.type}-${assessmentId}`;
+      
+      if (!acc[key]) {
+        acc[key] = {
+          type: grade.type,
+          assessmentId,
+          grades: [],
+        };
+      }
+      acc[key].grades.push(grade);
+      return acc;
+    }, {} as { [key: string]: { type: string; assessmentId: string; grades: Grade[] } });
+  }, [grades]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  // Helper function to get paginated grades for a group
+  const getGroupPage = (key: string) => groupPages[key] || 1;
+  const setGroupPage = (key: string, page: number) => {
+    setGroupPages(prev => ({ ...prev, [key]: page }));
+  };
+
+  // Paginated grades for the "All Grades" fallback table
+  const totalPages = Math.ceil(grades.length / ITEMS_PER_PAGE);
+  const paginatedGrades = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return grades.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [grades, currentPage]);
+
+  if (loading && courses.length === 0) {
+    return <PageLoading title="الدرجات" icon={<StarIcon size={24} />} />;
   }
 
   // Calculate statistics
@@ -383,6 +404,12 @@ export default function AdminGradesPage() {
                   assessment = selectedCourse?.homeworks?.find((h: any) => h.id === group.assessmentId);
                 }
                 
+                // Pagination for this group
+                const groupCurrentPage = getGroupPage(key);
+                const groupTotalPages = Math.ceil(group.grades.length / ITEMS_PER_PAGE);
+                const startIndex = (groupCurrentPage - 1) * ITEMS_PER_PAGE;
+                const paginatedGroupGrades = group.grades.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+                
                 return (
                   <div key={key} className="bg-white rounded-lg shadow-lg overflow-hidden">
                     <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4">
@@ -405,7 +432,7 @@ export default function AdminGradesPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                          {group.grades.map((grade) => (
+                          {paginatedGroupGrades.map((grade) => (
                             <tr key={grade.id} className="hover:bg-gray-50">
                               <td className="px-6 py-4">
                                 <div>
@@ -423,13 +450,30 @@ export default function AdminGradesPage() {
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-800">
-                                {new Date(grade.createdAt).toLocaleDateString('ar-SA')}
+                                {formatDate(grade.createdAt)}
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
+                    
+                    {/* Pagination for this group */}
+                    {group.grades.length > ITEMS_PER_PAGE && (
+                      <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <PaginationInfo
+                          currentPage={groupCurrentPage}
+                          limit={ITEMS_PER_PAGE}
+                          total={group.grades.length}
+                          itemName="تقييم"
+                        />
+                        <Pagination
+                          currentPage={groupCurrentPage}
+                          totalPages={groupTotalPages}
+                          onPageChange={(page) => setGroupPage(key, page)}
+                        />
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -455,7 +499,7 @@ export default function AdminGradesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {grades.map((grade) => (
+                    {paginatedGrades.map((grade) => (
                       <tr key={grade.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <div>
@@ -478,13 +522,30 @@ export default function AdminGradesPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-800">
-                          {new Date(grade.createdAt).toLocaleDateString('ar-SA')}
+                          {formatDate(grade.createdAt)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              
+              {/* Pagination for All Grades */}
+              {grades.length > ITEMS_PER_PAGE && (
+                <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <PaginationInfo
+                    currentPage={currentPage}
+                    limit={ITEMS_PER_PAGE}
+                    total={grades.length}
+                    itemName="تقييم"
+                  />
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
             </div>
           )}
 

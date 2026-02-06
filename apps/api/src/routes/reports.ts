@@ -43,10 +43,35 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
 });
 
 /**
- * GET /my-reports - Get reports submitted by the current user
+ * GET /my-reports - Get reports submitted by the current student (only their own)
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
-router.get('/my-reports', authenticate, async (req: AuthRequest, res) => {
+router.get('/my-reports', authenticate, authorize('STUDENT'), async (req: AuthRequest, res) => {
   try {
+    const { page, limit } = req.query;
+
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await reportManager.getMyReportsPaginated(
+        {
+          userId: req.user!.userId,
+          role: req.user!.role,
+        },
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
     const result = await reportManager.getMyReports({
       userId: req.user!.userId,
       role: req.user!.role,
@@ -86,10 +111,12 @@ router.get('/count/new', authenticate, authorize('ADMIN', 'TEACHER'), async (req
 
 /**
  * GET / - Get all reports (Admin/Teacher)
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
 router.get('/', authenticate, authorize('ADMIN', 'TEACHER'), async (req: AuthRequest, res) => {
   try {
-    const { status, courseId, lessonId } = req.query;
+    const { status, courseId, lessonId, page, limit } = req.query;
 
     const filters: any = {};
     if (status && typeof status === 'string') {
@@ -102,6 +129,25 @@ router.get('/', authenticate, authorize('ADMIN', 'TEACHER'), async (req: AuthReq
       filters.lessonId = lessonId;
     }
 
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await reportManager.getReportsPaginated(
+        { userId: req.user!.userId, role: req.user!.role },
+        filters,
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
     const result = await reportManager.getReports(
       { userId: req.user!.userId, role: req.user!.role },
       filters
@@ -176,9 +222,9 @@ router.patch('/:id', authenticate, authorize('ADMIN', 'TEACHER'), async (req: Au
 });
 
 /**
- * DELETE /:id - Delete a report (Admin or Teacher of the course)
+ * DELETE /:id - Delete a report (Admin, Teacher of the course, or the reporter/student who created it)
  */
-router.delete('/:id', authenticate, authorize('ADMIN', 'TEACHER'), async (req: AuthRequest, res) => {
+router.delete('/:id', authenticate, authorize('ADMIN', 'TEACHER', 'STUDENT'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 

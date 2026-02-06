@@ -17,12 +17,34 @@ const router = express.Router();
 
 /**
  * GET /course/:courseId - Get homeworks for a course
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
 router.get('/course/:courseId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { courseId } = req.params;
+    const { page, limit } = req.query;
 
-    const result = await homeworkManager.listHomework(
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await homeworkManager.listHomework(
+        { userId: req.user!.userId, role: req.user!.role },
+        courseId,
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
+    const result = await homeworkManager.listHomeworkUnpaginated(
       { userId: req.user!.userId, role: req.user!.role },
       courseId
     );

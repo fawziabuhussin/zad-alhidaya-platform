@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { BookIcon, ClockIcon } from '@/components/Icons';
+import { BookIcon, ClockIcon, HomeworkIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDate } from '@/lib/utils';
+import PageLoading from '@/components/PageLoading';
 
 interface Homework {
   id: string;
@@ -71,9 +73,10 @@ export default function SubmitHomeworkPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="جاري تحميل الواجب..." 
+        icon={<HomeworkIcon className="text-white" size={20} />}
+      />
     );
   }
 
@@ -118,7 +121,7 @@ export default function SubmitHomeworkPage() {
           <div className="flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2 text-stone-600">
               <ClockIcon size={16} />
-              <span>تاريخ الاستحقاق: {new Date(homework.dueDate).toLocaleDateString('ar-SA')}</span>
+              <span>تاريخ الاستحقاق: {formatDate(homework.dueDate)}</span>
             </div>
             <div className="px-3 py-1 bg-stone-100 rounded-lg text-stone-700">
               الدرجة الكاملة: {homework.maxScore}

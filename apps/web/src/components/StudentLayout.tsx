@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { handleLogout as performLogout } from '@/lib/navigation';
 
 interface StudentLayoutProps {
   children: React.ReactNode;
@@ -49,9 +50,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      performLogout();
     }
   };
 

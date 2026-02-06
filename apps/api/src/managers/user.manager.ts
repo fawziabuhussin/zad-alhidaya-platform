@@ -3,7 +3,7 @@
  * Business logic layer for user management
  */
 import { userRepository } from '../repositories/user.repository';
-import { AuthContext } from '../types/common.types';
+import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
 import { CreateTeacherDTO, UpdateUserDTO, UserListItem, UserWithRelations, UserProfile } from '../types/user.types';
 import { hashPassword } from '../utils/password';
 
@@ -13,6 +13,12 @@ import { hashPassword } from '../utils/password';
 export interface UserListResult {
   success: boolean;
   data?: UserListItem[];
+  error?: { status: number; message: string };
+}
+
+export interface UserPaginatedResult {
+  success: boolean;
+  data?: PaginatedResponse<UserListItem>;
   error?: { status: number; message: string };
 }
 
@@ -35,9 +41,9 @@ export interface DeleteResult {
 
 export class UserManager {
   /**
-   * List all users (Admin only)
+   * List all users with pagination (Admin only)
    */
-  async listUsers(auth: AuthContext): Promise<UserListResult> {
+  async listUsers(auth: AuthContext, pagination?: PaginationParams): Promise<UserPaginatedResult> {
     // Check authorization - only admins can list users
     if (auth.role !== 'ADMIN') {
       return {
@@ -46,7 +52,23 @@ export class UserManager {
       };
     }
 
-    const users = await userRepository.findAll();
+    const result = await userRepository.findAll(pagination);
+    return { success: true, data: result };
+  }
+
+  /**
+   * List all users without pagination (Admin only) - backward compatible
+   */
+  async listUsersUnpaginated(auth: AuthContext): Promise<UserListResult> {
+    // Check authorization - only admins can list users
+    if (auth.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مسموح بالوصول' },
+      };
+    }
+
+    const users = await userRepository.findAllUnpaginated();
     return { success: true, data: users };
   }
 

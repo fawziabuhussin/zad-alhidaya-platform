@@ -13,6 +13,9 @@ import {
   TrashIcon
 } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { formatDate } from '@/lib/utils';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import PageLoading from '@/components/PageLoading';
 
 interface Report {
   id: string;
@@ -60,34 +63,37 @@ const STATUS_STYLES: Record<string, string> = {
   DISMISSED: 'bg-stone-100 text-stone-600 border-stone-200',
 };
 
-const POLLING_INTERVAL = 15000; // 15 seconds
+const POLLING_INTERVAL = 60000; // 1 minute
+const ITEMS_PER_PAGE = 15;
 
 export default function TeacherReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
-  const [newCount, setNewCount] = useState(0);
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalReports, setTotalReports] = useState(0);
 
   const loadReports = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
+      params.append('page', currentPage.toString());
+      params.append('limit', ITEMS_PER_PAGE.toString());
       
-      const [reportsRes, countRes] = await Promise.all([
-        api.get(`/reports?${params.toString()}`),
-        api.get('/reports/count/new'),
-      ]);
-      
-      setReports(reportsRes.data || []);
-      setNewCount(countRes.data?.count || 0);
+      const res = await api.get(`/reports?${params.toString()}`);
+      const data = res.data as PaginatedResponse<Report>;
+      setReports(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalReports(data.pagination?.total || 0);
     } catch (error) {
       console.error('Failed to load reports:', error);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, currentPage]);
 
   // Initial load
   useEffect(() => {
@@ -99,6 +105,10 @@ export default function TeacherReportsPage() {
     const interval = setInterval(loadReports, POLLING_INTERVAL);
     return () => clearInterval(interval);
   }, [loadReports]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const updateStatus = async (reportId: string, status: string, reviewNote?: string) => {
     setUpdating(reportId);
@@ -128,11 +138,12 @@ export default function TeacherReportsPage() {
     }
   };
 
-  if (loading) {
+  if (loading && reports.length === 0) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
+      <PageLoading 
+        title="التبليغات" 
+        icon={<AlertIcon className="text-white" size={20} />}
+      />
     );
   }
 
@@ -141,24 +152,14 @@ export default function TeacherReportsPage() {
       {/* Header */}
       <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                <AlertIcon className="text-white" size={20} />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">تبليغات الطلاب</h1>
-                <p className="text-white/70 text-sm">{reports.length} تبليغ على دوراتي</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <AlertIcon className="text-white" size={20} />
             </div>
-            
-            {/* New Reports Badge */}
-            {newCount > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-500 rounded-lg animate-pulse">
-                <span className="font-bold">{newCount}</span>
-                <span className="text-sm">تبليغات جديدة</span>
-              </div>
-            )}
+            <div>
+              <h1 className="text-xl font-bold">تبليغات الطلاب</h1>
+              <p className="text-white/70 text-sm">إدارة تبليغات الطلاب عن أخطاء في محتوى دوراتك (فيديو، نص، مرفقات)</p>
+            </div>
           </div>
         </div>
       </div>
@@ -172,7 +173,7 @@ export default function TeacherReportsPage() {
                 <AlertIcon className="text-stone-600" size={20} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-stone-800">{reports.length}</p>
+                <p className="text-2xl font-bold text-stone-800">{totalReports}</p>
                 <p className="text-xs text-stone-500">إجمالي التبليغات</p>
               </div>
             </div>
@@ -213,20 +214,42 @@ export default function TeacherReportsPage() {
         </div>
 
         {/* Filter */}
-        <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-4 mb-6">
-          <div className="flex items-center gap-3">
-            <FilterIcon className="text-stone-400" size={18} />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white"
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+        <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <FilterIcon size={18} className="text-stone-500" />
+            <span className="text-sm font-medium text-stone-700">تصفية</span>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setStatusFilter(opt.value);
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-2 rounded-lg text-sm transition ${
+                  statusFilter === opt.value
+                    ? 'bg-[#1a3a2f] text-white'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Pagination Info */}
+        {reports.length > 0 && (
+          <div className="mb-4">
+            <PaginationInfo
+              currentPage={currentPage}
+              limit={ITEMS_PER_PAGE}
+              total={totalReports}
+              itemName="تبليغ"
+            />
+          </div>
+        )}
 
         {/* Reports List */}
         {reports.length === 0 ? (
@@ -292,17 +315,17 @@ export default function TeacherReportsPage() {
                     {/* Meta */}
                     <div className="flex items-center gap-4 text-sm text-stone-500 flex-wrap">
                       <span>من: <span className="font-medium text-stone-700">{report.reporter.name}</span></span>
-                      <span>{new Date(report.createdAt).toLocaleDateString('ar-SA')}</span>
+                      <span>{formatDate(report.createdAt)}</span>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-wrap gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <Link
                       href={`/teacher/courses/${report.course.id}/edit`}
-                      className="px-3 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition flex items-center gap-1 text-sm"
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
                     >
-                      <EyeIcon size={14} /> تحرير الدورة
+                      <EyeIcon size={18} /> تحرير الدورة
                     </Link>
                     
                     {report.status === 'NEW' && (
@@ -338,10 +361,10 @@ export default function TeacherReportsPage() {
                     <button
                       onClick={() => deleteReport(report.id)}
                       disabled={deleting === report.id}
-                      className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm disabled:opacity-50 flex items-center gap-1"
+                      className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm disabled:opacity-50"
+                      title="حذف التبليغ"
                     >
-                      <TrashIcon size={14} />
-                      {deleting === report.id ? '...' : 'حذف'}
+                      <TrashIcon size={18} />
                     </button>
                   </div>
                 </div>
@@ -350,9 +373,20 @@ export default function TeacherReportsPage() {
           </div>
         )}
 
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
+
         {/* Polling indicator */}
         <div className="mt-6 text-center text-sm text-stone-400">
-          يتم تحديث البيانات تلقائياً كل 15 ثانية
+          يتم تحديث البيانات تلقائياً كل دقيقة
         </div>
       </div>
     </div>

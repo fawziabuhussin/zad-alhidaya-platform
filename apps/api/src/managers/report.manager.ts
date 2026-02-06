@@ -5,7 +5,7 @@
 import { reportRepository } from '../repositories/report.repository';
 import { enrollmentRepository } from '../repositories/enrollment.repository';
 import { lessonRepository } from '../repositories/lesson.repository';
-import { AuthContext } from '../types/common.types';
+import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
 import { CreateReportDTO, UpdateReportDTO, ReportFilters, ReportWithRelations } from '../types/report.types';
 
 /**
@@ -26,6 +26,12 @@ export interface ReportsListResult {
 export interface ReportCountResult {
   success: boolean;
   data?: { count: number };
+  error?: { status: number; message: string };
+}
+
+export interface ReportsPaginatedResult {
+  success: boolean;
+  data?: PaginatedResponse<ReportWithRelations>;
   error?: { status: number; message: string };
 }
 
@@ -58,9 +64,9 @@ export class ReportManager {
 
     // Check if user is enrolled in the course (unless admin)
     if (auth.role !== 'ADMIN') {
-      const enrollments = await enrollmentRepository.findByUserId(auth.userId);
+      const enrollments = await enrollmentRepository.findByUserIdUnpaginated(auth.userId);
       const isEnrolled = enrollments.some(
-        (e) => e.courseId === data.courseId && e.status === 'ACTIVE'
+        (e: any) => e.courseId === data.courseId && e.status === 'ACTIVE'
       );
 
       if (!isEnrolled) {
@@ -81,14 +87,41 @@ export class ReportManager {
   }
 
   /**
-   * Get reports submitted by the current user (Student)
+   * Get reports submitted by the current user (Student only - only their own)
    */
   async getMyReports(auth: AuthContext): Promise<ReportsListResult> {
+    if (auth.role !== 'STUDENT') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مصرح لك بالوصول' },
+      };
+    }
     const reports = await reportRepository.findByReporterId(auth.userId);
 
     return {
       success: true,
       data: reports as ReportWithRelations[],
+    };
+  }
+
+  /**
+   * Get reports submitted by the current student with pagination (only their own)
+   */
+  async getMyReportsPaginated(
+    auth: AuthContext,
+    pagination?: PaginationParams
+  ): Promise<ReportsPaginatedResult> {
+    if (auth.role !== 'STUDENT') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مصرح لك بالوصول' },
+      };
+    }
+    const result = await reportRepository.findByReporterIdPaginated(auth.userId, pagination);
+
+    return {
+      success: true,
+      data: result,
     };
   }
 
@@ -117,6 +150,35 @@ export class ReportManager {
     return {
       success: true,
       data: reports as ReportWithRelations[],
+    };
+  }
+
+  /**
+   * Get all reports with pagination (Admin) or reports for teacher's courses with pagination (Teacher)
+   */
+  async getReportsPaginated(
+    auth: AuthContext,
+    filters: ReportFilters = {},
+    pagination?: PaginationParams
+  ): Promise<ReportsPaginatedResult> {
+    let result;
+
+    if (auth.role === 'ADMIN') {
+      // Admin sees all reports
+      result = await reportRepository.findAllPaginated(filters, pagination);
+    } else if (auth.role === 'TEACHER') {
+      // Teacher sees reports for their courses only
+      result = await reportRepository.findByTeacherIdPaginated(auth.userId, filters, pagination);
+    } else {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مسموح بالوصول' },
+      };
+    }
+
+    return {
+      success: true,
+      data: result,
     };
   }
 
@@ -231,11 +293,12 @@ export class ReportManager {
       };
     }
 
-    // Check authorization: Admin can delete any, Teacher can delete their course's reports
+    // Check authorization: Admin, course teacher, or the reporter (student) who created it
     const isAdmin = auth.role === 'ADMIN';
     const isCourseTeacher = auth.role === 'TEACHER' && report.course.teacherId === auth.userId;
+    const isReporter = report.reporterId === auth.userId;
 
-    if (!isAdmin && !isCourseTeacher) {
+    if (!isAdmin && !isCourseTeacher && !isReporter) {
       return {
         success: false,
         error: { status: 403, message: 'غير مسموح بحذف هذا التبليغ' },

@@ -1,5 +1,8 @@
 // Professional SVG Icons for Zad Al-Hidaya Platform
 // Clean, consistent Islamic-themed iconography
+// 
+// ACCESSIBILITY: All icons have aria-hidden="true" by default (decorative).
+// When using an icon as the only content of a button, add aria-label to the button.
 
 interface IconProps {
   className?: string;
@@ -812,5 +815,41 @@ export const WifiOffIcon = ({ className = "", size = 24 }: IconProps) => (
     <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
     <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
     <line x1="12" y1="20" x2="12.01" y2="20" />
+  </svg>
+);
+
+// Chevron Left Icon - Navigation
+export const ChevronLeftIcon = ({ className = "", size = 24 }: IconProps) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    width={size} 
+    height={size} 
+    className={className}
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2"
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+// Chevron Right Icon - Navigation
+export const ChevronRightIcon = ({ className = "", size = 24 }: IconProps) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    width={size} 
+    height={size} 
+    className={className}
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2"
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="9 18 15 12 9 6" />
   </svg>
 );

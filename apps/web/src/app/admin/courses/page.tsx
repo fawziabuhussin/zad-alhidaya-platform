@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { BookIcon, PlusIcon, EditIcon, TrashIcon, SearchIcon, GraduateIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
+import PageLoading from '@/components/PageLoading';
 
 interface Course {
   id: string;
@@ -20,21 +22,30 @@ interface Course {
   createdAt: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCourses, setTotalCourses] = useState(0);
   const searchParams = useSearchParams();
   const selectedCategoryId = searchParams.get('categoryId') || '';
 
   useEffect(() => {
     loadCourses();
-  }, []);
+  }, [currentPage]);
 
   const loadCourses = async () => {
     try {
-      const response = await api.get('/courses/admin');
-      setCourses(response.data || []);
+      setLoading(true);
+      const response = await api.get(`/courses/admin?page=${currentPage}&limit=${ITEMS_PER_PAGE}`);
+      const data = response.data as PaginatedResponse<Course>;
+      setCourses(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalCourses(data.pagination?.total || 0);
     } catch (error) {
       console.error('Failed to load courses:', error);
     } finally {
@@ -47,11 +58,16 @@ export default function AdminCoursesPage() {
 
     try {
       await api.delete(`/courses/${id}`);
-      setCourses(courses.filter(c => c.id !== id));
       showSuccess(TOAST_MESSAGES.DELETE_SUCCESS);
+      // Reload current page
+      loadCourses();
     } catch (error: any) {
       showError(error.response?.data?.message || 'فشل حذف الدورة');
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const filteredCourses = useMemo(() => {
@@ -72,19 +88,16 @@ export default function AdminCoursesPage() {
     return courses.find((course) => course.category?.id === selectedCategoryId)?.category?.title || '';
   }, [courses, selectedCategoryId]);
 
+  // Stats based on current page (for accurate stats, would need separate API endpoint)
   const stats = {
-    total: courses.length,
+    total: totalCourses,
     published: courses.filter(c => c.status === 'PUBLISHED').length,
     draft: courses.filter(c => c.status === 'DRAFT').length,
     totalStudents: courses.reduce((sum, c) => sum + (c._count?.enrollments || 0), 0),
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  if (loading && courses.length === 0) {
+    return <PageLoading title="الدورات" icon={<BookIcon size={24} />} />;
   }
 
   return (
@@ -178,76 +191,95 @@ export default function AdminCoursesPage() {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-stone-50 border-b border-stone-200">
-                  <tr>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الدورة</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الفئة</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden lg:table-cell">المدرس</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الحالة</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden sm:table-cell">التسجيلات</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {filteredCourses.map((course) => (
-                    <tr key={course.id} className="hover:bg-stone-50/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] rounded-lg flex items-center justify-center text-white font-bold text-sm overflow-hidden">
-                            {course.coverImage ? (
-                              <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover" />
-                            ) : (
-                              course.title.charAt(0)
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-stone-800 line-clamp-1">{course.title}</h3>
-                            <p className="text-sm text-stone-500 line-clamp-1 hidden sm:block">{course.description}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">{course.category?.title || 'بدون فئة'}</td>
-                      <td className="px-6 py-4 text-sm text-stone-600 hidden lg:table-cell">{course.teacher?.name || 'غير محدد'}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                          course.status === 'PUBLISHED' 
-                            ? 'bg-emerald-100 text-emerald-700' 
-                            : 'bg-stone-100 text-stone-600'
-                        }`}>
-                          {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 hidden sm:table-cell">
-                        <div className="flex items-center gap-1 text-stone-600">
-                          <GraduateIcon size={14} />
-                          <span className="text-sm font-medium">{course._count?.enrollments || 0}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <Link
-                            href={`/admin/courses/${course.id}/edit`}
-                            className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
-                            title="تعديل"
-                          >
-                            <EditIcon size={16} />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(course.id)}
-                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
-                            title="حذف"
-                          >
-                            <TrashIcon size={16} />
-                          </button>
-                        </div>
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-stone-50 border-b border-stone-200">
+                    <tr>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الدورة</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الفئة</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden lg:table-cell">المدرس</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الحالة</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden sm:table-cell">التسجيلات</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {filteredCourses.map((course) => (
+                      <tr key={course.id} className="hover:bg-stone-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] rounded-lg flex items-center justify-center text-white font-bold text-sm overflow-hidden">
+                              {course.coverImage ? (
+                                <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover" />
+                              ) : (
+                                course.title.charAt(0)
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-stone-800 line-clamp-1">{course.title}</h3>
+                              <p className="text-sm text-stone-500 line-clamp-1 hidden sm:block">{course.description}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">{course.category?.title || 'بدون فئة'}</td>
+                        <td className="px-6 py-4 text-sm text-stone-600 hidden lg:table-cell">{course.teacher?.name || 'غير محدد'}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                            course.status === 'PUBLISHED' 
+                              ? 'bg-emerald-100 text-emerald-700' 
+                              : 'bg-stone-100 text-stone-600'
+                          }`}>
+                            {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 hidden sm:table-cell">
+                          <div className="flex items-center gap-1 text-stone-600">
+                            <GraduateIcon size={14} />
+                            <span className="text-sm font-medium">{course._count?.enrollments || 0}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <Link
+                              href={`/admin/courses/${course.id}/edit`}
+                              className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
+                              title="تعديل"
+                            >
+                              <EditIcon size={16} />
+                            </Link>
+                            <button
+                              onClick={() => handleDelete(course.id)}
+                              className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                              title="حذف"
+                            >
+                              <TrashIcon size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <PaginationInfo
+                    currentPage={currentPage}
+                    limit={ITEMS_PER_PAGE}
+                    total={totalCourses}
+                    itemName="دورة"
+                  />
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

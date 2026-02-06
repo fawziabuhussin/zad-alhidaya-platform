@@ -4,6 +4,7 @@
  */
 import { prisma } from '../utils/prisma';
 import { CourseWithRelations, CreateCourseDTO, UpdateCourseDTO, CourseListFilters } from '../types/course.types';
+import { PaginationParams, PaginatedResponse } from '../types/common.types';
 
 /**
  * Include configuration for fetching courses with full relations
@@ -117,9 +118,65 @@ export class CourseRepository {
   }
 
   /**
-   * Find all courses with filters
+   * Find all courses with filters (supports pagination)
    */
-  async findAll(filters: CourseListFilters): Promise<CourseWithRelations[]> {
+  async findAll(
+    filters: CourseListFilters,
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<CourseWithRelations>> {
+    const where: any = {};
+
+    if (filters.categoryId) {
+      where.categoryId = filters.categoryId;
+    }
+
+    if (filters.teacherId) {
+      where.teacherId = filters.teacherId;
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.search) {
+      where.OR = [
+        { title: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Pagination defaults
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    // Execute count and data queries in parallel
+    const [total, data] = await Promise.all([
+      prisma.course.count({ where }),
+      prisma.course.findMany({
+        where,
+        include: courseBasicInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data: data as any,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Find all courses without pagination (for backward compatibility)
+   */
+  async findAllUnpaginated(filters: CourseListFilters): Promise<CourseWithRelations[]> {
     const where: any = {};
 
     if (filters.categoryId) {
@@ -178,12 +235,13 @@ export class CourseRepository {
           include: courseBasicInclude,
         });
 
+        // Dedupe prerequisite IDs to prevent duplicates
+        const uniquePrereqIds = [...new Set(prerequisiteIds)];
         await tx.coursePrerequisite.createMany({
-          data: prerequisiteIds.map((prereqId) => ({
+          data: uniquePrereqIds.map((prereqId) => ({
             courseId: created.id,
             prerequisiteCourseId: prereqId,
           })),
-          skipDuplicates: true,
         });
 
         return created as any;
@@ -225,12 +283,13 @@ export class CourseRepository {
         await tx.coursePrerequisite.deleteMany({ where: { courseId: id } });
 
         if (prerequisiteIds.length > 0) {
+          // Dedupe prerequisite IDs (duplicates already removed by deleteMany above)
+          const uniquePrereqIds = [...new Set(prerequisiteIds)];
           await tx.coursePrerequisite.createMany({
-            data: prerequisiteIds.map((prereqId) => ({
+            data: uniquePrereqIds.map((prereqId) => ({
               courseId: id,
               prerequisiteCourseId: prereqId,
             })),
-            skipDuplicates: true,
           });
         }
 

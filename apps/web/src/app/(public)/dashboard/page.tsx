@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import useSWR from 'swr';
 import api from '@/lib/api';
 import { BookIcon, ExamIcon, HomeworkIcon, StarIcon, PlayIcon } from '@/components/Icons';
 import { 
@@ -11,6 +12,16 @@ import {
   ContinueLearningCardSkeleton,
   DeadlineItemSkeleton 
 } from '@/components/Skeleton';
+import { LiveRegion } from '@/components/Accessibility';
+import { CourseCoverImage } from '@/components/OptimizedImage';
+import { shouldShowSkeleton } from '@/lib/swr-config';
+import { formatDate } from '@/lib/utils';
+
+// SWR fetcher
+const fetcher = async (url: string) => {
+  const response = await api.get(url);
+  return response.data;
+};
 
 interface LessonProgress {
   id: string;
@@ -52,111 +63,129 @@ interface Deadline {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const [activeExamsCount, setActiveExamsCount] = useState(0);
   const [pendingHomeworkCount, setPendingHomeworkCount] = useState(0);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<Deadline[]>([]);
+  const [examsLoaded, setExamsLoaded] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [userRes, enrollmentsRes] = await Promise.all([
-        api.get('/auth/me'),
-        api.get('/enrollments/my-enrollments'),
-      ]);
-      setUser(userRes.data);
-      const enrollmentsData = enrollmentsRes.data || [];
-      setEnrollments(enrollmentsData);
-
-      // Load exams and homework counts for badges
-      const courses = enrollmentsData.map((e: any) => e.course).filter((c: any) => c);
-      if (courses.length > 0) {
-        await loadExamsAndHomework(courses);
-      }
-    } catch (error) {
-      router.push('/login');
-    } finally {
-      setLoading(false);
+  // Use SWR for user data (cached) - keepPreviousData prevents flash on navigation
+  const { data: user, isLoading: userLoading, error: userError } = useSWR(
+    '/auth/me',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      keepPreviousData: true,
+      errorRetryCount: 0,
+      onError: () => router.push('/login'),
     }
-  };
+  );
 
-  const loadExamsAndHomework = async (courses: any[]) => {
-    const now = new Date();
-    const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    let activeExams = 0;
-    let pendingHw = 0;
-    const deadlines: Deadline[] = [];
+  // Use SWR for enrollments (cached) - keepPreviousData prevents flash
+  const { data: enrollments = [], isLoading: enrollmentsLoading } = useSWR<Enrollment[]>(
+    user ? '/enrollments/my-enrollments' : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      keepPreviousData: true,
+      dedupingInterval: 10000,
+    }
+  );
 
-    for (const course of courses) {
-      try {
-        // Load exams
-        const examsRes = await api.get(`/exams/course/${course.id}`).catch(() => ({ data: [] }));
-        const exams = examsRes.data || [];
-        
-        for (const exam of exams) {
+  // Extract courses from enrollments
+  const courses = useMemo(() => {
+    return enrollments.map((e: any) => e.course).filter((c: any) => c);
+  }, [enrollments]);
+
+  // Load exams and homework IN PARALLEL when courses are available
+  useEffect(() => {
+    if (!courses.length || examsLoaded) return;
+
+    const loadExamsAndHomework = async () => {
+      const now = new Date();
+      const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      let activeExams = 0;
+      let pendingHw = 0;
+      const deadlines: Deadline[] = [];
+
+      // Load ALL exams and homework in PARALLEL
+      const examPromises = courses.map((course: any) =>
+        api.get(`/exams/course/${course.id}`)
+          .then(res => ({ courseId: course.id, courseTitle: course.title, data: res.data || [] }))
+          .catch(() => ({ courseId: course.id, courseTitle: course.title, data: [] }))
+      );
+      
+      const homeworkPromises = courses.map((course: any) =>
+        api.get(`/homework/course/${course.id}`)
+          .then(res => ({ courseId: course.id, courseTitle: course.title, data: res.data || [] }))
+          .catch(() => ({ courseId: course.id, courseTitle: course.title, data: [] }))
+      );
+
+      const [examResults, homeworkResults] = await Promise.all([
+        Promise.all(examPromises),
+        Promise.all(homeworkPromises),
+      ]);
+
+      // Process exam results
+      for (const result of examResults) {
+        for (const exam of result.data) {
           const start = new Date(exam.startDate);
           const end = new Date(exam.endDate);
           const hasAttempt = exam.attempts && exam.attempts.length > 0;
           
-          // Count active exams (available now, not attempted)
           if (!hasAttempt && now >= start && now <= end) {
             activeExams++;
           }
           
-          // Add to upcoming deadlines (within 7 days, not completed)
           if (!hasAttempt && end > now && end <= sevenDaysLater) {
             deadlines.push({
               id: exam.id,
               title: exam.title,
               type: 'exam',
               dueDate: exam.endDate,
-              courseTitle: course.title,
-              courseId: course.id,
+              courseTitle: result.courseTitle,
+              courseId: result.courseId,
             });
           }
         }
+      }
 
-        // Load homework
-        const hwRes = await api.get(`/homework/course/${course.id}`).catch(() => ({ data: [] }));
-        const homeworks = hwRes.data || [];
-        
-        for (const hw of homeworks) {
+      // Process homework results
+      for (const result of homeworkResults) {
+        for (const hw of result.data) {
           const due = new Date(hw.dueDate);
           const hasSubmission = hw.submissions && hw.submissions.length > 0;
           
-          // Count pending homework (not submitted, not overdue)
           if (!hasSubmission && now <= due) {
             pendingHw++;
           }
           
-          // Add to upcoming deadlines (within 7 days, not submitted)
           if (!hasSubmission && due > now && due <= sevenDaysLater) {
             deadlines.push({
               id: hw.id,
               title: hw.title,
               type: 'homework',
               dueDate: hw.dueDate,
-              courseTitle: course.title,
-              courseId: course.id,
+              courseTitle: result.courseTitle,
+              courseId: result.courseId,
             });
           }
         }
-      } catch (e) {
-        // Skip errors
       }
-    }
 
-    setActiveExamsCount(activeExams);
-    setPendingHomeworkCount(pendingHw);
-    // Sort by due date
-    deadlines.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-    setUpcomingDeadlines(deadlines.slice(0, 5)); // Show max 5
-  };
+      setActiveExamsCount(activeExams);
+      setPendingHomeworkCount(pendingHw);
+      // Sort by due date
+      deadlines.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      setUpcomingDeadlines(deadlines.slice(0, 5)); // Show max 5
+      setExamsLoaded(true);
+    };
+
+    loadExamsAndHomework();
+  }, [courses, examsLoaded]);
+
+  // Only show skeleton on truly fresh loads, not navigation between cached pages
+  // This prevents the "flash" effect when navigating
+  const showSkeleton = shouldShowSkeleton(userLoading, user) || shouldShowSkeleton(enrollmentsLoading, enrollments.length > 0 ? enrollments : undefined);
 
   // Find next lesson to continue
   const getNextLesson = () => {
@@ -180,7 +209,7 @@ export default function DashboardPage() {
     return null;
   };
 
-  if (loading) {
+  if (showSkeleton) {
     return (
       <div className="min-h-screen bg-stone-50">
         {/* Header Skeleton */}
@@ -239,6 +268,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      {/* Screen reader announcement */}
+      <LiveRegion>تم تحميل لوحة التحكم</LiveRegion>
+      
       {/* Welcome Header */}
       <div className="bg-gradient-to-l from-[#1a3a2f] via-[#1f4a3d] to-[#0d2b24] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -397,7 +429,7 @@ export default function DashboardPage() {
                               : `باقي ${diffDays} أيام`}
                       </p>
                       <p className="text-xs text-stone-400">
-                        {dueDate.toLocaleDateString('ar-SA')}
+                        {formatDate(dueDate)}
                       </p>
                     </div>
                   </Link>
@@ -459,17 +491,10 @@ export default function DashboardPage() {
                   className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-stone-100"
                 >
                   <div className="h-40 md:h-44 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] relative">
-                    {enrollment.course.coverImage ? (
-                      <img
-                        src={enrollment.course.coverImage}
-                        alt={enrollment.course.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white text-3xl font-bold">
-                        {enrollment.course.title.charAt(0)}
-                      </div>
-                    )}
+                    <CourseCoverImage
+                      src={enrollment.course.coverImage}
+                      alt={enrollment.course.title}
+                    />
                     {/* Play overlay on hover */}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">

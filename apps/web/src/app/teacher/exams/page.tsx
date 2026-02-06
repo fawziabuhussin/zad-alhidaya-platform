@@ -1,9 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { ExamIcon, ClockIcon, EditIcon, UsersIcon } from '@/components/Icons';
+import { navigateTo } from '@/lib/navigation';
+import PageLoading from '@/components/PageLoading';
+import { Pagination, PaginationInfo } from '@/components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 interface Exam {
   id: string;
@@ -19,13 +25,16 @@ interface Exam {
 }
 
 export default function TeacherExamsPage() {
+  const router = useRouter();
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     checkAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAuth = async () => {
@@ -47,7 +56,7 @@ export default function TeacherExamsPage() {
 
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        window.location.href = '/login';
+        navigateTo('/login', router);
         return;
       }
 
@@ -55,7 +64,7 @@ export default function TeacherExamsPage() {
       const userData = userRes.data;
       
       if (userData.role !== 'TEACHER' && userData.role !== 'ADMIN') {
-        window.location.href = '/dashboard';
+        navigateTo('/dashboard', router);
         return;
       }
 
@@ -77,7 +86,7 @@ export default function TeacherExamsPage() {
           // Invalid cached user
         }
       }
-      window.location.href = '/login';
+      navigateTo('/login', router);
     }
   };
 
@@ -109,12 +118,22 @@ export default function TeacherExamsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3a2f]"></div>
-      </div>
-    );
+  // Client-side pagination
+  const totalPages = Math.ceil(exams.length / ITEMS_PER_PAGE);
+  const paginatedExams = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return exams.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [exams, currentPage]);
+
+  // Reset to page 1 if current page exceeds total pages after data changes
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [exams.length, totalPages, currentPage]);
+
+  if (loading && exams.length === 0) {
+    return <PageLoading title="الامتحانات" icon={<ExamIcon className="text-white" size={20} />} />;
   }
 
   const totalAttempts = exams.reduce((sum, e) => sum + (e._count?.attempts || 0), 0);
@@ -186,7 +205,7 @@ export default function TeacherExamsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {exams.map((exam) => (
+                  {paginatedExams.map((exam) => (
                     <tr key={exam.id} className="hover:bg-stone-50 transition-colors">
                       <td className="px-6 py-4">
                         <div>
@@ -234,6 +253,23 @@ export default function TeacherExamsPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {exams.length > ITEMS_PER_PAGE && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <PaginationInfo
+              currentPage={currentPage}
+              limit={ITEMS_PER_PAGE}
+              total={exams.length}
+              itemName="امتحان"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>

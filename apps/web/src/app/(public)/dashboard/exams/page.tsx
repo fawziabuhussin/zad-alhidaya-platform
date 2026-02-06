@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import useSWR from 'swr';
 import api from '@/lib/api';
-import { CheckCircleIcon, ExamIcon, ClockIcon, BookIcon, SearchIcon } from '@/components/Icons';
+import { CheckCircleIcon, ExamIcon, ClockIcon, BookIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/Icons';
 import { ExamCardSkeleton, SearchBarSkeleton } from '@/components/Skeleton';
+import { shouldShowSkeleton } from '@/lib/swr-config';
+import { formatDate, formatTime, formatDateTime } from '@/lib/utils';
 
 interface Exam {
   id: string;
@@ -20,56 +23,96 @@ interface Exam {
   attempts: Array<{ id: string; score: number | null }>;
 }
 
+// SWR fetcher
+const fetcher = async (url: string) => {
+  const response = await api.get(url);
+  return response.data;
+};
+
+// Items per page
+const ITEMS_PER_PAGE = 6;
+
 export default function StudentExamsPage() {
   const router = useRouter();
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const hasLoadedOnce = useRef(false);
 
+  // Use SWR to fetch enrollments with caching
+  // keepPreviousData prevents flash on navigation
+  const { data: enrollments = [], isLoading: enrollmentsLoading } = useSWR(
+    '/enrollments/my-enrollments',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      keepPreviousData: true,
+      dedupingInterval: 10000,
+      onError: () => [],
+    }
+  );
+
+  // Extract courses from enrollments
+  const courses = useMemo(() => {
+    return enrollments.map((e: any) => e.course).filter((c: any) => c);
+  }, [enrollments]);
+
+  // Load exams for all courses IN PARALLEL (reduces waterfall)
   useEffect(() => {
-    loadExams();
-  }, []);
+    if (enrollmentsLoading) return;
+    
+    if (courses.length === 0) {
+      setExams([]);
+      setLoading(false);
+      hasLoadedOnce.current = true;
+      return;
+    }
 
-  const loadExams = async () => {
-    try {
-      // Get all enrolled courses
-      const enrollmentsRes = await api.get('/enrollments/my-enrollments').catch(() => ({ data: [] }));
-      const enrollments = enrollmentsRes.data || [];
-      const courses = enrollments.map((e: any) => e.course).filter((c: any) => c);
+    const loadExamsParallel = async () => {
+      try {
+        // Load exams for ALL courses in parallel using Promise.allSettled
+        const examPromises = courses.map((course: any) =>
+          api.get(`/exams/course/${course.id}`)
+            .then(res => ({
+              courseId: course.id,
+              courseTitle: course.title || 'N/A',
+              exams: res.data || [],
+            }))
+            .catch(() => ({
+              courseId: course.id,
+              courseTitle: course.title || 'N/A',
+              exams: [],
+            }))
+        );
 
-      if (courses.length === 0) {
-        setExams([]);
-        setLoading(false);
-        return;
-      }
+        const results = await Promise.all(examPromises);
 
-      // Load exams for all courses
-      const allExams: Exam[] = [];
-      for (const course of courses) {
-        try {
-          const examsRes = await api.get(`/exams/course/${course.id}`);
-          if (examsRes.data && Array.isArray(examsRes.data)) {
-            const examsWithCourse = examsRes.data.map((exam: any) => ({
+        // Flatten all exams with course info
+        const allExams: Exam[] = [];
+        for (const result of results) {
+          if (result.exams && Array.isArray(result.exams)) {
+            const examsWithCourse = result.exams.map((exam: any) => ({
               ...exam,
-              course: { title: course.title || 'N/A', id: course.id },
+              course: { title: result.courseTitle, id: result.courseId },
             }));
             allExams.push(...examsWithCourse);
           }
-        } catch (e: any) {
-          // Skip if no exams or error
-          console.log(`No exams for course ${course.id}:`, e.response?.data?.message || e.message);
         }
-      }
 
-      setExams(allExams);
-    } catch (error: any) {
-      console.error('Failed to load exams:', error);
-      setExams([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setExams(allExams);
+      } catch (error: any) {
+        console.error('Failed to load exams:', error);
+        setExams([]);
+      } finally {
+        setLoading(false);
+        hasLoadedOnce.current = true;
+      }
+    };
+
+    loadExamsParallel();
+  }, [courses, enrollmentsLoading]);
 
   const getExamStatus = (exam: Exam) => {
     const now = new Date();
@@ -84,20 +127,43 @@ export default function StudentExamsPage() {
   };
 
   // Filter exams based on search and status
-  const filteredExams = exams.filter((exam) => {
-    // Search filter
-    const matchesSearch = 
-      exam.title.toLowerCase().includes(search.toLowerCase()) ||
-      exam.course.title.toLowerCase().includes(search.toLowerCase());
-    
-    // Status filter
-    const status = getExamStatus(exam).status;
-    const matchesStatus = statusFilter === 'all' || status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredExams = useMemo(() => {
+    return exams.filter((exam) => {
+      // Search filter
+      const matchesSearch = 
+        exam.title.toLowerCase().includes(search.toLowerCase()) ||
+        exam.course.title.toLowerCase().includes(search.toLowerCase());
+      
+      // Status filter
+      const status = getExamStatus(exam).status;
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [exams, search, statusFilter]);
 
-  if (loading) {
+  // Pagination
+  const totalPages = Math.ceil(filteredExams.length / ITEMS_PER_PAGE);
+  const paginatedExams = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredExams.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredExams, currentPage]);
+
+  // Reset page when filters change
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  // Only show skeleton on truly fresh loads - not navigation between pages
+  const showSkeleton = loading && !hasLoadedOnce.current && exams.length === 0;
+
+  if (showSkeleton) {
     return (
       <div className="min-h-screen bg-stone-50">
         {/* Header Skeleton */}
@@ -165,7 +231,7 @@ export default function StudentExamsPage() {
               type="text"
               placeholder="ابحث عن امتحان..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-4 pr-12 py-3 bg-white border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#c9a227]/20 focus:border-[#c9a227] outline-none transition-all"
             />
           </div>
@@ -181,7 +247,7 @@ export default function StudentExamsPage() {
             ].map((tab) => (
               <button
                 key={tab.value}
-                onClick={() => setStatusFilter(tab.value)}
+                onClick={() => handleStatusFilterChange(tab.value)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   statusFilter === tab.value
                     ? 'bg-[#1a3a2f] text-white'
@@ -217,15 +283,21 @@ export default function StudentExamsPage() {
             <h3 className="text-xl font-bold text-stone-800 mb-2">لا توجد نتائج مطابقة</h3>
             <p className="text-stone-500 mb-6">جرب تغيير معايير البحث أو الفلتر</p>
             <button
-              onClick={() => { setSearch(''); setStatusFilter('all'); }}
+              onClick={() => { setSearch(''); setStatusFilter('all'); setCurrentPage(1); }}
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#143026] transition"
             >
               إزالة الفلتر
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {filteredExams.map((exam) => {
+          <>
+            {/* Results count */}
+            <div className="mb-4 text-sm text-stone-500">
+              عرض {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredExams.length)} من {filteredExams.length} امتحان
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              {paginatedExams.map((exam) => {
               const examStatus = getExamStatus(exam);
               const hasAttempt = exam.attempts && exam.attempts.length > 0;
               const score = hasAttempt ? exam.attempts[0].score : null;
@@ -263,14 +335,14 @@ export default function StudentExamsPage() {
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-stone-100">
                       <span className="text-stone-500">البدء</span>
-                      <span className="font-medium text-stone-800">
-                        {new Date(exam.startDate).toLocaleDateString('ar-SA')} {new Date(exam.startDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                      <span className="font-medium text-stone-800" dir="ltr">
+                        {formatDateTime(exam.startDate)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-stone-100">
                       <span className="text-stone-500">الانتهاء</span>
-                      <span className="font-medium text-stone-800">
-                        {new Date(exam.endDate).toLocaleDateString('ar-SA')} {new Date(exam.endDate).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                      <span className="font-medium text-stone-800" dir="ltr">
+                        {formatDateTime(exam.endDate)}
                       </span>
                     </div>
                     {hasAttempt && score !== null && (
@@ -303,11 +375,8 @@ export default function StudentExamsPage() {
                       {/* Review button - ONLY for passed students */}
                       {score !== null && score >= exam.passingScore && (() => {
                         const isAfterEndDate = new Date() > new Date(exam.endDate);
-                        const endDateFormatted = new Date(exam.endDate).toLocaleDateString('ar-SA');
-                        const endTimeFormatted = new Date(exam.endDate).toLocaleTimeString('ar-SA', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        });
+                        const endDateFormatted = formatDate(exam.endDate);
+                        const endTimeFormatted = formatTime(exam.endDate);
 
                         if (isAfterEndDate) {
                           // ENABLED - can review now
@@ -349,6 +418,62 @@ export default function StudentExamsPage() {
               );
             })}
           </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  aria-label="الصفحة السابقة"
+                >
+                  <ChevronRightIcon size={20} />
+                </button>
+                
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      if (page === 1 || page === totalPages) return true;
+                      if (Math.abs(page - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .map((page, index, arr) => {
+                      const prevPage = arr[index - 1];
+                      const showEllipsis = prevPage && page - prevPage > 1;
+                      
+                      return (
+                        <span key={page} className="flex items-center">
+                          {showEllipsis && (
+                            <span className="px-2 text-stone-400">...</span>
+                          )}
+                          <button
+                            onClick={() => setCurrentPage(page)}
+                            className={`min-w-[40px] h-10 rounded-lg font-medium transition ${
+                              currentPage === page
+                                ? 'bg-[#1a3a2f] text-white'
+                                : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        </span>
+                      );
+                    })}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  aria-label="الصفحة التالية"
+                >
+                  <ChevronLeftIcon size={20} />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
