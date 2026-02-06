@@ -19,6 +19,7 @@ export interface RegisterDTO {
   profession: string;
   gender: 'MALE' | 'FEMALE';
   idNumber: string;
+  location: string;
 }
 
 /**
@@ -33,6 +34,7 @@ export interface CompleteProfileDTO {
   profession: string;
   gender: 'MALE' | 'FEMALE';
   idNumber: string;
+  location: string;
 }
 
 /**
@@ -90,6 +92,7 @@ export interface TokenPayload {
 export interface AuthResponse {
   message: string;
   accessToken: string;
+  refreshToken: string;
   user: AuthUserInfo;
 }
 

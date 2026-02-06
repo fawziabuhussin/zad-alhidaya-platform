@@ -41,6 +41,9 @@ export const registerSchema = z.object({
   idNumber: z.string()
     .length(9, 'رقم الهوية يجب أن يكون 9 أرقام بالضبط')
     .regex(/^[0-9]+$/, 'رقم الهوية يجب أن يحتوي على أرقام فقط'),
+  location: z.string()
+    .min(2, 'البلد يجب أن يكون حرفين على الأقل')
+    .max(100, 'البلد طويل جداً'),
 });
 
 /**
@@ -74,6 +77,9 @@ export const completeProfileSchema = z.object({
   idNumber: z.string()
     .length(9, 'رقم الهوية يجب أن يكون 9 أرقام بالضبط')
     .regex(/^[0-9]+$/, 'رقم الهوية يجب أن يحتوي على أرقام فقط'),
+  location: z.string()
+    .min(2, 'البلد يجب أن يكون حرفين على الأقل')
+    .max(100, 'البلد طويل جداً'),
 });
 
 /**

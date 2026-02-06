@@ -56,14 +56,16 @@ router.post('/login', async (req, res) => {
     }
 
     // Set refresh token as httpOnly cookie
-    res.cookie('refreshToken', result.data!.accessToken, {
+    res.cookie('refreshToken', result.data!.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    res.json(result.data);
+    // Return response without refreshToken in body (it's in the cookie)
+    const { refreshToken, ...responseData } = result.data!;
+    res.json(responseData);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -90,14 +92,16 @@ router.post('/google', async (req, res) => {
     }
 
     // Set refresh token as httpOnly cookie
-    res.cookie('refreshToken', result.data!.accessToken, {
+    res.cookie('refreshToken', result.data!.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.json(result.data);
+    // Return response without refreshToken in body (it's in the cookie)
+    const { refreshToken, ...responseData } = result.data!;
+    res.json(responseData);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -124,14 +128,16 @@ router.post('/apple', async (req, res) => {
     }
 
     // Set refresh token as httpOnly cookie
-    res.cookie('refreshToken', result.data!.accessToken, {
+    res.cookie('refreshToken', result.data!.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.json(result.data);
+    // Return response without refreshToken in body (it's in the cookie)
+    const { refreshToken, ...responseData } = result.data!;
+    res.json(responseData);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({

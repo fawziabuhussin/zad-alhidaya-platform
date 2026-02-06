@@ -17,6 +17,7 @@ export interface CreateUserDTO {
   profession: string;
   gender: 'MALE' | 'FEMALE';
   idNumber: string;
+  location: string;
 }
 
 /**
@@ -33,6 +34,7 @@ export interface CreateTeacherDTO {
   profession: string;
   gender: 'MALE' | 'FEMALE';
   idNumber: string;
+  location: string;
 }
 
 /**
@@ -51,6 +53,7 @@ export interface UpdateUserDTO {
   profession?: string;
   gender?: 'MALE' | 'FEMALE';
   idNumber?: string;
+  location?: string;
 }
 
 /**
@@ -71,6 +74,7 @@ export interface UserWithRelations {
   profession?: string | null;
   gender?: string | null;
   idNumber?: string | null;
+  location?: string | null;
   provider: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -94,6 +98,7 @@ export interface UserListItem {
   profession?: string | null;
   gender?: string | null;
   idNumber?: string | null;
+  location?: string | null;
   createdAt: Date;
   _count: {
     coursesTaught: number;
@@ -119,6 +124,7 @@ export interface UserProfile {
   profession?: string | null;
   gender?: string | null;
   idNumber?: string | null;
+  location?: string | null;
   provider: string | null;
   createdAt: Date;
   _count: {

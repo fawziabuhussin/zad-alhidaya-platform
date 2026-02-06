@@ -76,6 +76,7 @@ export class AuthManager {
       profession,
       gender,
       idNumber,
+      location,
     } = data;
 
     // Concatenate name from parts
@@ -106,6 +107,7 @@ export class AuthManager {
       profession,
       gender,
       idNumber,
+      location,
       profileComplete: true,
     });
 
@@ -181,6 +183,7 @@ export class AuthManager {
       data: {
         message: 'تم تسجيل الدخول بنجاح',
         accessToken,
+        refreshToken,
         user: {
           id: user.id,
           name: user.name,
@@ -274,6 +277,7 @@ export class AuthManager {
         data: {
           message: 'تم تسجيل الدخول بنجاح',
           accessToken,
+          refreshToken,
           user: {
             id: user.id,
             name: user.name,
@@ -367,6 +371,7 @@ export class AuthManager {
         data: {
           message: 'تم تسجيل الدخول بنجاح',
           accessToken,
+          refreshToken,
           user: {
             id: user.id,
             name: user.name,
@@ -455,6 +460,7 @@ export class AuthManager {
       profession,
       gender,
       idNumber,
+      location,
     } = data;
 
     // Concatenate name from parts
@@ -471,6 +477,7 @@ export class AuthManager {
       profession,
       gender,
       idNumber,
+      location,
       profileComplete: true,
     });
 

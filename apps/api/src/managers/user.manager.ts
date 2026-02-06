@@ -111,6 +111,7 @@ export class UserManager {
       profession: data.profession,
       gender: data.gender,
       idNumber: data.idNumber,
+      location: data.location,
       profileComplete: true,
     });
 
@@ -156,6 +157,7 @@ export class UserManager {
       profession: data.profession,
       gender: data.gender,
       idNumber: data.idNumber,
+      location: data.location,
       profileComplete: true,
     });
 

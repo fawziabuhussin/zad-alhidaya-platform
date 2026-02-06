@@ -19,14 +19,6 @@ export default function LoginPage() {
 
   useEffect(() => {
     setMounted(true);
-    // Load Google Sign-In script on mount
-    if (typeof window !== 'undefined' && !(window as any).google) {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
   }, []);
 
   const handleLoginSuccess = (user: any, accessToken: string) => {
@@ -96,59 +88,91 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    try {
-      // Wait for Google script to load
-      if (typeof window === 'undefined' || !(window as any).google) {
-        // Load Google Sign-In script
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-        
-        await new Promise((resolve, reject) => {
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
-
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-      if (!clientId) {
-        const errorMsg = 'Google Client ID غير موجود. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local';
-        setError(errorMsg);
-        showError(errorMsg);
-        setLoading(false);
-        return;
-      }
-
-      // Initialize Google Sign-In
-      (window as any).google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response: any) => {
-          try {
-            const res = await api.post('/auth/google', { token: response.credential });
-            const { accessToken, user } = res.data;
-            handleLoginSuccess(user, accessToken);
-          } catch (err: any) {
-            console.error('Google OAuth error:', err);
-            const errorMsg = err.response?.data?.message || 'فشل تسجيل الدخول باستخدام Google';
-            setError(errorMsg);
-            showError(errorMsg);
-            setLoading(false);
-          }
-        },
-      });
-
-      // Trigger sign-in popup
-      (window as any).google.accounts.id.prompt();
-      setLoading(false);
-    } catch (err: any) {
-      console.error('Google login error:', err);
-      const errorMsg = 'فشل تحميل Google Sign-In. تأكد من إضافة NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local';
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      const errorMsg = 'Google Client ID غير موجود. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID في .env.local';
       setError(errorMsg);
       showError(errorMsg);
       setLoading(false);
+      return;
     }
+
+    // OAuth 2.0 popup flow parameters
+    const redirectUri = window.location.origin + '/auth/google/callback';
+    const scope = 'openid email profile';
+    const responseType = 'token id_token';
+    const state = Math.random().toString(36).substring(7);
+    
+    // Store state for verification
+    sessionStorage.setItem('google_oauth_state', state);
+
+    // Build OAuth URL
+    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    authUrl.searchParams.append('client_id', clientId);
+    authUrl.searchParams.append('redirect_uri', redirectUri);
+    authUrl.searchParams.append('response_type', responseType);
+    authUrl.searchParams.append('scope', scope);
+    authUrl.searchParams.append('state', state);
+    authUrl.searchParams.append('nonce', Math.random().toString(36).substring(7));
+
+    // Open popup window
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      authUrl.toString(),
+      'Google Sign In',
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+    );
+
+    if (!popup) {
+      const errorMsg = 'فشل فتح نافذة Google. قد يكون المتصفح قد حظر النوافذ المنبثقة.';
+      setError(errorMsg);
+      showError(errorMsg);
+      setLoading(false);
+      return;
+    }
+
+    // Listen for message from popup
+    const handleMessage = async (event: MessageEvent) => {
+      // Verify origin
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data.type === 'GOOGLE_AUTH_SUCCESS' && event.data.idToken) {
+        window.removeEventListener('message', handleMessage);
+        
+        try {
+          const res = await api.post('/auth/google', { token: event.data.idToken });
+          const { accessToken, user } = res.data;
+          handleLoginSuccess(user, accessToken);
+        } catch (err: any) {
+          console.error('Google OAuth error:', err);
+          const errorMsg = err.response?.data?.message || 'فشل تسجيل الدخول باستخدام Google';
+          setError(errorMsg);
+          showError(errorMsg);
+          setLoading(false);
+        }
+      } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+        window.removeEventListener('message', handleMessage);
+        const errorMsg = event.data.error || 'فشل تسجيل الدخول باستخدام Google';
+        setError(errorMsg);
+        showError(errorMsg);
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Check if popup was closed
+    const checkPopup = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopup);
+        window.removeEventListener('message', handleMessage);
+        setLoading(false);
+      }
+    }, 500);
   };
 
   const handleAppleLogin = async () => {
@@ -477,4 +501,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

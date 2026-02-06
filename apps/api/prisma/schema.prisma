@@ -29,6 +29,7 @@ model User {
   profession    String?   // المهنة
   gender        String?   // الجنس (MALE/FEMALE)
   idNumber      String?   // رقم الهوية
+  location      String?   // البلد
   profileComplete Boolean @default(false) // Track if user completed profile
 
   createdAt     DateTime  @default(now())

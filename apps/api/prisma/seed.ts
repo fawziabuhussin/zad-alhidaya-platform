@@ -13,9 +13,19 @@ async function main() {
     update: {},
     create: {
       name: 'مدير النظام',
+      firstName: 'عبدالله',
+      fatherName: 'محمد',
+      familyName: 'السعيد',
       email: 'admin@zad-alhidaya.com',
       passwordHash: adminPassword,
       role: 'ADMIN',
+      dateOfBirth: new Date('1985-05-15'),
+      phone: '+972598123456',
+      profession: 'مدير تنفيذي',
+      gender: 'MALE',
+      idNumber: '123456789',
+      location: 'الأردن',
+      profileComplete: true,
     },
   });
   console.log('✅ Admin user created:', admin.email);
@@ -27,9 +37,19 @@ async function main() {
     update: {},
     create: {
       name: 'الشيخ أحمد محمد',
+      firstName: 'أحمد',
+      fatherName: 'محمد',
+      familyName: 'الحسن',
       email: 'teacher@zad-alhidaya.com',
       passwordHash: teacherPassword,
       role: 'TEACHER',
+      dateOfBirth: new Date('1980-03-20'),
+      phone: '+972599234567',
+      profession: 'معلم علوم شرعية',
+      gender: 'MALE',
+      idNumber: '234567890',
+      location: 'الأردن',
+      profileComplete: true,
     },
   });
   console.log('✅ Teacher user created:', teacher.email);
@@ -41,9 +61,19 @@ async function main() {
     update: {},
     create: {
       name: 'طالب العلم',
+      firstName: 'يوسف',
+      fatherName: 'عمر',
+      familyName: 'الخطيب',
       email: 'student@zad-alhidaya.com',
       passwordHash: studentPassword,
       role: 'STUDENT',
+      dateOfBirth: new Date('2000-08-10'),
+      phone: '+972597345678',
+      profession: 'طالب جامعي',
+      gender: 'MALE',
+      idNumber: '345678901',
+      location: 'الأردن',
+      profileComplete: true,
     },
   });
   console.log('✅ Student user created:', student.email);
