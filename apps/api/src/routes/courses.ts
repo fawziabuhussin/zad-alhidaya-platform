@@ -34,10 +34,35 @@ function getAuthContext(req: any): AuthContext | null {
 
 /**
  * GET /admin - Get all courses for admin/teacher (includes DRAFT)
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
 router.get('/admin', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await courseManager.listAdminCourses({
+    const { page, limit } = req.query;
+
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await courseManager.listAdminCourses(
+        {
+          userId: req.user!.userId,
+          role: req.user!.role,
+        },
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
+    const result = await courseManager.listAdminCoursesUnpaginated({
       userId: req.user!.userId,
       role: req.user!.role,
     });
@@ -55,13 +80,37 @@ router.get('/admin', authenticate, async (req: AuthRequest, res) => {
 
 /**
  * GET / - Get all courses (public/authenticated with filters)
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
 router.get('/', async (req, res) => {
   try {
     const auth = getAuthContext(req);
-    const { categoryId, search } = req.query;
+    const { categoryId, search, page, limit } = req.query;
 
-    const result = await courseManager.listCourses(auth, {
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await courseManager.listCourses(
+        auth,
+        {
+          categoryId: categoryId as string,
+          search: search as string,
+        },
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
+    const result = await courseManager.listCoursesUnpaginated(auth, {
       categoryId: categoryId as string,
       search: search as string,
     });
@@ -79,16 +128,24 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /public - Get all published courses (public)
+ * Returns paginated response: { data: [...], pagination: {...} }
  */
 router.get('/public', async (req, res) => {
   try {
-    const { categoryId, search } = req.query;
+    const { categoryId, search, page, limit } = req.query;
 
-    const result = await courseManager.listCourses(null, {
-      categoryId: categoryId as string,
-      search: search as string,
-      status: 'PUBLISHED',
-    });
+    const result = await courseManager.listCourses(
+      null,
+      {
+        categoryId: categoryId as string,
+        search: search as string,
+        status: 'PUBLISHED',
+      },
+      {
+        page: parseInt(page as string) || 1,
+        limit: parseInt(limit as string) || 100, // Default high limit for public listing
+      }
+    );
 
     if (!result.success) {
       return res.status(result.error!.status).json({ message: result.error!.message });

@@ -73,7 +73,7 @@ function getLetterGrade(percentage: number): string {
 
 export class ExamManager {
   /**
-   * List all exams for a course
+   * List all exams for a course (unpaginated for backward compatibility)
    * Note: Questions are serialized to hide answers for students
    * unless they passed AND it's after endDate
    */
@@ -91,12 +91,56 @@ export class ExamManager {
       };
     }
 
-    const exams = await examRepository.findByCourseId(courseId, auth.userId);
+    const exams = await examRepository.findByCourseIdUnpaginated(courseId, auth.userId);
     
     // Serialize exams to hide answers based on user context
     const serializedExams = examSerializer.serializeExams(exams, auth);
     
     return { success: true, data: serializedExams };
+  }
+
+  /**
+   * List all exams for a course with pagination
+   * Note: Questions are serialized to hide answers for students
+   * unless they passed AND it's after endDate
+   */
+  async listExamsPaginated(
+    auth: AuthContext,
+    courseId: string,
+    pagination?: { page?: number; limit?: number }
+  ): Promise<{
+    success: boolean;
+    data?: {
+      data: ExamWithRelations[];
+      pagination: { page: number; limit: number; total: number; totalPages: number };
+    };
+    error?: { status: number; message: string };
+  }> {
+    // Check authorization - read access required
+    const access = await authorizationService.checkReadAccess(auth, {
+      type: 'course',
+      id: courseId,
+    });
+
+    if (!access.allowed) {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مسموح بالوصول' },
+      };
+    }
+
+    const result = await examRepository.findByCourseId(courseId, auth.userId, pagination);
+    
+    // Serialize exams to hide answers based on user context
+    const serializedExams = examSerializer.serializeExams(result.data, auth);
+    
+    return {
+      success: true,
+      data: {
+        data: serializedExams,
+        pagination: result.pagination,
+      },
+    };
   }
 
   /**

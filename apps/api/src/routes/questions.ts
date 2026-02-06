@@ -43,10 +43,12 @@ router.post('/', authenticate, authorize('STUDENT'), async (req: AuthRequest, re
 
 /**
  * GET /questions - Get all questions (admin only)
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
 router.get('/', authenticate, authorize('ADMIN'), async (req: AuthRequest, res) => {
   try {
-    const { status, courseId, lessonId } = req.query;
+    const { status, courseId, lessonId, page, limit } = req.query;
 
     const filters: any = {};
     if (status && typeof status === 'string') {
@@ -59,7 +61,26 @@ router.get('/', authenticate, authorize('ADMIN'), async (req: AuthRequest, res) 
       filters.lessonId = lessonId;
     }
 
-    const result = await questionManager.getAllQuestions(
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await questionManager.getAllQuestions(
+        { userId: req.user!.userId, role: req.user!.role },
+        filters,
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
+    const result = await questionManager.getAllQuestionsUnpaginated(
       { userId: req.user!.userId, role: req.user!.role },
       filters
     );
@@ -77,10 +98,32 @@ router.get('/', authenticate, authorize('ADMIN'), async (req: AuthRequest, res) 
 
 /**
  * GET /questions/my - Get questions for the logged-in student
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
 router.get('/my', authenticate, authorize('STUDENT'), async (req: AuthRequest, res) => {
   try {
-    const result = await questionManager.getMyQuestions({
+    const { page, limit } = req.query;
+
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await questionManager.getMyQuestions(
+        { userId: req.user!.userId, role: req.user!.role },
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
+    const result = await questionManager.getMyQuestionsUnpaginated({
       userId: req.user!.userId,
       role: req.user!.role,
     });
@@ -98,10 +141,12 @@ router.get('/my', authenticate, authorize('STUDENT'), async (req: AuthRequest, r
 
 /**
  * GET /questions/teacher - Get questions for courses taught by the teacher
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
 router.get('/teacher', authenticate, authorize('TEACHER', 'ADMIN'), async (req: AuthRequest, res) => {
   try {
-    const { status, courseId } = req.query;
+    const { status, courseId, page, limit } = req.query;
 
     const filters: any = {};
     if (status && typeof status === 'string') {
@@ -111,7 +156,26 @@ router.get('/teacher', authenticate, authorize('TEACHER', 'ADMIN'), async (req: 
       filters.courseId = courseId;
     }
 
-    const result = await questionManager.getTeacherQuestions(
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await questionManager.getTeacherQuestions(
+        { userId: req.user!.userId, role: req.user!.role },
+        filters,
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
+    const result = await questionManager.getTeacherQuestionsUnpaginated(
       { userId: req.user!.userId, role: req.user!.role },
       filters
     );

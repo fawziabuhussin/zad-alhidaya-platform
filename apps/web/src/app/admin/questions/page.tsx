@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { HelpIcon, CheckCircleIcon, ClockIcon, EyeIcon, TrashIcon, FilterIcon, UserIcon } from '@/components/Icons';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 
 interface Question {
   id: string;
@@ -38,27 +39,40 @@ interface Question {
   } | null;
 }
 
+const ITEMS_PER_PAGE = 15;
+
 export default function AdminQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'PENDING' | 'ANSWERED'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalQuestions, setTotalQuestions] = useState(0);
   const [answeringId, setAnsweringId] = useState<string | null>(null);
   const [answerText, setAnswerText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadQuestions();
-  }, []);
+  }, [currentPage]);
 
   const loadQuestions = async () => {
     try {
-      const response = await api.get('/questions');
-      setQuestions(response.data || []);
+      setLoading(true);
+      const response = await api.get(`/questions?page=${currentPage}&limit=${ITEMS_PER_PAGE}`);
+      const data = response.data as PaginatedResponse<Question>;
+      setQuestions(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalQuestions(data.pagination?.total || 0);
     } catch (error) {
       console.error('Failed to load questions:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const handleAnswer = async (questionId: string) => {
@@ -281,6 +295,23 @@ export default function AdminQuestionsPage() {
                 )}
               </div>
             ))
+          )}
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <PaginationInfo
+                currentPage={currentPage}
+                limit={ITEMS_PER_PAGE}
+                total={totalQuestions}
+                itemName="سؤال"
+              />
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
           )}
         </div>
       </div>

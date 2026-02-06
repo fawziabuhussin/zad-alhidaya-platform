@@ -50,13 +50,15 @@ export default function AdminDashboard() {
   const loadDashboardData = async () => {
     try {
       const [coursesRes, usersRes, enrollmentsRes, categoriesRes] = await Promise.all([
-        api.get('/courses/public').catch(() => ({ data: [] })),
+        api.get('/courses/public').catch(() => ({ data: { data: [], pagination: {} } })),
         api.get('/users').catch(() => ({ data: [] })),
         api.get('/enrollments').catch(() => ({ data: [] })),
         api.get('/categories').catch(() => ({ data: [] })),
       ]);
 
-      const courses = coursesRes.data || [];
+      // Handle paginated response from /courses/public
+      const coursesData = coursesRes.data;
+      const courses = coursesData?.data ?? coursesData ?? [];
       const users = usersRes.data || [];
       const enrollments = enrollmentsRes.data || [];
       const categories = categoriesRes.data || [];

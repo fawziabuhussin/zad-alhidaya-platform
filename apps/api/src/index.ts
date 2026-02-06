@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { prisma } from './utils/prisma';
@@ -77,6 +78,13 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// Response compression - reduces payload size by 60-80%
+app.use(compression({
+  level: 6, // Balanced compression level
+  threshold: 1024, // Only compress responses > 1KB
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 

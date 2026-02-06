@@ -20,15 +20,24 @@ export default function Home() {
           localStorage.setItem('user', JSON.stringify(res.data));
         })
         .catch(() => {
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            setUser(JSON.parse(userStr));
+          try {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+              setUser(JSON.parse(userStr));
+            }
+          } catch (e) {
+            localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
           }
         });
     } else {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        setUser(JSON.parse(userStr));
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          setUser(JSON.parse(userStr));
+        }
+      } catch (e) {
+        localStorage.removeItem('user');
       }
     }
   }, []);

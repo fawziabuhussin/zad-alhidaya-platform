@@ -14,6 +14,7 @@ import {
   ExamQuestionWithParsedChoices,
   CourseCompletionStatus,
 } from '../types/exam.types';
+import { PaginationParams, PaginatedResponse } from '../types/common.types';
 
 /**
  * Include configuration for fetching exams with relations
@@ -78,9 +79,61 @@ export class ExamRepository {
   }
 
   /**
-   * Find all exams for a course
+   * Find all exams for a course with pagination
    */
-  async findByCourseId(courseId: string, userId: string): Promise<ExamWithRelations[]> {
+  async findByCourseId(
+    courseId: string,
+    userId: string,
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<ExamWithRelations>> {
+    const where = { courseId };
+
+    // Pagination defaults
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    // Execute count and data queries in parallel
+    const [total, exams] = await Promise.all([
+      prisma.exam.count({ where }),
+      prisma.exam.findMany({
+        where,
+        include: {
+          ...examInclude,
+          questions: {
+            orderBy: { order: 'asc' },
+          },
+          attempts: {
+            where: { userId },
+          },
+          _count: { select: { attempts: true } },
+        },
+        orderBy: { startDate: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    const data = exams.map((exam) => ({
+      ...exam,
+      questions: exam.questions.map((q) => this.parseQuestionChoices(q)),
+    }));
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Find all exams for a course without pagination (for backward compatibility)
+   */
+  async findByCourseIdUnpaginated(courseId: string, userId: string): Promise<ExamWithRelations[]> {
     const exams = await prisma.exam.findMany({
       where: { courseId },
       include: {

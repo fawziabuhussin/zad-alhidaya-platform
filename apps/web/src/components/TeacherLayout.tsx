@@ -275,10 +275,11 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
 
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="lg:hidden p-1.5 text-stone-300 hover:text-white rounded"
-                aria-label="القائمة"
+                className="lg:hidden touch-icon-btn text-stone-300 hover:text-white hover:bg-white/10 rounded-lg"
+                aria-label={menuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+                aria-expanded={menuOpen}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {menuOpen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
@@ -302,7 +303,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2 rounded text-sm ${
+                    className={`touch-list-item justify-between rounded-lg text-sm ${
                       isActive
                         ? 'bg-white/15 text-white'
                         : 'text-stone-300 hover:bg-white/10'
@@ -319,25 +320,25 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
               })}
               
               <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="flex items-center gap-2 px-3 py-2">
-                  <div className="w-8 h-8 bg-[#c9a227] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-10 h-10 bg-[#c9a227] rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0">
                     {user?.name?.charAt(0) || 'T'}
                   </div>
                   <div>
-                    <p className="text-sm text-white">{user?.name || 'المدرس'}</p>
+                    <p className="text-sm text-white font-medium">{user?.name || 'المدرس'}</p>
                     <p className="text-xs text-stone-400">{user?.email || ''}</p>
                   </div>
                 </div>
                 <Link
                   href="/"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-3 py-2 text-sm text-stone-300 hover:bg-white/10 rounded"
+                  className="touch-list-item text-sm text-stone-300 hover:bg-white/10 rounded-lg"
                 >
                   الموقع الرئيسي
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full text-right px-3 py-2 text-sm text-red-400 hover:bg-white/10 rounded"
+                  className="touch-list-item w-full text-right text-sm text-red-400 hover:bg-white/10 rounded-lg"
                 >
                   تسجيل الخروج
                 </button>

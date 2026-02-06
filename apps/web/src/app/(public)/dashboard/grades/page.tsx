@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
+import useSWR from 'swr';
 import api from '@/lib/api';
 import { StarIcon, ChartIcon, FilterIcon } from '@/components/Icons';
 import { GradeItemSkeleton, StatCardSkeleton, FilterSkeleton } from '@/components/Skeleton';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 
 interface Grade {
   id: string;
@@ -16,34 +19,60 @@ interface Grade {
   course: { id: string; title: string; coverImage?: string };
 }
 
-export default function StudentGradesPage() {
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [gpa, setGpa] = useState<string>('0.00');
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState({ courseId: '', type: '' });
+interface PaginatedGradesResponse {
+  grades: PaginatedResponse<Grade>;
+  gpa: string;
+}
 
+// SWR fetcher
+const fetcher = async (url: string) => {
+  const response = await api.get(url);
+  return response.data;
+};
+
+// Items per page
+const ITEMS_PER_PAGE = 10;
+
+export default function StudentGradesPage() {
+  const [filter, setFilter] = useState({ courseId: '', type: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get user ID from localStorage on mount
   useEffect(() => {
-    loadGrades();
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+    setUserId(user.id);
   }, []);
 
-  const loadGrades = async () => {
-    try {
-      const userStr = localStorage.getItem('user');
-      const user = userStr ? JSON.parse(userStr) : null;
-      
-      if (!user) {
-        window.location.href = '/login';
-        return;
-      }
+  // Fetch grades with SWR (cached) - now with pagination
+  const gradesUrl = useMemo(() => {
+    if (!userId) return null;
+    return `/grades/student/${userId}?page=${currentPage}&limit=${ITEMS_PER_PAGE}`;
+  }, [userId, currentPage]);
 
-      const response = await api.get(`/grades/student/${user.id}`);
-      setGrades(response.data.grades || []);
-      setGpa(response.data.gpa || '0.00');
-    } catch (error) {
-      console.error('Failed to load grades:', error);
-    } finally {
-      setLoading(false);
+  const { data, isLoading } = useSWR<PaginatedGradesResponse>(
+    gradesUrl,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
     }
+  );
+
+  const grades = data?.grades?.data || [];
+  const pagination = data?.grades?.pagination;
+  const totalPages = pagination?.totalPages || 1;
+  const totalGrades = pagination?.total || grades.length;
+  const gpa = data?.gpa || '0.00';
+  const loading = isLoading || !userId;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const getGradeColor = (grade: string) => {
@@ -64,15 +93,26 @@ export default function StudentGradesPage() {
     return labels[type] || type;
   };
 
-  const filteredGrades = grades.filter(grade => {
-    if (filter.courseId && grade.course.id !== filter.courseId) return false;
-    if (filter.type && grade.type !== filter.type) return false;
-    return true;
-  });
+  // Client-side filtering on current page's data (for full filtering, would need API support)
+  const filteredGrades = useMemo(() => {
+    return grades.filter(grade => {
+      if (filter.courseId && grade.course.id !== filter.courseId) return false;
+      if (filter.type && grade.type !== filter.type) return false;
+      return true;
+    });
+  }, [grades, filter]);
 
-  const uniqueCourses = Array.from(new Set(grades.map(g => g.course.id)))
-    .map(id => grades.find(g => g.course.id === id)?.course)
-    .filter(Boolean) as any[];
+  // Reset page when filter changes
+  const handleFilterChange = (newFilter: typeof filter) => {
+    setFilter(newFilter);
+    setCurrentPage(1);
+  };
+
+  const uniqueCourses = useMemo(() => {
+    return Array.from(new Set(grades.map(g => g.course.id)))
+      .map(id => grades.find(g => g.course.id === id)?.course)
+      .filter(Boolean) as any[];
+  }, [grades]);
 
   if (loading) {
     return (
@@ -180,7 +220,7 @@ export default function StudentGradesPage() {
               <label className="block text-sm font-medium mb-2 text-stone-700">الدورة</label>
               <select
                 value={filter.courseId}
-                onChange={(e) => setFilter({ ...filter, courseId: e.target.value })}
+                onChange={(e) => handleFilterChange({ ...filter, courseId: e.target.value })}
                 className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white"
               >
                 <option value="">جميع الدورات</option>
@@ -193,7 +233,7 @@ export default function StudentGradesPage() {
               <label className="block text-sm font-medium mb-2 text-stone-700">النوع</label>
               <select
                 value={filter.type}
-                onChange={(e) => setFilter({ ...filter, type: e.target.value })}
+                onChange={(e) => handleFilterChange({ ...filter, type: e.target.value })}
                 className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-800 bg-white"
               >
                 <option value="">جميع الأنواع</option>
@@ -216,43 +256,69 @@ export default function StudentGradesPage() {
             <p className="text-stone-500">أكمل الامتحانات والواجبات لعرض درجاتك</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredGrades.map((grade) => (
-              <div key={grade.id} className="bg-white rounded-xl shadow-sm border border-stone-100 p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  {grade.course.coverImage ? (
-                    <img
-                      src={grade.course.coverImage}
-                      alt={grade.course.title}
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-[#1a3a2f] rounded-lg flex items-center justify-center text-white text-xl font-bold shrink-0">
-                      {grade.course.title.charAt(0)}
+          <>
+            {/* Results count */}
+            <div className="mb-4">
+              <PaginationInfo
+                currentPage={currentPage}
+                limit={ITEMS_PER_PAGE}
+                total={totalGrades}
+                itemName="تقييم"
+              />
+            </div>
+
+            <div className="space-y-4">
+              {filteredGrades.map((grade) => (
+                <div key={grade.id} className="bg-white rounded-xl shadow-sm border border-stone-100 p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-[#1a3a2f] shrink-0 relative">
+                      {grade.course.coverImage ? (
+                        <Image
+                          src={grade.course.coverImage}
+                          alt={grade.course.title}
+                          fill
+                          className="object-cover"
+                          sizes="64px"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
+                          {grade.course.title.charAt(0)}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-stone-800 truncate">{grade.course.title}</h3>
-                    <p className="text-stone-500">{getTypeLabel(grade.type)}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className={`px-4 py-2 rounded-lg border ${getGradeColor(grade.letterGrade)}`}>
-                      <p className="text-2xl font-bold">{grade.letterGrade}</p>
-                      <p className="text-sm font-medium">{grade.percentage.toFixed(1)}%</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-stone-800 truncate">{grade.course.title}</h3>
+                      <p className="text-stone-500">{getTypeLabel(grade.type)}</p>
                     </div>
-                    <div className="text-left">
-                      <p className="text-lg font-bold text-stone-800">
-                        {grade.score} / {grade.maxScore}
-                      </p>
-                      <p className="text-sm text-stone-500">
-                        {new Date(grade.createdAt).toLocaleDateString('ar-SA')}
-                      </p>
+                    <div className="flex items-center gap-4">
+                      <div className={`px-4 py-2 rounded-lg border ${getGradeColor(grade.letterGrade)}`}>
+                        <p className="text-2xl font-bold">{grade.letterGrade}</p>
+                        <p className="text-sm font-medium">{grade.percentage.toFixed(1)}%</p>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-lg font-bold text-stone-800">
+                          {grade.score} / {grade.maxScore}
+                        </p>
+                        <p className="text-sm text-stone-500">
+                          {new Date(grade.createdAt).toLocaleDateString('ar-SA')}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                className="mt-8"
+              />
+            )}
+          </>
         )}
       </div>
     </div>

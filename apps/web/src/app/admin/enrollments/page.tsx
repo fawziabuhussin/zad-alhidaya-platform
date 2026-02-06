@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { UsersIcon, BookIcon, CalendarIcon, FilterIcon } from '@/components/Icons';
 import { showSuccess, showError, TOAST_MESSAGES } from '@/lib/toast';
+import { Pagination, PaginationInfo, PaginatedResponse } from '@/components/Pagination';
 
 // Custom Status Filter Dropdown
 function StatusFilterDropdown({ value, onChange }: { value: string, onChange: (value: string) => void }) {
@@ -132,24 +133,37 @@ interface Enrollment {
   course: { title: string };
 }
 
+const ITEMS_PER_PAGE = 15;
+
 export default function AdminEnrollmentsPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalEnrollments, setTotalEnrollments] = useState(0);
 
   useEffect(() => {
     loadEnrollments();
-  }, []);
+  }, [currentPage]);
 
   const loadEnrollments = async () => {
     try {
-      const response = await api.get('/enrollments');
-      setEnrollments(response.data || []);
+      setLoading(true);
+      const response = await api.get(`/enrollments?page=${currentPage}&limit=${ITEMS_PER_PAGE}`);
+      const data = response.data as PaginatedResponse<Enrollment>;
+      setEnrollments(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalEnrollments(data.pagination?.total || 0);
     } catch (error) {
       console.error('Failed to load enrollments:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
@@ -168,8 +182,9 @@ export default function AdminEnrollmentsPage() {
     !statusFilter || e.status === statusFilter
   );
 
+  // Stats based on current page (for accurate stats, would need separate API endpoint)
   const stats = {
-    total: enrollments.length,
+    total: totalEnrollments,
     active: enrollments.filter(e => e.status === 'ACTIVE').length,
     pending: enrollments.filter(e => e.status === 'PENDING').length,
     canceled: enrollments.filter(e => e.status === 'CANCELED').length,
@@ -242,61 +257,80 @@ export default function AdminEnrollmentsPage() {
               <p className="text-stone-500 text-lg">لا توجد تسجيلات</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-stone-50 border-b border-stone-200">
-                  <tr>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الطالب</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الدورة</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الحالة</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden sm:table-cell">تاريخ التسجيل</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {filteredEnrollments.map((enrollment) => (
-                    <tr key={enrollment.id} className="hover:bg-stone-50/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <h3 className="font-semibold text-stone-800">{enrollment.user.name}</h3>
-                          <p className="text-sm text-stone-500">{enrollment.user.email}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">{enrollment.course.title}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                          enrollment.status === 'ACTIVE'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : enrollment.status === 'PENDING'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                          {enrollment.status === 'ACTIVE' ? 'نشط' : 
-                           enrollment.status === 'PENDING' ? 'قيد الانتظار' : 'ملغي'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 hidden sm:table-cell">
-                        <div className="flex items-center gap-1 text-stone-500 text-sm">
-                          <CalendarIcon size={14} />
-                          {new Date(enrollment.enrolledAt).toLocaleDateString('ar-SA')}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <select
-                          value={enrollment.status}
-                          onChange={(e) => handleStatusChange(enrollment.id, e.target.value)}
-                          className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-700 bg-white"
-                        >
-                          <option value="ACTIVE">نشط</option>
-                          <option value="PENDING">قيد الانتظار</option>
-                          <option value="CANCELED">إلغاء</option>
-                        </select>
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-stone-50 border-b border-stone-200">
+                    <tr>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الطالب</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden md:table-cell">الدورة</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الحالة</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider hidden sm:table-cell">تاريخ التسجيل</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">الإجراءات</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {filteredEnrollments.map((enrollment) => (
+                      <tr key={enrollment.id} className="hover:bg-stone-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div>
+                            <h3 className="font-semibold text-stone-800">{enrollment.user.name}</h3>
+                            <p className="text-sm text-stone-500">{enrollment.user.email}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-stone-600 hidden md:table-cell">{enrollment.course.title}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                            enrollment.status === 'ACTIVE'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : enrollment.status === 'PENDING'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {enrollment.status === 'ACTIVE' ? 'نشط' : 
+                             enrollment.status === 'PENDING' ? 'قيد الانتظار' : 'ملغي'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 hidden sm:table-cell">
+                          <div className="flex items-center gap-1 text-stone-500 text-sm">
+                            <CalendarIcon size={14} />
+                            {new Date(enrollment.enrolledAt).toLocaleDateString('ar-SA')}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <select
+                            value={enrollment.status}
+                            onChange={(e) => handleStatusChange(enrollment.id, e.target.value)}
+                            className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-stone-700 bg-white"
+                          >
+                            <option value="ACTIVE">نشط</option>
+                            <option value="PENDING">قيد الانتظار</option>
+                            <option value="CANCELED">إلغاء</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <PaginationInfo
+                    currentPage={currentPage}
+                    limit={ITEMS_PER_PAGE}
+                    total={totalEnrollments}
+                    itemName="تسجيل"
+                  />
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

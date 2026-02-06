@@ -817,3 +817,39 @@ export const WifiOffIcon = ({ className = "", size = 24 }: IconProps) => (
     <line x1="12" y1="20" x2="12.01" y2="20" />
   </svg>
 );
+
+// Chevron Left Icon - Navigation
+export const ChevronLeftIcon = ({ className = "", size = 24 }: IconProps) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    width={size} 
+    height={size} 
+    className={className}
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2"
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+// Chevron Right Icon - Navigation
+export const ChevronRightIcon = ({ className = "", size = 24 }: IconProps) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    width={size} 
+    height={size} 
+    className={className}
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2"
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);

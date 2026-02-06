@@ -84,20 +84,30 @@ export default function TeacherHomeworkPage() {
       const myCourses = coursesRes.data || [];
       setCourses(myCourses);
       
-      // Load homeworks for teacher's courses
-      const allHomeworks: Homework[] = [];
-      for (const course of myCourses) {
-        try {
-          const hwRes = await api.get(`/homework/course/${course.id}`);
-          const hwWithCourse = (hwRes.data || []).map((hw: any) => ({
-            ...hw,
-            course: hw.course || { id: course.id, title: course.title },
-          }));
-          allHomeworks.push(...hwWithCourse);
-        } catch (error) {
-          console.error(`Failed to load homeworks for course ${course.id}:`, error);
-        }
-      }
+      // Load homeworks for all teacher's courses in PARALLEL (fixes N+1 query)
+      const homeworkPromises = myCourses.map((course: any) =>
+        api.get(`/homework/course/${course.id}`)
+          .then(hwRes => ({
+            courseId: course.id,
+            courseTitle: course.title,
+            homeworks: hwRes.data || [],
+          }))
+          .catch(error => {
+            console.error(`Failed to load homeworks for course ${course.id}:`, error);
+            return { courseId: course.id, courseTitle: course.title, homeworks: [] };
+          })
+      );
+      
+      const results = await Promise.all(homeworkPromises);
+      
+      // Flatten results and add course info
+      const allHomeworks: Homework[] = results.flatMap(result =>
+        result.homeworks.map((hw: any) => ({
+          ...hw,
+          course: hw.course || { id: result.courseId, title: result.courseTitle },
+        }))
+      );
+      
       setHomeworks(allHomeworks);
     } catch (error) {
       console.error('Failed to load data:', error);

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { showSuccess, TOAST_MESSAGES } from '@/lib/toast';
 import { SkipLink } from '@/components/Accessibility';
+import MobileBottomNav from '@/components/MobileBottomNav';
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -26,15 +27,26 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
           localStorage.setItem('user', JSON.stringify(res.data));
         })
         .catch(() => {
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            setUser(JSON.parse(userStr));
+          try {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+              setUser(JSON.parse(userStr));
+            }
+          } catch (e) {
+            // Invalid JSON in localStorage, clear it
+            localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
           }
         });
     } else {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        setUser(JSON.parse(userStr));
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          setUser(JSON.parse(userStr));
+        }
+      } catch (e) {
+        // Invalid JSON in localStorage, clear it
+        localStorage.removeItem('user');
       }
     }
   }, []);
@@ -179,10 +191,11 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="md:hidden p-1.5 text-stone-300 hover:text-white rounded"
-                aria-label="القائمة"
+                className="md:hidden touch-icon-btn text-stone-300 hover:text-white hover:bg-white/10 rounded-lg"
+                aria-label={menuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+                aria-expanded={menuOpen}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {menuOpen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
@@ -196,11 +209,11 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
         {menuOpen && (
           <div className="md:hidden border-t border-white/10 bg-[#1a3a2f]">
-            <nav className="px-4 py-3 space-y-1">
+            <nav className="px-4 py-3 space-y-1" aria-label="قائمة التنقل">
               <Link
                 href="/"
                 onClick={() => setMenuOpen(false)}
-                className={`block px-3 py-2 rounded text-sm ${
+                className={`touch-list-item rounded-lg text-sm ${
                   pathname === '/'
                     ? 'bg-white/15 text-white'
                     : 'text-stone-300 hover:bg-white/10'
@@ -211,7 +224,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
               <Link
                 href="/courses"
                 onClick={() => setMenuOpen(false)}
-                className={`block px-3 py-2 rounded text-sm ${
+                className={`touch-list-item rounded-lg text-sm ${
                   pathname === '/courses' || pathname.startsWith('/courses/')
                     ? 'bg-white/15 text-white'
                     : 'text-stone-300 hover:bg-white/10'
@@ -231,7 +244,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                         : '/dashboard'
                     }
                     onClick={() => setMenuOpen(false)}
-                    className={`block px-3 py-2 rounded text-sm ${
+                    className={`touch-list-item rounded-lg text-sm ${
                       pathname === '/dashboard'
                         ? 'bg-white/15 text-white'
                         : 'text-stone-300 hover:bg-white/10'
@@ -244,7 +257,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                       <Link
                         href="/dashboard/questions"
                         onClick={() => setMenuOpen(false)}
-                        className={`block px-3 py-2 rounded text-sm ${
+                        className={`touch-list-item rounded-lg text-sm ${
                           pathname === '/dashboard/questions'
                             ? 'bg-white/15 text-white'
                             : 'text-stone-300 hover:bg-white/10'
@@ -255,7 +268,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                       <Link
                         href="/dashboard/reports"
                         onClick={() => setMenuOpen(false)}
-                        className={`block px-3 py-2 rounded text-sm ${
+                        className={`touch-list-item rounded-lg text-sm ${
                           pathname === '/dashboard/reports'
                             ? 'bg-white/15 text-white'
                             : 'text-stone-300 hover:bg-white/10'
@@ -267,12 +280,12 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                   )}
                   
                   <div className="border-t border-white/10 pt-3 mt-3">
-                    <div className="flex items-center gap-2 px-3 py-2">
-                      <div className="w-8 h-8 bg-[#c9a227] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    <div className="flex items-center gap-3 px-3 py-3">
+                      <div className="w-10 h-10 bg-[#c9a227] rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0">
                         {user.name?.charAt(0) || 'U'}
                       </div>
                       <div>
-                        <p className="text-sm text-white">{user.name}</p>
+                        <p className="text-sm text-white font-medium">{user.name}</p>
                         <p className="text-xs text-stone-400">
                           {user.role === 'ADMIN' ? 'مدير' : user.role === 'TEACHER' ? 'مدرس' : 'طالب'}
                         </p>
@@ -280,25 +293,25 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-right px-3 py-2 text-sm text-red-400 hover:bg-white/10 rounded"
+                      className="touch-list-item w-full text-right text-sm text-red-400 hover:bg-white/10 rounded-lg"
                     >
                       تسجيل الخروج
                     </button>
                   </div>
                 </>
               ) : (
-                <div className="border-t border-white/10 pt-3 mt-3 space-y-1">
+                <div className="border-t border-white/10 pt-3 mt-3 space-y-2">
                   <Link
                     href="/login"
                     onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 text-sm text-stone-300 hover:bg-white/10 rounded"
+                    className="touch-list-item text-sm text-stone-300 hover:bg-white/10 rounded-lg"
                   >
                     تسجيل الدخول
                   </Link>
                   <Link
                     href="/register"
                     onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 text-sm bg-[#c9a227] text-white rounded hover:bg-[#b08f20]"
+                    className="touch-btn w-full text-sm bg-[#c9a227] text-white rounded-lg hover:bg-[#b08f20] font-medium"
                   >
                     إنشاء حساب
                   </Link>
@@ -309,9 +322,16 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
         )}
       </header>
 
-      <main id="main-content" className="flex-1 animate-fade-in" role="main">
+      <main 
+        id="main-content" 
+        className={`flex-1 animate-fade-in ${user ? 'has-bottom-nav' : ''}`} 
+        role="main"
+      >
         {children}
       </main>
+
+      {/* Mobile Bottom Navigation - only for logged-in users */}
+      <MobileBottomNav user={user} />
 
       {/* Footer */}
       <footer className="bg-[#1a3a2f] text-white mt-auto" role="contentinfo">

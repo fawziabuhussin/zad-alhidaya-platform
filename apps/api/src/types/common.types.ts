@@ -25,3 +25,29 @@ export interface AccessCheckResult {
   allowed: boolean;
   courseId?: string;
 }
+
+/**
+ * Pagination parameters for list queries
+ */
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Pagination metadata in response
+ */
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+/**
+ * Paginated response wrapper
+ */
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}

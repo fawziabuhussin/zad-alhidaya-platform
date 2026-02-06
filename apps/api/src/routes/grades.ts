@@ -10,12 +10,34 @@ const router = express.Router();
 
 /**
  * GET /student/:userId - Get student grades with GPA
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns original format (backward compatible)
  */
 router.get('/student/:userId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { userId } = req.params;
+    const { page, limit } = req.query;
 
-    const result = await gradeManager.getStudentGrades(
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await gradeManager.getStudentGrades(
+        { userId: req.user!.userId, role: req.user!.role },
+        userId,
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 10,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
+    const result = await gradeManager.getStudentGradesUnpaginated(
       { userId: req.user!.userId, role: req.user!.role },
       userId
     );
@@ -33,12 +55,34 @@ router.get('/student/:userId', authenticate, async (req: AuthRequest, res) => {
 
 /**
  * GET /course/:courseId - Get course grades (teacher/admin only)
+ * Supports pagination: ?page=1&limit=20
+ * Without pagination params, returns array (backward compatible)
  */
 router.get('/course/:courseId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { courseId } = req.params;
+    const { page, limit } = req.query;
 
-    const result = await gradeManager.getCourseGrades(
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await gradeManager.getCourseGrades(
+        { userId: req.user!.userId, role: req.user!.role },
+        courseId,
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
+    const result = await gradeManager.getCourseGradesUnpaginated(
       { userId: req.user!.userId, role: req.user!.role },
       courseId
     );

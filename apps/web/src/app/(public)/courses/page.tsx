@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import useSWR from 'swr';
 import api from '@/lib/api';
-import { BookIcon, UserIcon, SearchIcon } from '@/components/Icons';
+import { BookIcon, UserIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/Icons';
 import { CourseCardSkeleton, SearchBarSkeleton, CategoryFilterSkeleton } from '@/components/Skeleton';
+import { CourseCoverImage } from '@/components/OptimizedImage';
 
 interface Category {
   id: string;
@@ -22,56 +24,87 @@ interface Course {
   _count: { enrollments: number };
 }
 
+// Paginated API response type
+interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// SWR fetcher that extracts data from paginated response
+const fetcher = async (url: string) => {
+  const response = await api.get(url);
+  // Handle both paginated and non-paginated responses
+  return response.data?.data ?? response.data;
+};
+
+// Fetcher for paginated response with metadata
+const paginatedFetcher = async (url: string): Promise<PaginatedResponse<Course>> => {
+  const response = await api.get(url);
+  return response.data;
+};
+
+// Items per page for pagination
+const ITEMS_PER_PAGE = 9;
+
 export default function CoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [filtering, setFiltering] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Load categories on mount
-  useEffect(() => {
-    loadCategories();
-  }, []);
+  // Build URL with filters and server-side pagination
+  const coursesUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (selectedCategory) params.append('categoryId', selectedCategory);
+    params.append('page', currentPage.toString());
+    params.append('limit', ITEMS_PER_PAGE.toString());
+    return `/courses/public?${params.toString()}`;
+  }, [search, selectedCategory, currentPage]);
 
-  // Load courses when search or category changes
-  useEffect(() => {
-    loadCourses();
-  }, [search, selectedCategory]);
-
-  const loadCategories = async () => {
-    try {
-      const response = await api.get('/categories');
-      setCategories(response.data || []);
-    } catch (error: any) {
-      console.error('[Courses] Failed to load categories:', error);
-      setCategories([]);
+  // Fetch courses with SWR (cached) - using server-side pagination
+  const { data: coursesResponse, isLoading: coursesLoading, isValidating } = useSWR<PaginatedResponse<Course>>(
+    coursesUrl,
+    paginatedFetcher,
+    { 
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
     }
+  );
+
+  // Extract courses and pagination from response
+  const courses = coursesResponse?.data ?? [];
+  const pagination = coursesResponse?.pagination;
+  const totalPages = pagination?.totalPages ?? 1;
+  const totalCourses = pagination?.total ?? courses.length;
+
+  // Fetch categories with SWR (cached longer)
+  const { data: categories = [], isLoading: categoriesLoading } = useSWR<Category[]>(
+    '/categories',
+    fetcher,
+    { 
+      revalidateOnFocus: false,
+      dedupingInterval: 60000, // Cache for 1 minute
+    }
+  );
+
+  // Reset to page 1 when filters change
+  const handleFilterChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setCurrentPage(1);
   };
 
-  const loadCourses = async () => {
-    try {
-      // Only show filtering indicator after initial load
-      if (!initialLoading) {
-        setFiltering(true);
-      }
-      
-      const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (selectedCategory) params.append('categoryId', selectedCategory);
-      
-      const url = `/courses/public${params.toString() ? `?${params.toString()}` : ''}`;
-      const response = await api.get(url);
-      setCourses(response.data || []);
-    } catch (error: any) {
-      console.error('[Courses] Failed to load courses:', error);
-      setCourses([]);
-    } finally {
-      setInitialLoading(false);
-      setFiltering(false);
-    }
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setCurrentPage(1);
   };
+
+  const initialLoading = coursesLoading && courses.length === 0;
+  const filtering = isValidating && !initialLoading;
 
   // Skeleton loading on initial load
   if (initialLoading) {
@@ -127,7 +160,7 @@ export default function CoursesPage() {
               type="text"
               placeholder="ابحث عن دورة..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pr-12 pl-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
             />
           </div>
@@ -136,7 +169,7 @@ export default function CoursesPage() {
           {categories.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
               <button
-                onClick={() => setSelectedCategory('')}
+                onClick={() => handleFilterChange('')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   selectedCategory === ''
                     ? 'bg-[#c9a227] text-white'
@@ -148,7 +181,7 @@ export default function CoursesPage() {
               {categories.map((category) => (
                 <button
                   key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
+                  onClick={() => handleFilterChange(category.id)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     selectedCategory === category.id
                       ? 'bg-[#c9a227] text-white'
@@ -174,7 +207,7 @@ export default function CoursesPage() {
             </p>
             {(search || selectedCategory) && (
               <button
-                onClick={() => { setSearch(''); setSelectedCategory(''); }}
+                onClick={() => { setSearch(''); setSelectedCategory(''); setCurrentPage(1); }}
                 className="mt-4 text-[#1a3a2f] font-medium hover:underline"
               >
                 إزالة الفلتر
@@ -182,55 +215,112 @@ export default function CoursesPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
-              <Link
-                key={course.id}
-                href={`/courses/${course.id}`}
-                className="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition group"
-              >
-                <div className="h-40 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] relative">
-                  {course.coverImage ? (
-                    <img
+          <>
+            {/* Results count */}
+            <div className="mb-4 text-sm text-stone-500">
+              عرض {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalCourses)} من {totalCourses} دورة
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((course) => (
+                <Link
+                  key={course.id}
+                  href={`/courses/${course.id}`}
+                  className="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition group"
+                >
+                  <div className="h-40 bg-gradient-to-br from-[#1a3a2f] to-[#2d5a4a] relative">
+                    <CourseCoverImage
                       src={course.coverImage}
                       alt={course.title}
-                      className="w-full h-full object-cover"
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold opacity-50">
-                      {course.title.charAt(0)}
+                    <div className="absolute top-3 left-3">
+                      <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                        course.price === 0 || !course.price 
+                          ? 'bg-emerald-500 text-white' 
+                          : 'bg-white text-stone-800'
+                      }`}>
+                        {course.price === 0 || !course.price ? 'مجاني' : `${course.price} ر.س`}
+                      </span>
                     </div>
-                  )}
-                  <div className="absolute top-3 left-3">
-                    <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                      course.price === 0 || !course.price 
-                        ? 'bg-emerald-500 text-white' 
-                        : 'bg-white text-stone-800'
-                    }`}>
-                      {course.price === 0 || !course.price ? 'مجاني' : `${course.price} ر.س`}
-                    </span>
                   </div>
+                  <div className="p-5">
+                    <div className="mb-2">
+                      <span className="text-xs px-2 py-1 bg-stone-100 text-stone-600 rounded">
+                        {course.category.title}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-stone-800 mb-2 group-hover:text-[#1a3a2f] transition">
+                      {course.title}
+                    </h3>
+                    <p className="text-stone-600 text-sm mb-4 line-clamp-2">
+                      {course.description}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-stone-500">
+                      <UserIcon size={14} />
+                      <span>{course.teacher.name}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  aria-label="الصفحة السابقة"
+                >
+                  <ChevronRightIcon size={20} />
+                </button>
+                
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      // Show first, last, current, and pages around current
+                      if (page === 1 || page === totalPages) return true;
+                      if (Math.abs(page - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .map((page, index, arr) => {
+                      // Add ellipsis if there's a gap
+                      const prevPage = arr[index - 1];
+                      const showEllipsis = prevPage && page - prevPage > 1;
+                      
+                      return (
+                        <span key={page} className="flex items-center">
+                          {showEllipsis && (
+                            <span className="px-2 text-stone-400">...</span>
+                          )}
+                          <button
+                            onClick={() => setCurrentPage(page)}
+                            className={`min-w-[40px] h-10 rounded-lg font-medium transition ${
+                              currentPage === page
+                                ? 'bg-[#1a3a2f] text-white'
+                                : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        </span>
+                      );
+                    })}
                 </div>
-                <div className="p-5">
-                  <div className="mb-2">
-                    <span className="text-xs px-2 py-1 bg-stone-100 text-stone-600 rounded">
-                      {course.category.title}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-stone-800 mb-2 group-hover:text-[#1a3a2f] transition">
-                    {course.title}
-                  </h3>
-                  <p className="text-stone-600 text-sm mb-4 line-clamp-2">
-                    {course.description}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm text-stone-500">
-                    <UserIcon size={14} />
-                    <span>{course.teacher.name}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  aria-label="الصفحة التالية"
+                >
+                  <ChevronLeftIcon size={20} />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

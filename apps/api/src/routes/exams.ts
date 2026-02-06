@@ -19,11 +19,32 @@ const router = express.Router();
 
 /**
  * GET /courses/:courseId/exams - List all exams for a course
+ * Supports pagination: ?page=1&limit=20
  */
 router.get('/course/:courseId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { courseId } = req.params;
+    const { page, limit } = req.query;
 
+    // If pagination params provided, use paginated version
+    if (page || limit) {
+      const result = await examManager.listExamsPaginated(
+        { userId: req.user!.userId, role: req.user!.role },
+        courseId,
+        {
+          page: parseInt(page as string) || 1,
+          limit: parseInt(limit as string) || 20,
+        }
+      );
+
+      if (!result.success) {
+        return res.status(result.error!.status).json({ message: result.error!.message });
+      }
+
+      return res.json(result.data);
+    }
+
+    // Default: unpaginated for backward compatibility
     const result = await examManager.listExams(
       { userId: req.user!.userId, role: req.user!.role },
       courseId

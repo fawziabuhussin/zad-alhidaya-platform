@@ -30,8 +30,8 @@ const getApiUrl = (): string => {
 
 const API_URL = getApiUrl();
 
-// Always log API URL for debugging (helps identify issues)
-if (typeof window !== 'undefined') {
+// Log API URL only in development mode
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   console.log('[API] Using API URL:', API_URL);
 }
 

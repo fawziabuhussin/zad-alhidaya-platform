@@ -5,7 +5,7 @@ import { questionRepository } from '../repositories/question.repository';
 import { enrollmentRepository } from '../repositories/enrollment.repository';
 import { lessonRepository } from '../repositories/lesson.repository';
 import { CreateQuestionDTO, AnswerQuestionDTO, QuestionFilters } from '../types/question.types';
-import { AuthContext } from '../types/common.types';
+import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
 
 export const questionManager = {
   /**
@@ -42,9 +42,9 @@ export const questionManager = {
     }
 
     // Check if user is enrolled in the course
-    const enrollments = await enrollmentRepository.findByUserId(auth.userId);
+    const enrollments = await enrollmentRepository.findByUserIdUnpaginated(auth.userId);
     const isEnrolled = enrollments.some(
-      (e) => e.courseId === data.courseId && e.status === 'ACTIVE'
+      (e: any) => e.courseId === data.courseId && e.status === 'ACTIVE'
     );
 
     if (!isEnrolled) {
@@ -65,9 +65,28 @@ export const questionManager = {
   },
 
   /**
-   * Get all questions (admin only)
+   * Get all questions with pagination (admin only)
    */
   async getAllQuestions(
+    auth: AuthContext,
+    filters: QuestionFilters = {},
+    pagination?: PaginationParams
+  ) {
+    if (auth.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مصرح لك بالوصول' },
+      };
+    }
+
+    const result = await questionRepository.findAll(filters, pagination);
+    return { success: true, data: result };
+  },
+
+  /**
+   * Get all questions without pagination (admin only - backward compatible)
+   */
+  async getAllQuestionsUnpaginated(
     auth: AuthContext,
     filters: QuestionFilters = {}
   ) {
@@ -78,14 +97,14 @@ export const questionManager = {
       };
     }
 
-    const questions = await questionRepository.findAll(filters);
+    const questions = await questionRepository.findAllUnpaginated(filters);
     return { success: true, data: questions };
   },
 
   /**
-   * Get questions for the logged-in student
+   * Get questions for the logged-in student with pagination
    */
-  async getMyQuestions(auth: AuthContext) {
+  async getMyQuestions(auth: AuthContext, pagination?: PaginationParams) {
     if (auth.role !== 'STUDENT') {
       return {
         success: false,
@@ -93,14 +112,54 @@ export const questionManager = {
       };
     }
 
-    const questions = await questionRepository.findByStudent(auth.userId);
+    const result = await questionRepository.findByStudent(auth.userId, pagination);
+    return { success: true, data: result };
+  },
+
+  /**
+   * Get questions for the logged-in student without pagination (backward compatible)
+   */
+  async getMyQuestionsUnpaginated(auth: AuthContext) {
+    if (auth.role !== 'STUDENT') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مصرح لك بالوصول' },
+      };
+    }
+
+    const questions = await questionRepository.findByStudentUnpaginated(auth.userId);
     return { success: true, data: questions };
   },
 
   /**
-   * Get questions for courses taught by the teacher
+   * Get questions for courses taught by the teacher with pagination
    */
   async getTeacherQuestions(
+    auth: AuthContext,
+    filters: QuestionFilters = {},
+    pagination?: PaginationParams
+  ) {
+    if (auth.role !== 'TEACHER' && auth.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مصرح لك بالوصول' },
+      };
+    }
+
+    // Admin sees all, teacher sees their own
+    if (auth.role === 'ADMIN') {
+      const result = await questionRepository.findAll(filters, pagination);
+      return { success: true, data: result };
+    }
+
+    const result = await questionRepository.findByTeacher(auth.userId, filters, pagination);
+    return { success: true, data: result };
+  },
+
+  /**
+   * Get questions for courses taught by the teacher without pagination (backward compatible)
+   */
+  async getTeacherQuestionsUnpaginated(
     auth: AuthContext,
     filters: QuestionFilters = {}
   ) {
@@ -113,11 +172,11 @@ export const questionManager = {
 
     // Admin sees all, teacher sees their own
     if (auth.role === 'ADMIN') {
-      const questions = await questionRepository.findAll(filters);
+      const questions = await questionRepository.findAllUnpaginated(filters);
       return { success: true, data: questions };
     }
 
-    const questions = await questionRepository.findByTeacher(auth.userId, filters);
+    const questions = await questionRepository.findByTeacherUnpaginated(auth.userId, filters);
     return { success: true, data: questions };
   },
 

@@ -4,7 +4,7 @@
  */
 import { enrollmentRepository } from '../repositories/enrollment.repository';
 import { courseRepository } from '../repositories/course.repository';
-import { AuthContext } from '../types/common.types';
+import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
 import { EnrollmentWithRelations } from '../types/enrollment.types';
 import { prisma } from '../utils/prisma';
 
@@ -14,6 +14,12 @@ import { prisma } from '../utils/prisma';
 export interface EnrollmentListResult {
   success: boolean;
   data?: EnrollmentWithRelations[];
+  error?: { status: number; message: string };
+}
+
+export interface EnrollmentPaginatedResult {
+  success: boolean;
+  data?: PaginatedResponse<EnrollmentWithRelations>;
   error?: { status: number; message: string };
 }
 
@@ -29,6 +35,38 @@ export interface DeleteResult {
 }
 
 export class EnrollmentManager {
+  /**
+   * List all enrollments with pagination (Admin only)
+   */
+  async listAllEnrollments(auth: AuthContext, pagination?: PaginationParams): Promise<EnrollmentPaginatedResult> {
+    // Check authorization - only admins can list all enrollments
+    if (auth.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مسموح بالوصول' },
+      };
+    }
+
+    const result = await enrollmentRepository.findAll(pagination);
+    return { success: true, data: result };
+  }
+
+  /**
+   * List all enrollments without pagination (Admin only) - backward compatible
+   */
+  async listAllEnrollmentsUnpaginated(auth: AuthContext): Promise<EnrollmentListResult> {
+    // Check authorization - only admins can list all enrollments
+    if (auth.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مسموح بالوصول' },
+      };
+    }
+
+    const enrollments = await enrollmentRepository.findAllUnpaginated();
+    return { success: true, data: enrollments };
+  }
+
   /**
    * Enroll in a course (Student or Admin)
    */
@@ -120,7 +158,7 @@ export class EnrollmentManager {
   }
 
   /**
-   * Get my enrollments (Student or Admin)
+   * Get my enrollments (Student or Admin) - for backward compatibility
    */
   async getMyEnrollments(auth: AuthContext): Promise<EnrollmentListResult> {
     // Check authorization - only STUDENT and ADMIN can view their enrollments
@@ -131,8 +169,34 @@ export class EnrollmentManager {
       };
     }
 
-    const enrollments = await enrollmentRepository.findByUserId(auth.userId, 'ACTIVE');
+    const enrollments = await enrollmentRepository.findByUserIdUnpaginated(auth.userId, 'ACTIVE');
     return { success: true, data: enrollments };
+  }
+
+  /**
+   * Get my enrollments with pagination (Student or Admin)
+   */
+  async getMyEnrollmentsPaginated(
+    auth: AuthContext,
+    pagination?: { page?: number; limit?: number }
+  ): Promise<{
+    success: boolean;
+    data?: {
+      data: EnrollmentWithRelations[];
+      pagination: { page: number; limit: number; total: number; totalPages: number };
+    };
+    error?: { status: number; message: string };
+  }> {
+    // Check authorization - only STUDENT and ADMIN can view their enrollments
+    if (auth.role !== 'STUDENT' && auth.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: { status: 403, message: 'غير مسموح بالوصول' },
+      };
+    }
+
+    const result = await enrollmentRepository.findByUserId(auth.userId, 'ACTIVE', pagination);
+    return { success: true, data: result };
   }
 
   /**

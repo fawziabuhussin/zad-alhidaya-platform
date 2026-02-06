@@ -318,7 +318,7 @@ export default function LoginPage() {
                     setUsername('');
                     setError('');
                   }}
-                  className={`flex-1 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 ${
+                  className={`touch-btn flex-1 rounded-lg font-medium text-sm transition-all duration-300 ${
                     useEmail
                       ? 'bg-[#1a3a2f] text-white shadow-md'
                       : 'text-gray-600 hover:text-gray-800'
@@ -333,7 +333,7 @@ export default function LoginPage() {
                     setEmail('');
                     setError('');
                   }}
-                  className={`flex-1 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 ${
+                  className={`touch-btn flex-1 rounded-lg font-medium text-sm transition-all duration-300 ${
                     !useEmail
                       ? 'bg-[#1a3a2f] text-white shadow-md'
                       : 'text-gray-600 hover:text-gray-800'
@@ -360,7 +360,7 @@ export default function LoginPage() {
                     required
                     autoComplete="email"
                     aria-describedby={error ? 'login-error' : undefined}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200"
+                    className="touch-input w-full border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200"
                     placeholder="example@email.com"
                   />
                 ) : (
@@ -375,7 +375,7 @@ export default function LoginPage() {
                     required
                     autoComplete="username"
                     aria-describedby={error ? 'login-error' : undefined}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200"
+                    className="touch-input w-full border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200"
                     placeholder="اسم المستخدم"
                   />
                 )}
@@ -393,7 +393,7 @@ export default function LoginPage() {
                   required
                   autoComplete="current-password"
                   aria-describedby={error ? 'login-error' : undefined}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200"
+                  className="touch-input w-full border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a3a2f]/20 focus:border-[#1a3a2f] text-gray-800 bg-white/80 transition-all duration-200"
                   placeholder="••••••••"
                 />
               </div>
@@ -401,7 +401,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#1a3a2f] text-white py-3.5 rounded-xl font-bold hover:bg-[#143026] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="touch-btn w-full bg-[#1a3a2f] text-white rounded-xl font-bold hover:bg-[#143026] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -436,7 +436,7 @@ export default function LoginPage() {
                 onClick={handleGoogleLogin}
                 disabled={loading}
                 aria-label="تسجيل الدخول باستخدام حساب Google"
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="touch-btn w-full gap-3 bg-white border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -452,7 +452,7 @@ export default function LoginPage() {
                 onClick={handleAppleLogin}
                 disabled={loading}
                 aria-label="تسجيل الدخول باستخدام حساب Apple"
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-black text-white rounded-xl font-medium hover:bg-gray-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="touch-btn w-full gap-3 bg-black text-white rounded-xl font-medium hover:bg-gray-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C1.79 15.25 4.96 7.59 9.38 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>

@@ -4,6 +4,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 import { QuestionFilters } from '../types/question.types';
+import { PaginationParams, PaginatedResponse } from '../types/common.types';
 
 // Include relations for detailed question data
 const questionInclude = {
@@ -76,9 +77,51 @@ export const questionRepository = {
   },
 
   /**
-   * Find all questions with optional filters
+   * Find all questions with optional filters and pagination
    */
-  async findAll(filters: QuestionFilters = {}) {
+  async findAll(filters: QuestionFilters = {}, pagination?: PaginationParams): Promise<PaginatedResponse<any>> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.LessonQuestionWhereInput = {};
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+    if (filters.courseId) {
+      where.courseId = filters.courseId;
+    }
+    if (filters.lessonId) {
+      where.lessonId = filters.lessonId;
+    }
+
+    const [total, data] = await Promise.all([
+      prisma.lessonQuestion.count({ where }),
+      prisma.lessonQuestion.findMany({
+        where,
+        include: questionInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  },
+
+  /**
+   * Find all questions without pagination (backward compatible)
+   */
+  async findAllUnpaginated(filters: QuestionFilters = {}) {
     const where: Prisma.LessonQuestionWhereInput = {};
 
     if (filters.status) {
@@ -99,9 +142,39 @@ export const questionRepository = {
   },
 
   /**
-   * Find questions by student ID
+   * Find questions by student ID with pagination
    */
-  async findByStudent(studentId: string) {
+  async findByStudent(studentId: string, pagination?: PaginationParams): Promise<PaginatedResponse<any>> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const [total, data] = await Promise.all([
+      prisma.lessonQuestion.count({ where: { studentId } }),
+      prisma.lessonQuestion.findMany({
+        where: { studentId },
+        include: questionInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  },
+
+  /**
+   * Find questions by student ID without pagination (backward compatible)
+   */
+  async findByStudentUnpaginated(studentId: string) {
     return prisma.lessonQuestion.findMany({
       where: { studentId },
       include: questionInclude,
@@ -110,9 +183,52 @@ export const questionRepository = {
   },
 
   /**
-   * Find questions for courses taught by a specific teacher
+   * Find questions for courses taught by a specific teacher with pagination
    */
-  async findByTeacher(teacherId: string, filters: QuestionFilters = {}) {
+  async findByTeacher(teacherId: string, filters: QuestionFilters = {}, pagination?: PaginationParams): Promise<PaginatedResponse<any>> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.LessonQuestionWhereInput = {
+      course: {
+        teacherId,
+      },
+    };
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+    if (filters.courseId) {
+      where.courseId = filters.courseId;
+    }
+
+    const [total, data] = await Promise.all([
+      prisma.lessonQuestion.count({ where }),
+      prisma.lessonQuestion.findMany({
+        where,
+        include: questionInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  },
+
+  /**
+   * Find questions for courses taught by a specific teacher without pagination (backward compatible)
+   */
+  async findByTeacherUnpaginated(teacherId: string, filters: QuestionFilters = {}) {
     const where: Prisma.LessonQuestionWhereInput = {
       course: {
         teacherId,

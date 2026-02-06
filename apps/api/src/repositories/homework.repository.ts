@@ -11,6 +11,7 @@ import {
   SubmitHomeworkDTO,
   GradeHomeworkDTO,
 } from '../types/homework.types';
+import { PaginationParams, PaginatedResponse } from '../types/common.types';
 
 /**
  * Include configuration for fetching homework with relations
@@ -52,9 +53,58 @@ const submissionInclude = {
 
 export class HomeworkRepository {
   /**
-   * Find all homework for a course
+   * Find all homework for a course with pagination
    */
-  async findByCourseId(courseId: string, userId?: string): Promise<HomeworkWithRelations[]> {
+  async findByCourseId(courseId: string, userId?: string, pagination?: PaginationParams): Promise<PaginatedResponse<HomeworkWithRelations>> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const include: any = {
+      course: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          teacherId: true,
+        },
+      },
+      _count: { select: { submissions: true } },
+    };
+
+    // Include user's submissions if userId is provided
+    if (userId) {
+      include.submissions = {
+        where: { userId },
+      };
+    }
+
+    const [total, data] = await Promise.all([
+      prisma.homework.count({ where: { courseId } }),
+      prisma.homework.findMany({
+        where: { courseId },
+        include,
+        orderBy: { dueDate: 'asc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Find all homework for a course without pagination (backward compatible)
+   */
+  async findByCourseIdUnpaginated(courseId: string, userId?: string): Promise<HomeworkWithRelations[]> {
     const include: any = {
       course: {
         select: {
