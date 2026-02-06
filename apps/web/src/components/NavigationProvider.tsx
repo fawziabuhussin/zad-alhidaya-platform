@@ -25,14 +25,25 @@ export default function NavigationProvider({ children }: NavigationProviderProps
     setRouter(router);
   }, [router]);
 
-  // Prefetch common routes when user is authenticated
+  // Check profile completion and redirect if needed
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const userStr = localStorage.getItem('user');
-    if (userStr) {
+    const accessToken = localStorage.getItem('accessToken');
+
+    // Only check if user is logged in
+    if (userStr && accessToken) {
       try {
         const user = JSON.parse(userStr);
+
+        // If profile is incomplete and not already on complete-profile page
+        if (user && !user.profileComplete && pathname !== '/complete-profile') {
+          router.push('/complete-profile');
+          return;
+        }
+
+        // Prefetch common routes
         if (user?.role) {
           prefetchCommonRoutes(user.role, router);
         }
