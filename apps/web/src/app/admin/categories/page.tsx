@@ -231,31 +231,27 @@ export default function AdminCategoriesPage() {
                         <div className="flex gap-2">
                           <Link
                             href={`/admin/courses/create?categoryId=${category.id}`}
-                            className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition"
-                            title="إضافة دورة"
+                            className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition text-sm font-medium"
                           >
-                            <PlusIcon size={16} />
+                            إضافة دورة
                           </Link>
                           <Link
                             href={`/admin/courses?categoryId=${category.id}`}
-                            className="p-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition"
-                            title="عرض الدورات"
+                            className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition text-sm font-medium"
                           >
-                            <BookIcon size={16} />
+                            عرض الدورات
                           </Link>
                           <button
                             onClick={() => handleEdit(category)}
-                            className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
-                            title="تعديل"
+                            className="px-3 py-1.5 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
                           >
-                            <EditIcon size={16} />
+                            تعديل
                           </button>
                           <button
                             onClick={() => handleDelete(category.id)}
-                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
-                            title="حذف"
+                            className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
                           >
-                            <TrashIcon size={16} />
+                            حذف
                           </button>
                         </div>
                       </td>

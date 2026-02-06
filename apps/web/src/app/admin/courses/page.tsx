@@ -243,17 +243,15 @@ export default function AdminCoursesPage() {
                           <div className="flex gap-2">
                             <Link
                               href={`/admin/courses/${course.id}/edit`}
-                              className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
-                              title="تعديل"
+                              className="px-3 py-1.5 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
                             >
-                              <EditIcon size={16} />
+                              تعديل
                             </Link>
                             <button
                               onClick={() => handleDelete(course.id)}
-                              className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
-                              title="حذف"
+                              className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
                             >
-                              <TrashIcon size={16} />
+                              حذف
                             </button>
                           </div>
                         </td>

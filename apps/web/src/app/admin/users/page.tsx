@@ -18,7 +18,7 @@ function RoleFilterDropdown({ value, onChange }: { value: string, onChange: (val
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const options = [
     { value: '', label: 'جميع الأدوار' },
-    { value: 'ADMIN', label: 'أدمن' },
+    { value: 'ADMIN', label: 'مشرف' },
     { value: 'TEACHER', label: 'مدرس' },
     { value: 'STUDENT', label: 'طالب' },
   ];
@@ -540,21 +540,19 @@ export default function AdminUsersPage() {
                         <div className="flex gap-2 flex-wrap">
                           <button
                             onClick={() => handleViewProfile(user)}
-                            className="p-2 bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition"
-                            title="ملف شخصي"
+                            className="px-3 py-1.5 bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition text-sm font-medium"
                           >
-                            <EyeIcon size={16} />
+                            عرض
                           </button>
                           <button
                             onClick={() => handleEdit(user)}
-                            className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition"
-                            title="تعديل"
+                            className="px-3 py-1.5 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition text-sm font-medium"
                           >
-                            <EditIcon size={16} />
+                            تعديل
                           </button>
                           <button
                             onClick={() => handleBlock(user.id, user.blocked)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
                               user.blocked
                                 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                                 : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
@@ -564,10 +562,9 @@ export default function AdminUsersPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(user.id)}
-                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
-                            title="حذف"
+                            className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
                           >
-                            <TrashIcon size={16} />
+                            حذف
                           </button>
                         </div>
                       </td>
@@ -954,7 +951,7 @@ export default function AdminUsersPage() {
               >
                 <option value="STUDENT">طالب</option>
                 <option value="TEACHER">مدرس</option>
-                <option value="ADMIN">أدمن</option>
+                <option value="ADMIN">مشرف</option>
               </select>
             </div>
           </div>
@@ -1118,7 +1115,7 @@ export default function AdminUsersPage() {
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
-                        {profileData.role === 'ADMIN' ? 'أدمن' : profileData.role === 'TEACHER' ? 'مدرس' : 'طالب'}
+                        {profileData.role === 'ADMIN' ? 'مشرف' : profileData.role === 'TEACHER' ? 'مدرس' : 'طالب'}
                       </span>
                       {profileData.provider && (
                         <span className="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800">

@@ -234,17 +234,15 @@ export default function TeacherExamsPage() {
                         <div className="flex gap-2">
                           <Link
                             href={`/teacher/exams/${exam.id}`}
-                            className="p-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition"
-                            title="تعديل"
+                            className="px-3 py-1.5 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition text-sm font-medium"
                           >
-                            <EditIcon size={16} />
+                            تعديل
                           </Link>
                           <Link
                             href={`/teacher/exams/${exam.id}/attempts`}
-                            className="p-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition"
-                            title="المحاولات"
+                            className="px-3 py-1.5 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition text-sm font-medium"
                           >
-                            <UsersIcon size={16} />
+                            المحاولات
                           </Link>
                         </div>
                       </td>

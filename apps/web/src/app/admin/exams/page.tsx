@@ -429,10 +429,9 @@ export default function AdminExamsPage() {
                           </Link>
                           <button
                             onClick={() => handleDelete(exam.id)}
-                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
-                            title="حذف"
+                            className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
                           >
-                            <TrashIcon size={16} />
+                            حذف
                           </button>
                         </div>
                       </td>
