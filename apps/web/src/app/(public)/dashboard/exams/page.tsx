@@ -186,7 +186,7 @@ export default function StudentExamsPage() {
           {/* Filter Tabs Skeleton */}
           <div className="flex flex-wrap gap-2 mb-6">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-9 bg-stone-200 rounded-full animate-pulse" style={{ width: `${60 + i * 10}px` }} />
+              <div key={i} className="h-9 bg-stone-200 rounded-lg animate-pulse" style={{ width: `${60 + i * 10}px` }} />
             ))}
           </div>
 
@@ -248,7 +248,7 @@ export default function StudentExamsPage() {
               <button
                 key={tab.value}
                 onClick={() => handleStatusFilterChange(tab.value)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   statusFilter === tab.value
                     ? 'bg-[#1a3a2f] text-white'
                     : 'bg-stone-100 text-stone-600 hover:bg-stone-200'

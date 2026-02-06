@@ -149,29 +149,31 @@ export default function AdminDashboard() {
 
         {/* Secondary Stats - Row 2 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
+          <Link href="/admin/users?role=TEACHER" className="group bg-white rounded-xl p-5 shadow-sm border border-stone-100 hover:shadow-md hover:border-[#c9a227]/30 transition-all">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-stone-200 transition-colors">
                 <TeacherIcon className="text-stone-600" size={22} />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-2xl font-bold text-stone-800">{stats.teachers}</p>
                 <p className="text-stone-500 text-sm">المدرسين</p>
               </div>
+              <ArrowRightIcon className="text-stone-300 group-hover:text-[#c9a227] transition-colors" size={18} />
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
+          <Link href="/admin/users?role=STUDENT" className="group bg-white rounded-xl p-5 shadow-sm border border-stone-100 hover:shadow-md hover:border-[#c9a227]/30 transition-all">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-stone-200 transition-colors">
                 <GraduateIcon className="text-stone-600" size={22} />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-2xl font-bold text-stone-800">{stats.students}</p>
                 <p className="text-stone-500 text-sm">الطلاب</p>
               </div>
+              <ArrowRightIcon className="text-stone-300 group-hover:text-[#c9a227] transition-colors" size={18} />
             </div>
-          </div>
+          </Link>
 
           <Link href="/admin/categories" className="group bg-white rounded-xl p-5 shadow-sm border border-stone-100 hover:shadow-md hover:border-[#c9a227]/30 transition-all">
             <div className="flex items-center gap-4">

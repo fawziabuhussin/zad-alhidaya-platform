@@ -100,10 +100,11 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const action = searchParams.get('action');
+  const roleParam = searchParams.get('role');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState(roleParam || '');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
