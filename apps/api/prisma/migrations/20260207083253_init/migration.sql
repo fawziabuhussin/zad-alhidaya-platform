@@ -241,23 +241,6 @@ CREATE TABLE "ExamAttempt" (
 );
 
 -- CreateTable
-CREATE TABLE "Grade" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "userId" TEXT NOT NULL,
-    "courseId" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
-    "itemId" TEXT NOT NULL,
-    "score" REAL NOT NULL,
-    "maxScore" REAL NOT NULL,
-    "percentage" REAL NOT NULL,
-    "letterGrade" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Grade_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "Grade_courseId_fkey" FOREIGN KEY ("courseId") REFERENCES "Course" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-);
-
--- CreateTable
 CREATE TABLE "Resource" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "title" TEXT NOT NULL,
@@ -442,18 +425,6 @@ CREATE INDEX "ExamAttempt_status_idx" ON "ExamAttempt"("status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ExamAttempt_examId_userId_key" ON "ExamAttempt"("examId", "userId");
-
--- CreateIndex
-CREATE INDEX "Grade_userId_idx" ON "Grade"("userId");
-
--- CreateIndex
-CREATE INDEX "Grade_courseId_idx" ON "Grade"("courseId");
-
--- CreateIndex
-CREATE INDEX "Grade_type_idx" ON "Grade"("type");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Grade_userId_courseId_type_itemId_key" ON "Grade"("userId", "courseId", "type", "itemId");
 
 -- CreateIndex
 CREATE INDEX "Resource_courseId_idx" ON "Resource"("courseId");

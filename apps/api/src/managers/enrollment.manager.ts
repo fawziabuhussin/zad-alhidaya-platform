@@ -7,6 +7,7 @@ import { courseRepository } from '../repositories/course.repository';
 import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
 import { EnrollmentWithRelations } from '../types/enrollment.types';
 import { prisma } from '../utils/prisma';
+import { calculatePercentage } from '../utils/grade-helpers';
 
 /**
  * Result types for manager operations
@@ -110,18 +111,36 @@ export class EnrollmentManager {
 
     if (prerequisites.length > 0) {
       const prerequisiteIds = prerequisites.map((prereq) => prereq.prerequisite.id);
-      const grades = await prisma.grade.findMany({
+      
+      // Query exam attempts for prerequisite courses
+      const examAttempts = await prisma.examAttempt.findMany({
         where: {
           userId: auth.userId,
-          courseId: { in: prerequisiteIds },
-          type: 'FINAL',
+          score: { not: null },
+          exam: { courseId: { in: prerequisiteIds } }
         },
-        select: { courseId: true, percentage: true },
+        include: { exam: { select: { courseId: true, maxScore: true } } }
       });
 
-      const passedCourses = new Set(
-        grades.filter((grade) => grade.percentage >= 60).map((grade) => grade.courseId)
-      );
+      // Calculate average percentage per course
+      const coursePercentages = new Map<string, number[]>();
+      examAttempts.forEach(a => {
+        const percentage = calculatePercentage(a.score, a.exam.maxScore);
+        if (percentage !== null) {
+          const courseId = a.exam.courseId;
+          const list = coursePercentages.get(courseId) || [];
+          list.push(percentage);
+          coursePercentages.set(courseId, list);
+        }
+      });
+
+      // Determine passed courses (average >= 60%)
+      const passedCourses = new Set<string>();
+      coursePercentages.forEach((percentages, courseId) => {
+        const avg = percentages.reduce((a, b) => a + b, 0) / percentages.length;
+        if (avg >= 60) passedCourses.add(courseId);
+      });
+
       const missing = prerequisites.filter(
         (prereq) => !passedCourses.has(prereq.prerequisite.id)
       );

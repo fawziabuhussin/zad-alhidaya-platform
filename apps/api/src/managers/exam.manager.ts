@@ -290,8 +290,6 @@ export class ExamManager {
       };
     }
 
-    // Clean up Grade records (not cascade-deleted since Grade has no FK to Exam)
-    await examRepository.deleteGradesByExamId(examId);
     await examRepository.delete(examId);
     return { success: true };
   }
@@ -592,17 +590,6 @@ export class ExamManager {
 
       const attempt = await examRepository.createAttempt(examId, auth.userId, data.answers, score, status);
 
-      // Create grade record
-      await examRepository.upsertGrade(
-        auth.userId,
-        exam.courseId,
-        examId,
-        score,
-        exam.maxScore,
-        percentage,
-        letterGrade
-      );
-
       return {
         success: true,
         data: {
@@ -710,17 +697,6 @@ export class ExamManager {
 
     const updated = await examRepository.updateAttemptScore(attemptId, finalScore, 'GRADED');
 
-    // Update or create grade record
-    await examRepository.upsertGrade(
-      attempt.userId,
-      exam.courseId,
-      examId,
-      finalScore,
-      exam.maxScore,
-      percentage,
-      letterGrade
-    );
-
     return {
       success: true,
       data: {
@@ -788,16 +764,6 @@ export class ExamManager {
     const letterGrade = getLetterGrade(percentage);
 
     const updated = await examRepository.updateAttemptScore(attemptId, finalScore, 'GRADED');
-
-    // Update grade record
-    await examRepository.updateGrade(
-      attempt.userId,
-      exam.courseId,
-      examId,
-      finalScore,
-      percentage,
-      letterGrade
-    );
 
     return {
       success: true,

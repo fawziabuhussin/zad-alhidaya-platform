@@ -61,7 +61,6 @@ const userProfileSelect = {
       enrollments: true,
       examAttempts: true,
       homeworkSubmissions: true,
-      grades: true,
     },
   },
   enrollments: {
@@ -89,18 +88,6 @@ const userProfileSelect = {
       },
     },
     take: 10,
-  },
-  grades: {
-    include: {
-      course: {
-        select: {
-          id: true,
-          title: true,
-        },
-      },
-    },
-    take: 10,
-    orderBy: { createdAt: 'desc' as const },
   },
 };
 

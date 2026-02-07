@@ -6,6 +6,7 @@ import { courseRepository } from '../repositories/course.repository';
 import { AuthContext, PaginationParams, PaginatedResponse } from '../types/common.types';
 import { CreateCourseDTO, UpdateCourseDTO, CourseWithRelations, CourseListFilters } from '../types/course.types';
 import { prisma } from '../utils/prisma';
+import { calculatePercentage } from '../utils/grade-helpers';
 
 /**
  * Result types for manager operations
@@ -154,16 +155,14 @@ export class CourseManager {
     if (auth && course.prerequisites && course.prerequisites.length > 0) {
       const prerequisiteIds = course.prerequisites.map((p: any) => p.prerequisite.id);
       
-      // Get user's grades for prerequisite courses (to check if passed)
-      const userGrades = await prisma.grade.findMany({
+      // Query exam attempts for prerequisite courses
+      const examAttempts = await prisma.examAttempt.findMany({
         where: {
           userId: auth.userId,
-          courseId: { in: prerequisiteIds },
+          score: { not: null },
+          exam: { courseId: { in: prerequisiteIds } }
         },
-        select: {
-          courseId: true,
-          percentage: true,
-        },
+        include: { exam: { select: { courseId: true, maxScore: true } } }
       });
 
       // Get user's enrollments for prerequisite courses
@@ -178,12 +177,16 @@ export class CourseManager {
         },
       });
 
-      // Calculate average grade per course and check if passed (>= 60%)
+      // Calculate average percentage per course
       const courseGrades = new Map<string, number[]>();
-      userGrades.forEach((g: { courseId: string; percentage: number }) => {
-        const grades = courseGrades.get(g.courseId) || [];
-        grades.push(g.percentage);
-        courseGrades.set(g.courseId, grades);
+      examAttempts.forEach(a => {
+        const percentage = calculatePercentage(a.score, a.exam.maxScore);
+        if (percentage !== null) {
+          const courseId = a.exam.courseId;
+          const grades = courseGrades.get(courseId) || [];
+          grades.push(percentage);
+          courseGrades.set(courseId, grades);
+        }
       });
 
       const passedCourses = new Set<string>();

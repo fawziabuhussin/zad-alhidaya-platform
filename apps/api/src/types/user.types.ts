@@ -132,7 +132,6 @@ export interface UserProfile {
     enrollments: number;
     examAttempts: number;
     homeworkSubmissions: number;
-    grades: number;
   };
   enrollments: Array<{
     course: {
@@ -147,19 +146,6 @@ export interface UserProfile {
     coverImage: string | null;
     _count: {
       enrollments: number;
-    };
-  }>;
-  grades: Array<{
-    id: string;
-    type: string;
-    score: number;
-    maxScore: number;
-    percentage: number;
-    letterGrade: string;
-    createdAt: Date;
-    course: {
-      id: string;
-      title: string;
     };
   }>;
 }

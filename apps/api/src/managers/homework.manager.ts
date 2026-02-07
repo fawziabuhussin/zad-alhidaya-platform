@@ -351,23 +351,6 @@ export class HomeworkManager {
 
     const submission = await homeworkRepository.gradeSubmission(submissionId, data);
 
-    // Create grade record
-    const percentage = (data.score / homework.maxScore) * 100;
-    const letterGrade = getLetterGrade(percentage);
-
-    await prisma.grade.create({
-      data: {
-        userId: submission.userId,
-        courseId: homework.courseId,
-        type: 'HOMEWORK',
-        itemId: homeworkId,
-        score: data.score,
-        maxScore: homework.maxScore,
-        percentage,
-        letterGrade,
-      },
-    });
-
     return { success: true, data: submission };
   }
 }

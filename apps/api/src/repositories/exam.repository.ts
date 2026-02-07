@@ -249,12 +249,6 @@ export class ExamRepository {
     };
   }
 
-  /**
-   * Delete grade records associated with an exam
-   */
-  async deleteGradesByExamId(examId: string): Promise<void> {
-    await prisma.grade.deleteMany({ where: { type: 'EXAM', itemId: examId } });
-  }
 
   /**
    * Delete an exam
@@ -466,70 +460,6 @@ export class ExamRepository {
     });
   }
 
-  /**
-   * Create or update grade
-   */
-  async upsertGrade(
-    userId: string,
-    courseId: string,
-    examId: string,
-    score: number,
-    maxScore: number,
-    percentage: number,
-    letterGrade: string
-  ): Promise<void> {
-    await prisma.grade.upsert({
-      where: {
-        userId_courseId_type_itemId: {
-          userId,
-          courseId,
-          type: 'EXAM',
-          itemId: examId,
-        },
-      },
-      update: {
-        score,
-        percentage,
-        letterGrade,
-      },
-      create: {
-        userId,
-        courseId,
-        type: 'EXAM',
-        itemId: examId,
-        score,
-        maxScore,
-        percentage,
-        letterGrade,
-      },
-    });
-  }
-
-  /**
-   * Update grade
-   */
-  async updateGrade(
-    userId: string,
-    courseId: string,
-    examId: string,
-    score: number,
-    percentage: number,
-    letterGrade: string
-  ): Promise<void> {
-    await prisma.grade.updateMany({
-      where: {
-        userId,
-        courseId,
-        type: 'EXAM',
-        itemId: examId,
-      },
-      data: {
-        score,
-        percentage,
-        letterGrade,
-      },
-    });
-  }
 
   /**
    * Check course completion status for a user

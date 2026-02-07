@@ -1,27 +1,27 @@
 /**
  * Grade-specific types and DTOs
+ * NOTE: Grades are computed on-read from attempt tables
  */
 
 /**
- * Grade with relations (includes related data)
+ * Unified grade item (computed from ExamAttempt, HomeworkSubmission, or QuizAttempt)
  */
 export interface GradeWithRelations {
   id: string;
   userId: string;
-  courseId: string;
-  type: string; // EXAM, HOMEWORK, QUIZ, FINAL
-  itemId: string;
+  type: 'EXAM' | 'HOMEWORK' | 'QUIZ';
+  itemId: string; // examId, homeworkId, or quizId
   score: number;
   maxScore: number;
-  percentage: number;
-  letterGrade: string; // A+, A, B+, B, C+, C, D, F
+  percentage: number;  // Computed: (score/maxScore) * 100
+  letterGrade: string; // Computed from percentage
   createdAt: Date;
   updatedAt: Date;
   // Relations
   course?: {
     id: string;
     title: string;
-    coverImage: string | null;
+    coverImage?: string | null;
   };
   user?: {
     id: string;
