@@ -1,0 +1,11 @@
+-- Add User profile columns if they don't exist (production DB may have been created with older schema)
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "firstName" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "fatherName" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "familyName" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "dateOfBirth" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phone" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "profession" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "gender" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "idNumber" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "location" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "profileComplete" BOOLEAN NOT NULL DEFAULT false;
