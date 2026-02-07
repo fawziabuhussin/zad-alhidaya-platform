@@ -43,7 +43,6 @@ model User {
   refreshTokens RefreshToken[]
   homeworkSubmissions HomeworkSubmission[]
   examAttempts ExamAttempt[]
-  grades       Grade[]
   resourcesCreated Resource[] @relation("ResourceCreator")
   reportsSubmitted ContentReport[] @relation("ReportedBy")
   reportsReviewed  ContentReport[] @relation("ReviewedBy")
@@ -103,7 +102,6 @@ model Course {
   quizzes     Quiz[]
   homeworks   Homework[]
   exams       Exam[]
-  grades      Grade[]
   resources   Resource[]
   contentReports ContentReport[]
   lessonQuestions LessonQuestion[]
@@ -351,27 +349,6 @@ model ExamAttempt {
   @@index([status])
 }
 
-model Grade {
-  id          String   @id @default(uuid())
-  userId      String
-  courseId    String
-  type        String   // EXAM, HOMEWORK, QUIZ, FINAL
-  itemId      String   // ID of exam, homework, or quiz
-  score       Float
-  maxScore    Float
-  percentage  Float
-  letterGrade String   // A+, A, B+, B, C+, C, D, F
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, courseId, type, itemId])
-  @@index([userId])
-  @@index([courseId])
-  @@index([type])
-}
 
 model Resource {
   id          String   @id @default(uuid())
@@ -471,7 +448,3 @@ model LessonQuestion {
   @@index([status])
   @@index([createdAt])
 }
-
-
-
-
