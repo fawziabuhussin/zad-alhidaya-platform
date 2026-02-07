@@ -211,9 +211,7 @@ export class ExamRepository {
       maxScore: data.maxScore,
       passingScore: data.passingScore,
     };
-    if (data.description) {
-      examData.description = data.description;
-    }
+    examData.description = data.description || '';
 
     const exam = await prisma.exam.create({
       data: examData,
@@ -249,6 +247,13 @@ export class ExamRepository {
       ...exam,
       questions: exam.questions?.map((q: any) => this.parseQuestionChoices(q)) || [],
     };
+  }
+
+  /**
+   * Delete grade records associated with an exam
+   */
+  async deleteGradesByExamId(examId: string): Promise<void> {
+    await prisma.grade.deleteMany({ where: { type: 'EXAM', itemId: examId } });
   }
 
   /**

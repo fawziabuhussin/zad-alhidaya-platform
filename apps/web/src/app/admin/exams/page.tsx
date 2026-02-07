@@ -80,6 +80,18 @@ export default function AdminExamsPage() {
       alert('يجب اختيار دورة');
       return;
     }
+    // Validate dates
+    const startDateTime = new Date(formData.startDate);
+    const endDateTime = new Date(formData.endDate);
+    const now = new Date();
+    if (startDateTime.getTime() < now.getTime() - 60000) {
+      alert('تاريخ ووقت البدء لا يمكن أن يكون في الماضي');
+      return;
+    }
+    if (endDateTime.getTime() <= startDateTime.getTime()) {
+      alert('تاريخ ووقت الانتهاء يجب أن يكون بعد تاريخ ووقت البدء');
+      return;
+    }
     try {
       await api.post('/exams', formData);
       setShowForm(false);
