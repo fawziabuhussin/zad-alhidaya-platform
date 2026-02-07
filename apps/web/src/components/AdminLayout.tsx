@@ -141,7 +141,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <img 
                   src="/photos/logo.jpg" 
                   alt="زاد الهداية" 
-                  className="h-9 w-auto object-contain rounded"
+                  className="h-8 sm:h-9 w-auto max-w-[140px] object-contain rounded"
+                  width={140}
+                  height={36}
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}

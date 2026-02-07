@@ -24,6 +24,10 @@ const notoSansArabic = Noto_Sans_Arabic({
 export const metadata: Metadata = {
   title: 'زاد الهداية | Zad Al-Hidaya Academy',
   description: 'منصة تعليمية إلكترونية للعلوم الشرعية',
+  icons: {
+    icon: '/photos/logo.jpg',
+    apple: '/photos/logo.jpg',
+  },
 };
 
 export default function RootLayout({
