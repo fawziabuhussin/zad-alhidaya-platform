@@ -211,9 +211,7 @@ export class ExamRepository {
       maxScore: data.maxScore,
       passingScore: data.passingScore,
     };
-    if (data.description) {
-      examData.description = data.description;
-    }
+    examData.description = data.description || '';
 
     const exam = await prisma.exam.create({
       data: examData,
