@@ -329,6 +329,16 @@ export default function TakeExamPage() {
         }),
       };
 
+      // Check if user already has an attempt (e.g. after reload submitted via pagehide)
+      if (examData.attempts && examData.attempts.length > 0) {
+        if (!examSubmittedRef.current) {
+          examSubmittedRef.current = true;
+          showWarning('تم تسليم الامتحان.');
+          router.push('/dashboard/exams');
+        }
+        return;
+      }
+
       setExam(examData);
       setTimeRemaining(examData.durationMinutes);
 
